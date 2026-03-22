@@ -7,8 +7,8 @@
       "bg": "Готвено с любов, поднесено с грижа — като у дома."
     },
     "logo": "logo.png",
-    "image": "cover.jpg",
-    "background_image": "cover.jpg",
+    "image": "cover.png",
+    "background_image": "cover.png",
     "default_language": "bg",
     "menu": {
       "config": {
