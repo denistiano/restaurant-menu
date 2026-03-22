@@ -63,6 +63,8 @@
     menuEl.classList.remove('theme-classic', 'theme-modern');
     menuEl.classList.add(`theme-${theme}`);
 
+    document.body.dataset.theme = theme;
+
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.theme === theme);
     });
