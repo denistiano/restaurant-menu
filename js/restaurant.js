@@ -189,7 +189,7 @@
         const item = cat.items[idx];
         if (!item) return;
 
-        const passesTag = activeTags.size === 0 || (item.tags || []).some(tag => activeTags.has(tag.en));
+        const passesTag = activeTags.size === 0 || Array.from(activeTags).every(activeTag => (item.tags || []).some(tag => tag.en === activeTag));
         itemEl.classList.toggle('filtered-out', !passesTag);
         if (passesTag) visibleCount++;
       });

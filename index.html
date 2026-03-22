@@ -3,37 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Restaurants</title>
+  <title>Menus — Discover Great Restaurants</title>
+  <meta name="description" content="Explore restaurant menus, discover dishes and find your next favourite place to eat." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body class="landing-page">
 
-  <header class="site-header">
-    <div class="site-header__inner">
-      <span class="site-logo">&#127869; Menus</span>
-      <button class="lang-toggle" id="langToggle" aria-label="Toggle language">
-        <span class="lang-toggle__label">BG</span>
+  <!-- NAV -->
+  <nav class="l-nav" id="lNav" aria-label="Site navigation">
+    <div class="l-nav__inner">
+      <a href="/" class="l-nav__logo" aria-label="Home">
+        <span class="l-nav__logo-icon">&#9679;</span>
+        <span class="l-nav__logo-text">Menus</span>
+      </a>
+      <button class="l-lang-toggle" id="langToggle" aria-label="Toggle language">
+        <span class="l-lang-toggle__label">BG</span>
       </button>
     </div>
-  </header>
+  </nav>
 
-  <main class="landing-main">
-    <section class="landing-hero">
-      <h1 class="landing-hero__title" data-en="Find a restaurant" data-bg="Намери ресторант"></h1>
-      <p class="landing-hero__sub" data-en="Explore menus and discover great food near you." data-bg="Разгледай менюта и открий страхотна храна близо до теб."></p>
-    </section>
+  <!-- HERO -->
+  <section class="l-hero" aria-label="Hero">
+    <div class="l-hero__bg" aria-hidden="true">
+      <div class="l-hero__grain"></div>
+      <div class="l-hero__glow l-hero__glow--1"></div>
+      <div class="l-hero__glow l-hero__glow--2"></div>
+    </div>
+    <div class="l-hero__content">
+      <p class="l-hero__eyebrow" data-en="Curated restaurant menus" data-bg="Подбрани ресторантски менюта">Curated restaurant menus</p>
+      <h1 class="l-hero__title">
+        <span class="l-hero__title-line" data-en="Discover" data-bg="Открий">Discover</span>
+        <em class="l-hero__title-line l-hero__title-line--italic" data-en="great food" data-bg="страхотна храна">great food</em>
+      </h1>
+      <p class="l-hero__sub" data-en="Explore menus from the best local restaurants — beautifully presented, always up to date." data-bg="Разгледай менюта от най-добрите местни ресторанти — красиво представени, винаги актуални.">Explore menus from the best local restaurants — beautifully presented, always up to date.</p>
+      <a href="#restaurants" class="l-hero__cta">
+        <span data-en="Browse restaurants" data-bg="Разгледай ресторанти">Browse restaurants</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+    <div class="l-hero__scroll-hint" aria-hidden="true">
+      <div class="l-hero__scroll-line"></div>
+    </div>
+  </section>
 
-    <section class="restaurant-grid" id="restaurantGrid">
-      <div class="loading-spinner" id="loadingSpinner">
-        <div class="spinner"></div>
+  <!-- RESTAURANT LISTING -->
+  <section class="l-listing" id="restaurants" aria-label="Restaurants">
+    <div class="l-listing__inner">
+      <header class="l-listing__header">
+        <h2 class="l-listing__heading" data-en="Our restaurants" data-bg="Нашите ресторанти">Our restaurants</h2>
+        <div class="l-listing__rule" aria-hidden="true"></div>
+      </header>
+
+      <div class="l-grid" id="restaurantGrid">
+        <div class="l-loading" id="loadingSpinner">
+          <div class="l-spinner"></div>
+        </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
-  <footer class="site-footer">
-    <p data-en="Built with care. No backend, just good food." data-bg="Направено с грижа. Без сървър, само добра храна."></p>
+  <!-- FOOTER -->
+  <footer class="l-footer">
+    <div class="l-footer__inner">
+      <span class="l-footer__logo">&#9679; Menus</span>
+      <p class="l-footer__copy" data-en="Beautifully simple menus. No backend, just good food." data-bg="Красиво прости менюта. Без сървър, само добра храна.">Beautifully simple menus. No backend, just good food.</p>
+    </div>
   </footer>
 
   <script src="js/app.js"></script>
