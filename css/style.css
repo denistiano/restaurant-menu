@@ -607,6 +607,15 @@ html:has(.landing-page) {
   font-size: 13px;
   color: rgba(255,255,255,0.3);
 }
+.l-footer__contact {
+  font-size: 13px;
+  color: rgba(240,236,228,0.4);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.l-footer__contact:hover {
+  color: var(--color-accent);
+}
 
 /* --- SITE FOOTER (restaurant page) --- */
 .site-footer {
