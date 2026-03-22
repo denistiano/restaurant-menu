@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restaurants</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="landing-page">
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <span class="site-logo">&#127869; Menus</span>
+      <button class="lang-toggle" id="langToggle" aria-label="Toggle language">
+        <span class="lang-toggle__label">BG</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="landing-main">
+    <section class="landing-hero">
+      <h1 class="landing-hero__title" data-en="Find a restaurant" data-bg="Намери ресторант"></h1>
+      <p class="landing-hero__sub" data-en="Explore menus and discover great food near you." data-bg="Разгледай менюта и открий страхотна храна близо до теб."></p>
+    </section>
+
+    <section class="restaurant-grid" id="restaurantGrid">
+      <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p data-en="Built with care. No backend, just good food." data-bg="Направено с грижа. Без сървър, само добра храна."></p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

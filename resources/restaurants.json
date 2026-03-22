@@ -1,0 +1,12 @@
+[
+  {
+    "id": "retur",
+    "name": { "en": "Retur Food & Drinks", "bg": "Ретур Храна & Напитки" },
+    "description": {
+      "en": "Home-cooked with love, served with care — just like home.",
+      "bg": "Готвено с любов, поднесено с грижа — като у дома."
+    },
+    "image": "cover.jpg",
+    "theme": "classic"
+  }
+]
