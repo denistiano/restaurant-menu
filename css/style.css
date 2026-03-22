@@ -419,11 +419,10 @@ ul, ol { list-style: none; }
    ============================================================ */
 .theme-classic .menu-item {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 10px;
   padding: 12px 0;
   border-bottom: 1px solid var(--color-border);
-  transition: background var(--transition);
 }
 .theme-classic .menu-item:last-child { border-bottom: none; }
 .theme-classic .menu-item.unavailable { opacity: 0.45; }
@@ -433,8 +432,9 @@ ul, ol { list-style: none; }
   font-size: 12px;
   font-weight: 600;
   color: var(--color-accent);
-  min-width: 22px;
+  min-width: 20px;
   flex-shrink: 0;
+  padding-top: 2px;
 }
 .theme-classic .menu-item__body {
   flex: 1;
@@ -451,14 +451,14 @@ ul, ol { list-style: none; }
 .theme-classic .menu-item__desc {
   font-size: 13px;
   color: var(--color-text-muted);
-  margin-top: 2px;
-  line-height: 1.4;
+  margin-top: 3px;
+  line-height: 1.45;
 }
 .theme-classic .menu-item__tags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 5px;
+  margin-top: 6px;
 }
 .theme-classic .menu-item__tag {
   font-size: 11px;
@@ -474,15 +474,7 @@ ul, ol { list-style: none; }
   font-weight: 700;
   color: var(--color-price);
   white-space: nowrap;
-}
-
-/* Dot leader between name and price */
-.theme-classic .menu-item__leader {
-  flex: 1;
-  border-bottom: 1px dotted var(--color-border);
-  margin: 0 4px;
-  align-self: center;
-  min-width: 20px;
+  padding-top: 2px;
 }
 
 /* ============================================================

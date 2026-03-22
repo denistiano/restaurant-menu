@@ -10,7 +10,7 @@
   const RESOURCES_BASE = window.RESOURCES_BASE || '../resources';
 
   let data         = null;
-  let currentLang  = localStorage.getItem('preferredLang') || 'en';
+  let currentLang  = localStorage.getItem('preferredLang') || null;
   let currentTheme = null;
   let activeCategory = 'all';
   let activeTags   = new Set();
@@ -49,7 +49,7 @@
 
     const btn = document.getElementById('langToggle');
     if (btn) {
-      btn.querySelector('.lang-toggle__label').textContent = lang === 'en' ? 'BG' : 'EN';
+      btn.querySelector('.lang-toggle__label').textContent = lang === 'bg' ? 'EN' : 'BG';
     }
   }
 
@@ -216,7 +216,7 @@
     const descHtml = descText ? `<p class="menu-item__desc">${esc(descText)}</p>` : '';
 
     const priceHtml = showPrice
-      ? `<span class="menu-item__leader"></span><span class="menu-item__price">${esc(formatPrice(item.price))}</span>`
+      ? `<span class="menu-item__price">${esc(formatPrice(item.price))}</span>`
       : '';
 
     const el = document.createElement('div');
@@ -357,11 +357,15 @@
     const spinner = document.getElementById('loadingSpinner');
     if (spinner) spinner.remove();
 
-    const coverSrc = restaurant.image
-      ? `${RESOURCES_BASE}/${restaurant.id}/${restaurant.image}`
+    const bgSrc = restaurant.background_image
+      ? `${RESOURCES_BASE}/${restaurant.id}/${restaurant.background_image}`
+      : (restaurant.image ? `${RESOURCES_BASE}/${restaurant.id}/${restaurant.image}` : null);
+
+    const logoSrc = restaurant.logo
+      ? `${RESOURCES_BASE}/${restaurant.id}/${restaurant.logo}`
       : null;
 
-    const bgStyle = coverSrc ? `background-image: url('${coverSrc}')` : '';
+    const bgStyle = bgSrc ? `background-image: url('${bgSrc}')` : '';
 
     root.innerHTML = `
       <!-- HEADER -->
@@ -383,7 +387,7 @@
           </div>
         </nav>
         <div class="restaurant-header__content">
-          ${coverSrc ? `<img src="${coverSrc}" alt="${esc(t(restaurant.name))}" class="restaurant-header__cover-thumb" onerror="this.style.display='none'" />` : ''}
+          ${logoSrc ? `<img src="${logoSrc}" alt="${esc(t(restaurant.name))}" class="restaurant-header__cover-thumb" onerror="this.style.display='none'" />` : ''}
           <h1 class="restaurant-header__name" id="restaurantName">${esc(t(restaurant.name))}</h1>
           <p class="restaurant-header__tagline" id="restaurantTagline">${esc(t(restaurant.description))}</p>
         </div>
@@ -420,9 +424,9 @@
       btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
     });
 
-    /* Initial render */
+    /* Initial render — theme from JSON, language from JSON default or localStorage */
     applyTheme(restaurant.menu.theme || 'classic');
-    applyLang(currentLang);
+    applyLang(currentLang || restaurant.default_language || 'en');
   }
 
   /* ============================================================
@@ -433,6 +437,9 @@
       const res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.json`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       data = await res.json();
+      if (!currentLang) {
+        currentLang = data.restaurant.default_language || 'en';
+      }
       buildPage(data.restaurant);
     } catch (err) {
       const root = document.getElementById('restaurant-root');
