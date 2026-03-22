@@ -90,7 +90,7 @@
         },
         {
           "id": "salads",
-          "name": { "en": "Salads – 250g", "bg": "Салати – 0.250 гр" },
+          "name": { "en": "Salads", "bg": "Салати" },
           "items": [
             {
               "name": { "en": "Homemade Dairy Salad", "bg": "Домашна млечна салата" },
