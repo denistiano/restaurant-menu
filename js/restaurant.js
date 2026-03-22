@@ -251,7 +251,7 @@
     const imgHtml = imgSrc
       ? `<div class="menu-item__img-wrap">
            <img src="${esc(imgSrc)}" alt="${esc(t(item.name))}" loading="lazy"
-                onerror="this.parentElement.innerHTML='<div class=\\"menu-item__img-placeholder\\">🍽</div>'" />
+                onerror="this.parentElement.style.display='none'" />
          </div>`
       : '';
 

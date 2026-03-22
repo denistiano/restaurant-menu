@@ -68,7 +68,7 @@
         <div class="l-card__accent"></div>
         ${imgSrc
           ? `<img class="l-card__img" src="${imgSrc}" alt="${escapeHtml(r.name.en)}" loading="lazy"
-               onerror="this.outerHTML='<div class=\\"l-card__img-placeholder\\">🍽</div>'" />`
+               onerror="this.style.display='none'" />`
           : '<div class="l-card__img-placeholder">🍽</div>'
         }
         <div class="l-card__overlay"></div>
