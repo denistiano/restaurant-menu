@@ -9,12 +9,13 @@
   const RESTAURANT_ID  = window.RESTAURANT_ID  || 'unknown';
   const RESOURCES_BASE = window.RESOURCES_BASE || '../resources';
 
-  let data         = null;
-  let currentLang  = localStorage.getItem('preferredLang') || null;
-  let currentTheme = null;
+  let data           = null;
+  let currentLang    = localStorage.getItem('preferredLang') || null;
+  let currentTheme   = null;
   let activeCategory = 'all';
-  let activeTags   = new Set();
-  let allTags      = [];
+  let activeTags     = new Set();
+  let allTags        = [];
+  let initialized    = false; // skip animations on first render
 
   /* ============================================================
      HELPERS
@@ -39,37 +40,92 @@
   }
 
   /* ============================================================
-     LANGUAGE
+     IN-PLACE TEXT UPDATE (used by applyLang)
+     ============================================================ */
+  function updateTranslatables(lang) {
+    document.querySelectorAll('[data-en]').forEach(el => {
+      if (el.childElementCount === 0) {
+        el.textContent = (lang === 'bg' && el.dataset.bg)
+          ? el.dataset.bg
+          : (el.dataset.en || '');
+      }
+    });
+  }
+
+  /* ============================================================
+     LANGUAGE — smooth crossfade, no DOM rebuild
      ============================================================ */
   function applyLang(lang) {
     currentLang = lang;
     localStorage.setItem('preferredLang', lang);
     document.documentElement.lang = lang;
-    rerenderAll();
 
     const btn = document.getElementById('langToggle');
     if (btn) {
       btn.querySelector('.lang-toggle__label').textContent = lang === 'bg' ? 'EN' : 'BG';
     }
+
+    updatePageTitle();
+
+    if (!initialized) {
+      updateTranslatables(lang);
+      return;
+    }
+
+    // Fade content, swap text, fade back
+    const content = document.getElementById('menuCategories');
+    const filters = document.getElementById('filtersBar');
+    const header  = document.querySelector('.restaurant-header__content');
+
+    [content, filters, header].forEach(el => {
+      if (el) { el.style.transition = 'opacity 0.15s ease'; el.style.opacity = '0.45'; }
+    });
+
+    setTimeout(() => {
+      updateTranslatables(lang);
+      [content, filters, header].forEach(el => {
+        if (el) el.style.opacity = '1';
+      });
+    }, 150);
   }
 
   /* ============================================================
-     THEME
+     THEME — fade menu, rebuild, fade back
      ============================================================ */
   function applyTheme(theme) {
     currentTheme = theme;
     const menuEl = document.getElementById('menuContent');
     if (!menuEl) return;
-    menuEl.classList.remove('theme-classic', 'theme-modern');
-    menuEl.classList.add(`theme-${theme}`);
 
     document.body.dataset.theme = theme;
-
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.theme === theme);
     });
 
-    rerenderAll();
+    if (!initialized) {
+      menuEl.classList.remove('theme-classic', 'theme-modern');
+      menuEl.classList.add(`theme-${theme}`);
+      if (data) {
+        renderMenu(data.restaurant.menu.categories);
+        applyFilters(data.restaurant.menu.categories);
+      }
+      return;
+    }
+
+    menuEl.style.transition = 'opacity 0.18s ease';
+    menuEl.style.opacity = '0';
+
+    setTimeout(() => {
+      menuEl.classList.remove('theme-classic', 'theme-modern');
+      menuEl.classList.add(`theme-${theme}`);
+      if (data) {
+        renderMenu(data.restaurant.menu.categories);
+        applyFilters(data.restaurant.menu.categories);
+      }
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        menuEl.style.opacity = '1';
+      }));
+    }, 185);
   }
 
   /* ============================================================
@@ -99,28 +155,36 @@
 
     const allBtn = document.createElement('button');
     allBtn.className = 'category-tab' + (activeCategory === 'all' ? ' active' : '');
-    allBtn.textContent = currentLang === 'bg' ? 'Всички' : 'All';
+    allBtn.dataset.en  = 'All';
+    allBtn.dataset.bg  = 'Всички';
     allBtn.dataset.cat = 'all';
+    allBtn.textContent = currentLang === 'bg' ? 'Всички' : 'All';
     allBtn.addEventListener('click', () => selectCategory('all', categories));
     container.appendChild(allBtn);
 
     categories.forEach(cat => {
       const btn = document.createElement('button');
-      btn.className = 'category-tab' + (activeCategory === cat.id ? ' active' : '');
-      btn.textContent = t(cat.name);
-      btn.dataset.cat = cat.id;
+      btn.className    = 'category-tab' + (activeCategory === cat.id ? ' active' : '');
+      btn.dataset.en   = cat.name.en || '';
+      btn.dataset.bg   = cat.name.bg || cat.name.en || '';
+      btn.dataset.cat  = cat.id;
+      btn.textContent  = t(cat.name);
       btn.addEventListener('click', () => selectCategory(cat.id, categories));
       container.appendChild(btn);
     });
   }
 
+  /* selectCategory — no DOM rebuild, just show/hide */
   function selectCategory(catId, categories) {
     activeCategory = catId;
     activeTags.clear();
-    rerenderAll();
 
-    const tabs = document.querySelectorAll('.category-tab');
-    tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.cat === catId));
+    document.querySelectorAll('.category-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.cat === catId);
+    });
+
+    renderTagFilters(categories);
+    applyFilters(categories);
 
     if (catId !== 'all') {
       const targetSection = document.getElementById(`cat-${catId}`);
@@ -149,9 +213,11 @@
     container.innerHTML = '';
     allTags.forEach(tag => {
       const chip = document.createElement('button');
-      chip.className = 'tag-chip' + (activeTags.has(tag.en) ? ' active' : '');
-      chip.textContent = t(tag);
+      chip.className    = 'tag-chip' + (activeTags.has(tag.en) ? ' active' : '');
+      chip.dataset.en   = tag.en || '';
+      chip.dataset.bg   = tag.bg || tag.en || '';
       chip.dataset.tagEn = tag.en;
+      chip.textContent  = t(tag);
       chip.addEventListener('click', () => toggleTag(tag.en, categories));
       container.appendChild(chip);
     });
@@ -190,8 +256,9 @@
       items.forEach((itemEl, idx) => {
         const item = cat.items[idx];
         if (!item) return;
-
-        const passesTag = activeTags.size === 0 || Array.from(activeTags).every(activeTag => (item.tags || []).some(tag => tag.en === activeTag));
+        const passesTag = activeTags.size === 0 ||
+          Array.from(activeTags).every(activeTag =>
+            (item.tags || []).some(tag => tag.en === activeTag));
         itemEl.classList.toggle('filtered-out', !passesTag);
         if (passesTag) visibleCount++;
       });
@@ -205,17 +272,25 @@
      RENDER MENU ITEM — CLASSIC
      ============================================================ */
   function renderClassicItem(item, index) {
-    const config   = data.restaurant.menu.config;
-    const showTags = config.show_tags;
-    const showDesc = config.show_description;
+    const config    = data.restaurant.menu.config;
+    const showTags  = config.show_tags;
+    const showDesc  = config.show_description;
     const showPrice = config.show_price;
 
+    const nameEn = item.name.en || '';
+    const nameBg = item.name.bg || item.name.en || '';
+    const descEn = item.description ? (item.description.en || '') : '';
+    const descBg = item.description ? (item.description.bg || item.description.en || '') : '';
+
     const tagHtml = (showTags && item.tags && item.tags.length)
-      ? `<div class="menu-item__tags">${item.tags.map(tag => `<span class="menu-item__tag">${esc(t(tag))}</span>`).join('')}</div>`
+      ? `<div class="menu-item__tags">${item.tags.map(tag =>
+          `<span class="menu-item__tag" data-en="${esc(tag.en||'')}" data-bg="${esc(tag.bg||tag.en||'')}">${esc(t(tag))}</span>`
+        ).join('')}</div>`
       : '';
 
-    const descText = showDesc ? t(item.description) : '';
-    const descHtml = descText ? `<p class="menu-item__desc">${esc(descText)}</p>` : '';
+    const descHtml = (showDesc && descEn)
+      ? `<p class="menu-item__desc" data-en="${esc(descEn)}" data-bg="${esc(descBg)}">${esc(t(item.description))}</p>`
+      : '';
 
     const priceHtml = showPrice
       ? `<span class="menu-item__price">${esc(formatPrice(item.price))}</span>`
@@ -226,7 +301,8 @@
     el.innerHTML = `
       <span class="menu-item__number">${index + 1}.</span>
       <div class="menu-item__body">
-        <span class="menu-item__name${!item.availability ? ' unavailable' : ''}">${esc(t(item.name))}</span>
+        <span class="menu-item__name${!item.availability ? ' unavailable' : ''}"
+              data-en="${esc(nameEn)}" data-bg="${esc(nameBg)}">${esc(t(item.name))}</span>
         ${descHtml}
         ${tagHtml}
       </div>
@@ -244,22 +320,30 @@
     const showDesc  = config.show_description;
     const showPrice = config.show_price;
 
+    const nameEn = item.name.en || '';
+    const nameBg = item.name.bg || item.name.en || '';
+    const descEn = item.description ? (item.description.en || '') : '';
+    const descBg = item.description ? (item.description.bg || item.description.en || '') : '';
+
     const imgSrc = item.image
       ? `${RESOURCES_BASE}/${restaurantId}/menu-images/${item.image}`
       : null;
 
     const imgHtml = imgSrc
       ? `<div class="menu-item__img-wrap">
-           <img src="${esc(imgSrc)}" alt="${esc(t(item.name))}" loading="lazy"
+           <img src="${esc(imgSrc)}" alt="${esc(nameEn)}" loading="lazy"
                 onerror="this.parentElement.style.display='none'" />
          </div>`
       : '';
 
-    const descText = showDesc ? t(item.description) : '';
-    const descHtml = descText ? `<p class="menu-item__desc">${esc(descText)}</p>` : '';
+    const descHtml = (showDesc && descEn)
+      ? `<p class="menu-item__desc" data-en="${esc(descEn)}" data-bg="${esc(descBg)}">${esc(t(item.description))}</p>`
+      : '';
 
     const tagHtml = (showTags && item.tags && item.tags.length)
-      ? `<div class="menu-item__tags">${item.tags.map(tag => `<span class="menu-item__tag">${esc(t(tag))}</span>`).join('')}</div>`
+      ? `<div class="menu-item__tags">${item.tags.map(tag =>
+          `<span class="menu-item__tag" data-en="${esc(tag.en||'')}" data-bg="${esc(tag.bg||tag.en||'')}">${esc(t(tag))}</span>`
+        ).join('')}</div>`
       : '<div class="menu-item__tags"></div>';
 
     const priceHtml = showPrice
@@ -271,7 +355,7 @@
     el.innerHTML = `
       ${imgHtml}
       <div class="menu-item__body">
-        <h3 class="menu-item__name">${esc(t(item.name))}</h3>
+        <h3 class="menu-item__name" data-en="${esc(nameEn)}" data-bg="${esc(nameBg)}">${esc(t(item.name))}</h3>
         ${descHtml}
         <div class="menu-item__footer">
           ${tagHtml}
@@ -298,7 +382,12 @@
       section.id = `cat-${cat.id}`;
       section.setAttribute('aria-label', t(cat.name));
 
-      section.innerHTML = `<h2 class="menu-category__title">${esc(t(cat.name))}</h2>`;
+      const title = document.createElement('h2');
+      title.className  = 'menu-category__title';
+      title.dataset.en = cat.name.en || '';
+      title.dataset.bg = cat.name.bg || cat.name.en || '';
+      title.textContent = t(cat.name);
+      section.appendChild(title);
 
       const itemsWrap = document.createElement('div');
       itemsWrap.className = 'menu-category__items';
@@ -313,11 +402,11 @@
       section.appendChild(itemsWrap);
 
       const emptyMsg = document.createElement('p');
-      emptyMsg.className = 'category-empty';
-      emptyMsg.style.display = 'none';
-      emptyMsg.style.padding = '16px 0';
-      emptyMsg.style.color = 'var(--color-text-muted)';
-      emptyMsg.style.fontSize = '14px';
+      emptyMsg.className       = 'category-empty';
+      emptyMsg.style.display   = 'none';
+      emptyMsg.style.padding   = '16px 0';
+      emptyMsg.style.color     = 'var(--color-text-muted)';
+      emptyMsg.style.fontSize  = '14px';
       emptyMsg.dataset.en = 'No items match the selected filters.';
       emptyMsg.dataset.bg = 'Няма продукти, отговарящи на избраните филтри.';
       emptyMsg.textContent = currentLang === 'bg'
@@ -330,20 +419,7 @@
   }
 
   /* ============================================================
-     RERENDER ALL (on lang/theme change)
-     ============================================================ */
-  function rerenderAll() {
-    if (!data) return;
-    const categories = data.restaurant.menu.categories;
-    renderCategoryTabs(categories);
-    renderTagFilters(categories);
-    renderMenu(categories);
-    applyFilters(categories);
-    updatePageTitle();
-  }
-
-  /* ============================================================
-     BUILD PAGE STRUCTURE
+     PAGE TITLE / HEADER TEXT
      ============================================================ */
   function updatePageTitle() {
     if (!data) return;
@@ -354,8 +430,11 @@
     if (taglineEl) taglineEl.textContent = t(data.restaurant.description);
   }
 
+  /* ============================================================
+     BUILD PAGE STRUCTURE
+     ============================================================ */
   function buildPage(restaurant) {
-    const root = document.getElementById('restaurant-root');
+    const root    = document.getElementById('restaurant-root');
     const spinner = document.getElementById('loadingSpinner');
     if (spinner) spinner.remove();
 
@@ -370,7 +449,6 @@
     const bgStyle = bgSrc ? `background-image: url('${bgSrc}')` : '';
 
     root.innerHTML = `
-      <!-- HEADER -->
       <header class="restaurant-header">
         <div class="restaurant-header__bg" style="${bgStyle}" aria-hidden="true"></div>
         <nav class="restaurant-header__nav" aria-label="Site navigation">
@@ -384,51 +462,139 @@
               <button class="theme-btn" data-theme="modern">Modern</button>
             </div>
             <button class="lang-toggle" id="langToggle" aria-label="Toggle language">
-              <span class="lang-toggle__label">BG</span>
+              <span class="lang-toggle__label">EN</span>
             </button>
           </div>
         </nav>
         <div class="restaurant-header__content">
-          ${logoSrc ? `<img src="${logoSrc}" alt="${esc(t(restaurant.name))}" class="restaurant-header__cover-thumb" onerror="this.style.display='none'" />` : ''}
-          <h1 class="restaurant-header__name" id="restaurantName">${esc(t(restaurant.name))}</h1>
-          <p class="restaurant-header__tagline" id="restaurantTagline">${esc(t(restaurant.description))}</p>
+          ${logoSrc ? `<img src="${logoSrc}" alt="${esc(restaurant.name.en||'')}" class="restaurant-header__cover-thumb" onerror="this.style.display='none'" />` : ''}
+          <h1 class="restaurant-header__name" id="restaurantName"></h1>
+          <p class="restaurant-header__tagline" id="restaurantTagline"></p>
         </div>
       </header>
 
-      <!-- STICKY FILTERS -->
       <div class="filters-bar" id="filtersBar" role="navigation" aria-label="Menu filters">
         <div class="filters-bar__inner">
           <div class="category-tabs" id="categoryTabs" role="tablist" aria-label="Categories"></div>
-          <div class="tag-filters" id="tagFilters" aria-label="Tag filters"></div>
+          <div class="tag-filters"   id="tagFilters"   aria-label="Tag filters"></div>
         </div>
       </div>
 
-      <!-- MENU -->
-      <main class="menu-content theme-classic" id="menuContent">
+      <main class="menu-content" id="menuContent">
         <div id="menuCategories"></div>
       </main>
 
-      <!-- FOOTER -->
       <footer class="site-footer">
-        <p data-en="Menus are for reference. Prices and availability may vary." data-bg="Менютата са за справка. Цените и наличността може да варират.">
+        <p data-en="Menus are for reference. Prices and availability may vary."
+           data-bg="Менютата са за справка. Цените и наличността може да варират.">
           Menus are for reference. Prices and availability may vary.
         </p>
       </footer>
     `;
 
     /* Bind events */
-    const langBtn = document.getElementById('langToggle');
-    if (langBtn) {
-      langBtn.addEventListener('click', () => applyLang(currentLang === 'en' ? 'bg' : 'en'));
-    }
+    document.getElementById('langToggle')
+      .addEventListener('click', () => applyLang(currentLang === 'en' ? 'bg' : 'en'));
 
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
     });
 
-    /* Initial render — theme from JSON, language from JSON default or localStorage */
-    applyTheme(restaurant.menu.theme || 'classic');
-    applyLang(currentLang || restaurant.default_language || 'en');
+    /* Initial render — no animations */
+    const initialTheme = restaurant.menu.theme || 'classic';
+    currentTheme = initialTheme;
+
+    const menuEl = document.getElementById('menuContent');
+    menuEl.classList.add(`theme-${initialTheme}`);
+    document.body.dataset.theme = initialTheme;
+
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === initialTheme);
+    });
+
+    const categories = restaurant.menu.categories;
+    renderCategoryTabs(categories);
+    renderTagFilters(categories);
+    renderMenu(categories);
+    applyFilters(categories);
+
+    // Apply language (no animation yet)
+    const lang = currentLang || restaurant.default_language || 'en';
+    currentLang = lang;
+    localStorage.setItem('preferredLang', lang);
+    document.documentElement.lang = lang;
+    updatePageTitle();
+    updateTranslatables(lang);
+
+    const langBtnEl = document.getElementById('langToggle');
+    if (langBtnEl) {
+      langBtnEl.querySelector('.lang-toggle__label').textContent = lang === 'bg' ? 'EN' : 'BG';
+    }
+
+    // From here on, transitions are enabled
+    initialized = true;
+  }
+
+  /* ============================================================
+     YAML → INTERNAL DATA CONVERTER
+     ============================================================ */
+  function yamlToMenuData(parsed) {
+    const r          = parsed.restaurant || {};
+    const tagMap     = parsed.tags       || {};
+    const categories = parsed.menu       || [];
+
+    // Resolve a tag key to a bilingual {en, bg} object.
+    // Falls back gracefully if the key isn't in the tag_translations map.
+    function resolveTag(key) {
+      const k = String(key).trim();
+      if (tagMap[k]) return { en: tagMap[k].en || k, bg: tagMap[k].bg || k };
+      return { en: k, bg: k };
+    }
+
+    const menuCategories = categories.map((cat, i) => {
+      const nameEn = cat.category_en || `Category ${i + 1}`;
+      const nameBg = cat.category_bg || nameEn;
+      const catId  = nameEn.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+      const items = (cat.items || []).map(item => {
+        // Tags: comma-separated string → array of bilingual objects
+        const tagKeys = item.tags
+          ? String(item.tags).split(',').map(s => s.trim()).filter(Boolean)
+          : [];
+
+        return {
+          name:         { en: item.name_en || '',  bg: item.name_bg  || item.name_en  || '' },
+          description:  { en: item.desc_en || '',  bg: item.desc_bg  || item.desc_en  || '' },
+          price:        typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
+          tags:         tagKeys.map(resolveTag),
+          availability: item.available !== false,
+          image:        item.image || null,
+        };
+      });
+
+      return { id: catId, name: { en: nameEn, bg: nameBg }, items };
+    });
+
+    return {
+      restaurant: {
+        id:               r.id               || RESTAURANT_ID,
+        name:             { en: r.name_en    || '', bg: r.name_bg    || r.name_en    || '' },
+        description:      { en: r.tagline_en || '', bg: r.tagline_bg || r.tagline_en || '' },
+        image:            r.image            || '',
+        background_image: r.background      || '',
+        logo:             r.logo            || '',
+        default_language: r.default_language || 'en',
+        menu: {
+          theme: r.theme || 'classic',
+          config: {
+            show_price:       true,
+            show_description: true,
+            show_tags:        true,
+          },
+          categories: menuCategories,
+        },
+      },
+    };
   }
 
   /* ============================================================
@@ -436,9 +602,27 @@
      ============================================================ */
   async function init() {
     try {
-      const res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.json`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      data = await res.json();
+      // Try YAML first, fall back to JSON for backwards compatibility
+      let yamlAvailable = typeof jsyaml !== 'undefined';
+      let res, rawData;
+
+      if (yamlAvailable) {
+        res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.yaml`);
+        if (res.ok) {
+          const yamlText = await res.text();
+          rawData = yamlToMenuData(jsyaml.load(yamlText));
+        } else {
+          yamlAvailable = false;
+        }
+      }
+
+      if (!yamlAvailable) {
+        res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.json`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        rawData = await res.json();
+      }
+
+      data = rawData;
       if (!currentLang) {
         currentLang = data.restaurant.default_language || 'en';
       }
@@ -453,7 +637,7 @@
             <a href="../" style="margin-top:20px;color:var(--color-accent)">← Back to restaurants</a>
           </div>`;
       }
-      console.error('Failed to load menu.json:', err);
+      console.error('Failed to load menu:', err);
     }
   }
 

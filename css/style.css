@@ -45,6 +45,7 @@ body {
   font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
+  transition: background-color 0.35s ease, color 0.35s ease;
 }
 
 img { display: block; max-width: 100%; }
@@ -624,6 +625,7 @@ html:has(.landing-page) {
   font-size: 13px;
   color: var(--color-text-muted);
   border-top: 1px solid var(--color-border);
+  transition: background 0.35s ease, border-color 0.35s ease, color 0.35s ease;
 }
 
 /* --- RESPONSIVE LANDING --- */
@@ -669,7 +671,7 @@ html:has(.landing-page) {
   color: #fff;
   overflow: hidden;
   min-height: 200px;
-  transition: background 0.3s;
+  transition: background 0.35s ease, min-height 0.35s ease;
 }
 .restaurant-header__bg {
   position: absolute; inset: 0;
@@ -733,7 +735,8 @@ html:has(.landing-page) {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
-  transition: background 0.3s, border-color 0.3s;
+  transition: background 0.35s ease, border-color 0.35s ease,
+              backdrop-filter 0.35s ease, box-shadow 0.35s ease;
 }
 .filters-bar__inner {
   max-width: 900px;
@@ -815,7 +818,7 @@ html:has(.landing-page) {
   max-width: 900px;
   margin: 0 auto;
   padding: 32px 16px 80px;
-  transition: background 0.3s;
+  transition: background 0.35s ease, opacity 0.18s ease;
 }
 
 .menu-category {
@@ -832,7 +835,7 @@ html:has(.landing-page) {
   margin-bottom: 4px;
   padding-bottom: 12px;
   border-bottom: 2px solid var(--color-accent-light);
-  transition: color 0.3s, border-color 0.3s;
+  transition: color 0.35s ease, border-color 0.35s ease;
 }
 
 .menu-category__items { margin-top: 16px; }
@@ -846,6 +849,7 @@ html:has(.landing-page) {
   gap: 10px;
   padding: 12px 0;
   border-bottom: 1px solid var(--color-border);
+  transition: border-color 0.35s ease;
 }
 .theme-classic .menu-item:last-child { border-bottom: none; }
 .theme-classic .menu-item.unavailable { opacity: 0.45; }
@@ -869,6 +873,7 @@ html:has(.landing-page) {
   font-weight: 600;
   color: var(--color-navy);
   line-height: 1.3;
+  transition: color 0.35s ease;
 }
 .theme-classic .menu-item__name.unavailable { color: var(--color-unavailable); }
 .theme-classic .menu-item__desc {
