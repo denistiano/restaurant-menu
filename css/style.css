@@ -715,11 +715,11 @@ html:has(.landing-page) {
   line-height: 1.5;
 }
 .restaurant-header__cover-thumb {
-  width: 80px; height: 80px;
+  width: 150px; height: 150px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid rgba(255,255,255,0.3);
-  margin: 0 auto 16px;
+  margin: 0 auto 20px;
   display: block;
 }
 
