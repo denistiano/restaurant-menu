@@ -536,93 +536,13 @@
   }
 
   /* ============================================================
-     YAML → INTERNAL DATA CONVERTER
-     ============================================================ */
-  function yamlToMenuData(parsed) {
-    const r          = parsed.restaurant || {};
-    const tagMap     = parsed.tags       || {};
-    const categories = parsed.menu       || [];
-
-    // Resolve a tag key to a bilingual {en, bg} object.
-    // Falls back gracefully if the key isn't in the tag_translations map.
-    function resolveTag(key) {
-      const k = String(key).trim();
-      if (tagMap[k]) return { en: tagMap[k].en || k, bg: tagMap[k].bg || k };
-      return { en: k, bg: k };
-    }
-
-    const menuCategories = categories.map((cat, i) => {
-      const nameEn = cat.category_en || `Category ${i + 1}`;
-      const nameBg = cat.category_bg || nameEn;
-      const catId  = nameEn.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
-      const items = (cat.items || []).map(item => {
-        // Tags: comma-separated string → array of bilingual objects
-        const tagKeys = item.tags
-          ? String(item.tags).split(',').map(s => s.trim()).filter(Boolean)
-          : [];
-
-        return {
-          name:         { en: item.name_en || '',  bg: item.name_bg  || item.name_en  || '' },
-          description:  { en: item.desc_en || '',  bg: item.desc_bg  || item.desc_en  || '' },
-          price:        typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
-          tags:         tagKeys.map(resolveTag),
-          availability: item.available !== false,
-          image:        item.image || null,
-        };
-      });
-
-      return { id: catId, name: { en: nameEn, bg: nameBg }, items };
-    });
-
-    return {
-      restaurant: {
-        id:               r.id               || RESTAURANT_ID,
-        name:             { en: r.name_en    || '', bg: r.name_bg    || r.name_en    || '' },
-        description:      { en: r.tagline_en || '', bg: r.tagline_bg || r.tagline_en || '' },
-        image:            r.image            || '',
-        background_image: r.background      || '',
-        logo:             r.logo            || '',
-        default_language: r.default_language || 'en',
-        menu: {
-          theme: r.theme || 'classic',
-          config: {
-            show_price:       true,
-            show_description: true,
-            show_tags:        true,
-          },
-          categories: menuCategories,
-        },
-      },
-    };
-  }
-
-  /* ============================================================
      FETCH & INIT
      ============================================================ */
   async function init() {
     try {
-      // Try YAML first, fall back to JSON for backwards compatibility
-      let yamlAvailable = typeof jsyaml !== 'undefined';
-      let res, rawData;
-
-      if (yamlAvailable) {
-        res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.yaml`);
-        if (res.ok) {
-          const yamlText = await res.text();
-          rawData = yamlToMenuData(jsyaml.load(yamlText));
-        } else {
-          yamlAvailable = false;
-        }
-      }
-
-      if (!yamlAvailable) {
-        res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.json`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        rawData = await res.json();
-      }
-
-      data = rawData;
+      const res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.json`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      data = await res.json();
       if (!currentLang) {
         currentLang = data.restaurant.default_language || 'en';
       }
@@ -637,7 +557,7 @@
             <a href="../" style="margin-top:20px;color:var(--color-accent)">← Back to restaurants</a>
           </div>`;
       }
-      console.error('Failed to load menu:', err);
+      console.error('Failed to load menu.json:', err);
     }
   }
 
