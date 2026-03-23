@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const DEFAULT_LANG = 'en';
+  const DEFAULT_LANG = 'bg';
   let currentLang = localStorage.getItem('preferredLang') || DEFAULT_LANG;
 
   /* ============================================================
@@ -22,7 +22,8 @@
 
     const btn = document.getElementById('langToggle');
     if (btn) {
-      btn.querySelector('.l-lang-toggle__label').textContent = lang === 'bg' ? 'EN' : 'BG';
+      const label = btn.querySelector('.l-lang-toggle__label');
+      if (label) label.textContent = lang === 'bg' ? 'EN' : 'BG';
     }
 
     document.querySelectorAll('.l-card').forEach(card => {
@@ -108,18 +109,19 @@
 
     applyLang(currentLang);
     observeCards();
+    observeSections();
   }
 
   /* ============================================================
-     INTERSECTION OBSERVER — card entrance animations
+     INTERSECTION OBSERVER — entrance animations
      ============================================================ */
-  function observeCards() {
-    const cards = document.querySelectorAll('.l-card');
+  function observe(selector, threshold) {
+    const els = document.querySelectorAll(selector);
+    if (!els.length) return;
     if (!('IntersectionObserver' in window)) {
-      cards.forEach(c => c.classList.add('visible'));
+      els.forEach(el => el.classList.add('visible'));
       return;
     }
-
     const io = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -127,10 +129,12 @@
           io.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.08 });
-
-    cards.forEach(card => io.observe(card));
+    }, { threshold });
+    els.forEach(el => io.observe(el));
   }
+
+  function observeCards()    { observe('.l-card',          0.08); }
+  function observeSections() { observe('.l-feature-card, .l-step, .l-cta-block__inner', 0.1); }
 
   /* ============================================================
      SCROLL — frosted nav

@@ -8,8 +8,8 @@
  * loading from CDN are buffered and flushed on init — nothing is lost.
  */
 
-import { initializeApp }                    from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js';
-import { getAnalytics, logEvent, isSupported } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js';
+import { initializeApp }                    from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
+import { getAnalytics, logEvent, isSupported } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js';
 
 /* ── Event queue ─────────────────────────────────────────────
    Other scripts call window.trackEvent() before this module

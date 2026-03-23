@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bg">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Menus — Discover Great Restaurants</title>
-  <meta name="description" content="Explore restaurant menus, discover dishes and find your next favourite place to eat." />
+  <title>e-Menu — Дигитално меню за ресторанти</title>
+  <meta name="description" content="Дайте на вашия ресторант дигитално меню с QR код. Актуализирайте го по всяко време, двуезично, без технически познания." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
@@ -16,11 +16,15 @@
     <div class="l-nav__inner">
       <a href="/" class="l-nav__logo" aria-label="Home">
         <span class="l-nav__logo-icon">&#9679;</span>
-        <span class="l-nav__logo-text">Menus</span>
+        <span class="l-nav__logo-text">e-Menu</span>
       </a>
-      <button class="l-lang-toggle" id="langToggle" aria-label="Toggle language">
-        <span class="l-lang-toggle__label">BG</span>
-      </button>
+      <div class="l-nav__actions">
+        <a href="#contact" class="l-nav__cta-link"
+           data-en="Get yours" data-bg="Искам е-меню">Искам е-меню</a>
+        <button class="l-lang-toggle" id="langToggle" aria-label="Toggle language">
+          <span class="l-lang-toggle__label">EN</span>
+        </button>
+      </div>
     </div>
   </nav>
 
@@ -32,14 +36,22 @@
       <div class="l-hero__glow l-hero__glow--2"></div>
     </div>
     <div class="l-hero__content">
-      <p class="l-hero__eyebrow" data-en="Curated restaurant menus" data-bg="Подбрани ресторантски менюта">Curated restaurant menus</p>
+      <p class="l-hero__eyebrow"
+         data-en="Digital e-menu for restaurants"
+         data-bg="Дигитално е-меню за ресторанти">Дигитално е-меню за ресторанти</p>
       <h1 class="l-hero__title">
-        <span class="l-hero__title-line" data-en="Discover" data-bg="Открий">Discover</span>
-        <em class="l-hero__title-line l-hero__title-line--italic" data-en="great food" data-bg="страхотна храна">great food</em>
+        <span class="l-hero__title-line"
+              data-en="Your menu,"
+              data-bg="Менюто ти,">Менюто ти,</span>
+        <em class="l-hero__title-line l-hero__title-line--italic"
+            data-en="in their phone"
+            data-bg="в телефона им">в телефона им</em>
       </h1>
-      <p class="l-hero__sub" data-en="Explore menus from the best local restaurants — beautifully presented, always up to date." data-bg="Разгледай менюта от най-добрите местни ресторанти — красиво представени, винаги актуални.">Explore menus from the best local restaurants — beautifully presented, always up to date.</p>
-      <a href="#restaurants" class="l-hero__cta">
-        <span data-en="Browse restaurants" data-bg="Разгледай ресторанти">Browse restaurants</span>
+      <p class="l-hero__sub"
+         data-en="A QR code on the table. Guests scan and browse the full menu in their language — no paper, no waiting, always up to date."
+         data-bg="QR код на масата. Гостите сканират и разглеждат пълното меню на техния език — без хартия, без чакане, винаги актуално.">QR код на масата. Гостите сканират и разглеждат пълното меню на техния език — без хартия, без чакане, винаги актуално.</p>
+      <a href="#contact" class="l-hero__cta">
+        <span data-en="Get yours" data-bg="Искам е-меню">Искам е-меню</span>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
     </div>
@@ -48,11 +60,124 @@
     </div>
   </section>
 
-  <!-- RESTAURANT LISTING -->
-  <section class="l-listing" id="restaurants" aria-label="Restaurants">
+  <!-- FEATURES -->
+  <section class="l-features" aria-label="Features">
+    <div class="l-features__inner">
+      <header class="l-section-header">
+        <p class="l-section-header__eyebrow"
+           data-en="Why e-Menu?"
+           data-bg="Защо е-Меню?">Защо е-Меню?</p>
+        <h2 class="l-section-header__title"
+            data-en="Everything your restaurant needs"
+            data-bg="Всичко, което ресторантът ти трябва">Всичко, което ресторантът ти трябва</h2>
+      </header>
+      <div class="l-features__grid">
+
+        <div class="l-feature-card">
+          <div class="l-feature-card__icon" aria-hidden="true">📲</div>
+          <h3 class="l-feature-card__title"
+              data-en="QR Code Ready"
+              data-bg="Готов QR код">Готов QR код</h3>
+          <p class="l-feature-card__desc"
+             data-en="One QR code on the table is all it takes. Guests scan instantly — no app required."
+             data-bg="Един QR код на масата е всичко. Гостите сканират мигновено — без инсталиране на приложение.">Един QR код на масата е всичко. Гостите сканират мигновено — без инсталиране на приложение.</p>
+        </div>
+
+        <div class="l-feature-card">
+          <div class="l-feature-card__icon" aria-hidden="true">✏️</div>
+          <h3 class="l-feature-card__title"
+              data-en="Update Anytime"
+              data-bg="Актуализация по всяко време">Актуализация по всяко време</h3>
+          <p class="l-feature-card__desc"
+             data-en="Prices changed? New dish? Update your menu in minutes from any device — no developer needed."
+             data-bg="Сменили се цени? Ново ястие? Актуализирай менюто за минути от всяко устройство — без програмист.">Сменили се цени? Ново ястие? Актуализирай менюто за минути от всяко устройство — без програмист.</p>
+        </div>
+
+        <div class="l-feature-card">
+          <div class="l-feature-card__icon" aria-hidden="true">🌍</div>
+          <h3 class="l-feature-card__title"
+              data-en="Bilingual"
+              data-bg="Двуезично">Двуезично</h3>
+          <p class="l-feature-card__desc"
+             data-en="Bulgarian and English side-by-side. Every guest — local or foreign — feels at home."
+             data-bg="Български и английски едновременно. Всеки гост — местен или чужденец — се чувства добре дошъл.">Български и английски едновременно. Всеки гост — местен или чужденец — се чувства добре дошъл.</p>
+        </div>
+
+        <div class="l-feature-card">
+          <div class="l-feature-card__icon" aria-hidden="true">🎨</div>
+          <h3 class="l-feature-card__title"
+              data-en="Beautiful by Default"
+              data-bg="Красиво по подразбиране">Красиво по подразбиране</h3>
+          <p class="l-feature-card__desc"
+             data-en="Two refined themes — classic list or modern cards. Your restaurant always looks its best."
+             data-bg="Два изчистени стила — класик или модерен. Ресторантът ти винаги изглежда перфектно.">Два изчистени стила — класик или модерен. Ресторантът ти винаги изглежда перфектно.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="l-steps" aria-label="How it works">
+    <div class="l-steps__inner">
+      <header class="l-section-header">
+        <p class="l-section-header__eyebrow"
+           data-en="Simple process"
+           data-bg="Лесен процес">Лесен процес</p>
+        <h2 class="l-section-header__title"
+            data-en="How it works"
+            data-bg="Как работи">Как работи</h2>
+      </header>
+      <div class="l-steps__list">
+
+        <div class="l-step">
+          <div class="l-step__num" aria-hidden="true">01</div>
+          <h3 class="l-step__title"
+              data-en="Send us your menu"
+              data-bg="Изпрати ни менюто">Изпрати ни менюто</h3>
+          <p class="l-step__desc"
+             data-en="CSV, photo, or a simple message — we handle the setup entirely for you."
+             data-bg="CSV, снимка или просто съобщение — ние правим всичко за теб.">CSV, снимка или просто съобщение — ние правим всичко за теб.</p>
+        </div>
+
+        <div class="l-step__connector" aria-hidden="true"></div>
+
+        <div class="l-step">
+          <div class="l-step__num" aria-hidden="true">02</div>
+          <h3 class="l-step__title"
+              data-en="We build your e-menu"
+              data-bg="Ние изграждаме е-менюто">Ние изграждаме е-менюто</h3>
+          <p class="l-step__desc"
+             data-en="We create your branded digital menu — dishes, prices, descriptions, two languages."
+             data-bg="Създаваме твоето дигитално меню — ястия, цени, описания, два езика.">Създаваме твоето дигитално меню — ястия, цени, описания, два езика.</p>
+        </div>
+
+        <div class="l-step__connector" aria-hidden="true"></div>
+
+        <div class="l-step">
+          <div class="l-step__num" aria-hidden="true">03</div>
+          <h3 class="l-step__title"
+              data-en="Go live with a QR code"
+              data-bg="На живо с QR код">На живо с QR код</h3>
+          <p class="l-step__desc"
+             data-en="Print the QR code, place it on your tables. Guests scan and browse immediately."
+             data-bg="Принтирай QR кода, постави го на масите. Гостите сканират и разглеждат веднага.">Принтирай QR кода, постави го на масите. Гостите сканират и разглеждат веднага.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE EXAMPLES -->
+  <section class="l-listing" id="restaurants" aria-label="Live examples">
     <div class="l-listing__inner">
       <header class="l-listing__header">
-        <h2 class="l-listing__heading" data-en="Our restaurants" data-bg="Нашите ресторанти">Our restaurants</h2>
+        <h2 class="l-listing__heading"
+            data-en="See it live"
+            data-bg="Вижте го на живо">Вижте го на живо</h2>
+        <p class="l-listing__sub"
+           data-en="Restaurants already using e-menus."
+           data-bg="Ресторанти, вече с е-меню.">Ресторанти, вече с е-меню.</p>
         <div class="l-listing__rule" aria-hidden="true"></div>
       </header>
 
@@ -64,17 +189,40 @@
     </div>
   </section>
 
+  <!-- CTA / CONTACT -->
+  <section class="l-cta-block" id="contact" aria-label="Contact">
+    <div class="l-cta-block__bg" aria-hidden="true"></div>
+    <div class="l-cta-block__inner">
+      <h2 class="l-cta-block__title"
+          data-en="Ready to go digital?"
+          data-bg="Готов ли е ресторантът ти?">Готов ли е ресторантът ти?</h2>
+      <p class="l-cta-block__sub"
+         data-en="Get in touch — we'll have your e-menu up and running today."
+         data-bg="Свържи се с нас — имаш е-меню до края на деня.">Свържи се с нас — имаш е-меню до края на деня.</p>
+      <div class="l-cta-block__contacts">
+        <a href="tel:+359898513566" class="l-cta-block__link">
+          <span class="l-cta-block__link-icon" aria-hidden="true">📞</span>
+          <span>+359 898 513 566</span>
+        </a>
+        <a href="mailto:denistiano@gmail.com" class="l-cta-block__link">
+          <span class="l-cta-block__link-icon" aria-hidden="true">✉</span>
+          <span>denistiano@gmail.com</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <footer class="l-footer">
     <div class="l-footer__inner">
       <div class="l-footer__brand">
-        <span class="l-footer__logo">&#9679; Menus</span>
+        <span class="l-footer__logo">&#9679; e-Menu</span>
         <p class="l-footer__tagline"
-           data-en="Beautifully simple menus."
-           data-bg="Просто красиви менюта.">Beautifully simple menus.</p>
+           data-en="Digital menus for modern restaurants."
+           data-bg="Дигитални менюта за съвременни ресторанти.">Дигитални менюта за съвременни ресторанти.</p>
       </div>
       <p class="l-footer__copy"
-         data-en="No backend, just good food."
-         data-bg="Без сървър, само добра храна.">No backend, just good food.</p>
+         data-en="Menus are for reference. Prices may vary."
+         data-bg="Менютата са за справка. Цените могат да варират.">Менютата са за справка. Цените могат да варират.</p>
       <div class="l-footer__contact">
         <a href="tel:+359898513566" class="l-footer__link">+359 898 513 566</a>
         <a href="mailto:denistiano@gmail.com" class="l-footer__link">denistiano@gmail.com</a>

@@ -124,6 +124,40 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') closeItemModal();
     });
+
+    /* ── Swipe-down to close (mobile bottom sheet) ────────── */
+    const sheet = document.getElementById('itemModalSheet');
+    let swipeStartY  = 0;
+    let swipeCurrent = 0;
+    let swipeActive  = false;
+
+    sheet.addEventListener('touchstart', e => {
+      /* Only begin swipe if sheet content is scrolled to top */
+      if (sheet.scrollTop > 0) return;
+      swipeStartY  = e.touches[0].clientY;
+      swipeCurrent = swipeStartY;
+      swipeActive  = true;
+      sheet.style.transition = 'none';
+    }, { passive: true });
+
+    sheet.addEventListener('touchmove', e => {
+      if (!swipeActive) return;
+      swipeCurrent = e.touches[0].clientY;
+      const delta = Math.max(0, swipeCurrent - swipeStartY);
+      sheet.style.transform = `translateY(${delta}px)`;
+    }, { passive: true });
+
+    sheet.addEventListener('touchend', () => {
+      if (!swipeActive) return;
+      swipeActive = false;
+      sheet.style.transition = ''; // restore CSS transition
+      const delta = swipeCurrent - swipeStartY;
+      if (delta > 110 || delta > sheet.offsetHeight * 0.28) {
+        closeItemModal();
+      } else {
+        sheet.style.transform = ''; // spring back
+      }
+    });
   }
 
   function populateModal(item) {
@@ -200,6 +234,8 @@
   function closeItemModal() {
     const modal = document.getElementById('itemModal');
     if (!modal || !modal.classList.contains('open')) return;
+    const sheet = document.getElementById('itemModalSheet');
+    if (sheet) sheet.style.transform = ''; // reset any partial swipe
     modal.classList.remove('open');
     document.body.style.overflow = '';
     currentModalItem = null;
