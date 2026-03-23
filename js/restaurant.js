@@ -10,6 +10,36 @@
   const RESOURCES_BASE = window.RESOURCES_BASE || '../resources';
   const JSONBIN_BASE   = 'https://api.jsonbin.io/v3/b';
 
+  const CACHE_TTL = 60 * 60 * 1000;                      // 1 hour
+  const CACHE_KEY = `menu_cache_${RESTAURANT_ID}`;
+
+  function getCached() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const { payload, ts } = JSON.parse(raw);
+      if (Date.now() - ts > CACHE_TTL) {
+        localStorage.removeItem(CACHE_KEY);
+        return null;                                      // expired
+      }
+      return payload;
+    } catch { return null; }
+  }
+
+  function getStaleCached() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw).payload || null;             // ignore TTL
+    } catch { return null; }
+  }
+
+  function setCached(payload) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ payload, ts: Date.now() }));
+    } catch { /* localStorage full — skip silently */ }
+  }
+
   let data           = null;
   let currentLang    = localStorage.getItem('preferredLang') || null;
   let currentTheme   = null;
@@ -541,7 +571,16 @@
      ============================================================ */
   async function init() {
     try {
-      // Resolve bin ID from restaurants.json index
+      // ── 1. Serve from cache if fresh ─────────────────────
+      const cached = getCached();
+      if (cached) {
+        data = cached;
+        if (!currentLang) currentLang = data.restaurant.default_language || 'en';
+        buildPage(data.restaurant);
+        return;
+      }
+
+      // ── 2. Resolve bin ID ─────────────────────────────────
       let binId = window.MENU_BIN_ID || null;
       if (!binId) {
         try {
@@ -553,9 +592,10 @@
               binId = entry.menu_bin_id;
             }
           }
-        } catch (_) { /* fall through to local */ }
+        } catch (_) { /* fall through */ }
       }
 
+      // ── 3. Fetch live data ────────────────────────────────
       let rawData;
       if (binId) {
         const res = await fetch(`${JSONBIN_BASE}/${binId}/latest`);
@@ -563,18 +603,36 @@
         const wrapper = await res.json();
         rawData = wrapper.record;
       } else {
-        // Fallback to local file
         const res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.json`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         rawData = await res.json();
       }
 
+      setCached(rawData);                                 // store with timestamp
       data = rawData;
-      if (!currentLang) {
-        currentLang = data.restaurant.default_language || 'en';
-      }
+      if (!currentLang) currentLang = data.restaurant.default_language || 'en';
       buildPage(data.restaurant);
+
     } catch (err) {
+      // ── 4. Network failed — try stale cache as fallback ───
+      const stale = getStaleCached();
+      if (stale) {
+        data = stale;
+        if (!currentLang) currentLang = data.restaurant.default_language || 'en';
+        buildPage(data.restaurant);
+        // Non-blocking banner so user knows they're seeing cached content
+        setTimeout(() => {
+          const banner = document.createElement('div');
+          banner.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);' +
+            'background:rgba(20,20,36,0.95);border:1px solid rgba(255,255,255,0.1);' +
+            'color:rgba(240,236,228,0.6);font-size:12px;padding:8px 18px;border-radius:999px;' +
+            'z-index:9999;pointer-events:none;';
+          banner.textContent = 'Showing cached menu — could not reach server.';
+          document.body.appendChild(banner);
+          setTimeout(() => banner.remove(), 5000);
+        }, 500);
+        return;
+      }
       const root = document.getElementById('restaurant-root');
       if (root) {
         root.innerHTML = `
