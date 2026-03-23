@@ -61,8 +61,8 @@
   window.__bustMenuCache = () => cacheBust(MENU_KEY);
 
   let data           = null;
-  let currentLang    = localStorage.getItem('preferredLang') || null;
-  let currentTheme   = null;
+  let currentLang    = localStorage.getItem('preferredLang')   || null;
+  let currentTheme   = localStorage.getItem('preferredTheme')  || null;
   let activeCategory = 'all';
   let activeTags     = new Set();
   let allTags        = [];
@@ -150,6 +150,7 @@
      ============================================================ */
   function applyTheme(theme) {
     currentTheme = theme;
+    localStorage.setItem('preferredTheme', theme);
     const menuEl = document.getElementById('menuContent');
     if (!menuEl) return;
 
@@ -578,8 +579,8 @@
       btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
     });
 
-    /* Initial render — no animations */
-    const initialTheme = restaurant.menu.theme || 'classic';
+    /* Initial render — honour saved preference, fall back to JSON default */
+    const initialTheme = currentTheme || restaurant.menu.theme || 'classic';
     currentTheme = initialTheme;
 
     const menuEl = document.getElementById('menuContent');

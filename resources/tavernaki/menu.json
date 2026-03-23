@@ -1,0 +1,2289 @@
+{
+  "restaurant": {
+    "id": "tavernaki",
+    "name": {
+      "en": "Tavernaki",
+      "bg": "Тавернаки"
+    },
+    "description": {
+      "en": "A world of flavours — international cuisine with a warm, welcoming spirit.",
+      "bg": "Свят от вкусове — интернационална кухня с топъл и гостоприемен дух."
+    },
+    "logo": "",
+    "image": "cover.jpg",
+    "background_image": "cover.jpg",
+    "default_language": "bg",
+    "menu": {
+      "theme": "classic",
+      "config": {
+        "show_price": true,
+        "show_description": true,
+        "show_ingredients": false,
+        "show_tags": true,
+        "show_allergens": false
+      },
+      "categories": [
+        {
+          "id": "starters",
+          "name": {
+            "en": "Starters",
+            "bg": "Предястия"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Caesar Salad",
+                "bg": "Цезар Салата"
+              },
+              "description": {
+                "en": "Римска маруля, Крутони, Цезар дресинг, Пармезан",
+                "bg": "Римска маруля, Крутони, Цезар дресинг, Пармезан"
+              },
+              "price": 8.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Vegetable Samosas",
+                "bg": "Зеленчукови Самоси"
+              },
+              "description": {
+                "en": "Картофи, Грах, Подправки, Тесто",
+                "bg": "Картофи, Грах, Подправки, Тесто"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "indian",
+                  "bg": "индийска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Tom Yum Soup",
+                "bg": "Супа Том Ям"
+              },
+              "description": {
+                "en": "Скариди, Гъби, Лимонена трева, Люти чушки",
+                "bg": "Скариди, Гъби, Лимонена трева, Люти чушки"
+              },
+              "price": 7.99,
+              "tags": [
+                {
+                  "en": "thai",
+                  "bg": "тайландска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Guacamole",
+                "bg": "Гуакамоле"
+              },
+              "description": {
+                "en": "Авокадо, Лайм, Лук, Кориандър",
+                "bg": "Авокадо, Лайм, Лук, Кориандър"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "mexican",
+                  "bg": "мексиканска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Egg Drop Soup",
+                "bg": "Супа с Яйца"
+              },
+              "description": {
+                "en": "Яйца, Пилешки бульон, Царевица, Зелен лук",
+                "bg": "Яйца, Пилешки бульон, Царевица, Зелен лук"
+              },
+              "price": 4.99,
+              "tags": [
+                {
+                  "en": "chinese",
+                  "bg": "китайска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Miso Soup",
+                "bg": "Мисо Супа"
+              },
+              "description": {
+                "en": "Мисо паста, Тофу, Водорасли, Зелен лук",
+                "bg": "Мисо паста, Тофу, Водорасли, Зелен лук"
+              },
+              "price": 3.99,
+              "tags": [
+                {
+                  "en": "japanese",
+                  "bg": "японска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Greek Salad",
+                "bg": "Гръцка Салата"
+              },
+              "description": {
+                "en": "Домати, Краставици, Лук, Фета, Маслини",
+                "bg": "Домати, Краставици, Лук, Фета, Маслини"
+              },
+              "price": 7.99,
+              "tags": [
+                {
+                  "en": "greek",
+                  "bg": "гръцка"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Pumpkin Soup",
+                "bg": "Тиквена Супа"
+              },
+              "description": {
+                "en": "Тиква, Сметана, Подправки, Бульон",
+                "bg": "Тиква, Сметана, Подправки, Бульон"
+              },
+              "price": 6.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Clam Chowder",
+                "bg": "Кламато Супа"
+              },
+              "description": {
+                "en": "Миди, Картофи, Сметана, Лук, Целина",
+                "bg": "Миди, Картофи, Сметана, Лук, Целина"
+              },
+              "price": 8.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Gazpacho",
+                "bg": "Гаспачо"
+              },
+              "description": {
+                "en": "Домати, Краставици, Пиперки, Лук, Чесън",
+                "bg": "Домати, Краставици, Пиперки, Лук, Чесън"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "spanish",
+                  "bg": "испанска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Cobb Salad",
+                "bg": "Салата Коб"
+              },
+              "description": {
+                "en": "Маруля, Пиле, Бекон, Авокадо, Синьо сирене, Яйца",
+                "bg": "Маруля, Пиле, Бекон, Авокадо, Синьо сирене, Яйца"
+              },
+              "price": 9.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Bruschetta",
+                "bg": "Брускета"
+              },
+              "description": {
+                "en": "Домати, Босилек, Чесън, Зехтин, Хляб",
+                "bg": "Домати, Босилек, Чесън, Зехтин, Хляб"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Spinach Artichoke Dip",
+                "bg": "Спаначено артишок дип"
+              },
+              "description": {
+                "en": "Спанак, Артишок, Крем сирене, Пармезан",
+                "bg": "Спанак, Артишок, Крем сирене, Пармезан"
+              },
+              "price": 7.49,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "French Onion Soup",
+                "bg": "Френска лучена супа"
+              },
+              "description": {
+                "en": "Лук, Телешки бульон, Сирене, Хляб",
+                "bg": "Лук, Телешки бульон, Сирене, Хляб"
+              },
+              "price": 6.99,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Caprese Salad",
+                "bg": "Салата Капрезе"
+              },
+              "description": {
+                "en": "Домати, Моцарела, Босилек, Зехтин",
+                "bg": "Домати, Моцарела, Босилек, Зехтин"
+              },
+              "price": 7.49,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Spring Rolls",
+                "bg": "Пролетни рулца"
+              },
+              "description": {
+                "en": "Зеленчуци, Оризова хартия, Нудъли, Скариди",
+                "bg": "Зеленчуци, Оризова хартия, Нудъли, Скариди"
+              },
+              "price": 6.49,
+              "tags": [
+                {
+                  "en": "vietnamese",
+                  "bg": "виетнамска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Minestrone Soup",
+                "bg": "Минестроне супа"
+              },
+              "description": {
+                "en": "Зеленчуци, Боб, Паста, Доматен бульон",
+                "bg": "Зеленчуци, Боб, Паста, Доматен бульон"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Lobster Bisque",
+                "bg": "Лобстер биск"
+              },
+              "description": {
+                "en": "Омар, Сметана, Масло, Подправки",
+                "bg": "Омар, Сметана, Масло, Подправки"
+              },
+              "price": 9.99,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Gyoza",
+                "bg": "Гьоза"
+              },
+              "description": {
+                "en": "Свинско, Зеле, Джинджифил, Чесън, Тесто",
+                "bg": "Свинско, Зеле, Джинджифил, Чесън, Тесто"
+              },
+              "price": 7.49,
+              "tags": [
+                {
+                  "en": "japanese",
+                  "bg": "японска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Hummus",
+                "bg": "Хумус"
+              },
+              "description": {
+                "en": "Нахут, Тахан, Лимон, Чесън",
+                "bg": "Нахут, Тахан, Лимон, Чесън"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "middle eastern",
+                  "bg": "близкоизточна"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Borscht",
+                "bg": "Борш"
+              },
+              "description": {
+                "en": "Цвекло, Зеле, Картофи, Телешки бульон",
+                "bg": "Цвекло, Зеле, Картофи, Телешки бульон"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "russian",
+                  "bg": "руска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Stuffed Mushrooms",
+                "bg": "Пълнени гъби"
+              },
+              "description": {
+                "en": "Гъби, Сирене, Галета, Чесън",
+                "bg": "Гъби, Сирене, Галета, Чесън"
+              },
+              "price": 6.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Guacamole with Chips",
+                "bg": "Гуакамоле с чипс"
+              },
+              "description": {
+                "en": "Авокадо, Лайм, Лук, Кориандър, Чипс",
+                "bg": "Авокадо, Лайм, Лук, Кориандър, Чипс"
+              },
+              "price": 6.99,
+              "tags": [
+                {
+                  "en": "mexican",
+                  "bg": "мексиканска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Ham Tapas",
+                "bg": "Тапас с хамон"
+              },
+              "description": {
+                "en": "Хамон, Хляб, Сирене, Маслини",
+                "bg": "Хамон, Хляб, Сирене, Маслини"
+              },
+              "price": 8.49,
+              "tags": [
+                {
+                  "en": "spanish",
+                  "bg": "испанска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Quinoa Salad",
+                "bg": "Куиноа салата"
+              },
+              "description": {
+                "en": "Куиноа, Чери домати, Краставица, Лук, Лимонов дресинг",
+                "bg": "Куиноа, Чери домати, Краставица, Лук, Лимонов дресинг"
+              },
+              "price": 7.49,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Cheese & Roasted Peppers",
+                "bg": "Кашкавал и чушки"
+              },
+              "description": {
+                "en": "Кашкавал, Червени чушки, Масло, Подправки",
+                "bg": "Кашкавал, Червени чушки, Масло, Подправки"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "bulgarian",
+                  "bg": "българска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Baked Avocado",
+                "bg": "Печен авокадо"
+              },
+              "description": {
+                "en": "Авокадо, Лимон, Подправки, Чесън",
+                "bg": "Авокадо, Лимон, Подправки, Чесън"
+              },
+              "price": 7.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Asian Dumplings",
+                "bg": "Азиатски хапки"
+              },
+              "description": {
+                "en": "Свинско, Джинджифил, Соев сос, Чесън, Тесто",
+                "bg": "Свинско, Джинджифил, Соев сос, Чесън, Тесто"
+              },
+              "price": 9.99,
+              "tags": [
+                {
+                  "en": "asian",
+                  "bg": "азиатска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Asparagus Salad",
+                "bg": "Гарнитура от аспержи"
+              },
+              "description": {
+                "en": "Аспержи, Олио, Лимонов сок, Подправки",
+                "bg": "Аспержи, Олио, Лимонов сок, Подправки"
+              },
+              "price": 6.49,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Stuffed Baked Tomatoes",
+                "bg": "Печени пълнени домати"
+              },
+              "description": {
+                "en": "Домати, Ориз, Сирене, Подправки",
+                "bg": "Домати, Ориз, Сирене, Подправки"
+              },
+              "price": 6.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Quinoa & Bean Salad",
+                "bg": "Салата с киноа и боб"
+              },
+              "description": {
+                "en": "Киноа, Боб, Лук, Чери домати, Лимонов дресинг",
+                "bg": "Киноа, Боб, Лук, Чери домати, Лимонов дресинг"
+              },
+              "price": 8.49,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Falafel with Tahini",
+                "bg": "Фалафел с тахини"
+              },
+              "description": {
+                "en": "Фалафел, Тахини, Лаваш, Зеленчуци",
+                "bg": "Фалафел, Тахини, Лаваш, Зеленчуци"
+              },
+              "price": 7.49,
+              "tags": [
+                {
+                  "en": "middle eastern",
+                  "bg": "близкоизточна"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        },
+        {
+          "id": "mains",
+          "name": {
+            "en": "Mains",
+            "bg": "Основни ястия"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Margherita Pizza",
+                "bg": "Пица Маргарита"
+              },
+              "description": {
+                "en": "Доматен сос, Моцарела, Босилек",
+                "bg": "Доматен сос, Моцарела, Босилек"
+              },
+              "price": 12.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Chicken Tikka Masala",
+                "bg": "Пиле Тика Масала"
+              },
+              "description": {
+                "en": "Пиле, Кисело мляко, Сметана, Подправки",
+                "bg": "Пиле, Кисело мляко, Сметана, Подправки"
+              },
+              "price": 15.99,
+              "tags": [
+                {
+                  "en": "indian",
+                  "bg": "индийска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Beef Tacos",
+                "bg": "Телешки Такос"
+              },
+              "description": {
+                "en": "Телешко, Тортила, Маруля, Сирене, Салса",
+                "bg": "Телешко, Тортила, Маруля, Сирене, Салса"
+              },
+              "price": 10.99,
+              "tags": [
+                {
+                  "en": "mexican",
+                  "bg": "мексиканска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Sushi Platter",
+                "bg": "Суши Плато"
+              },
+              "description": {
+                "en": "Ориз, Риба, Нори, Зеленчуци",
+                "bg": "Ориз, Риба, Нори, Зеленчуци"
+              },
+              "price": 18.99,
+              "tags": [
+                {
+                  "en": "japanese",
+                  "bg": "японска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Spaghetti Carbonara",
+                "bg": "Спагети Карбонара"
+              },
+              "description": {
+                "en": "Спагети, Яйца, Пармезан, Панчета",
+                "bg": "Спагети, Яйца, Пармезан, Панчета"
+              },
+              "price": 13.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Pad Thai",
+                "bg": "Пад Тай"
+              },
+              "description": {
+                "en": "Оризови спагети, Скариди, Яйца, Фъстъци, Тамаринд сос",
+                "bg": "Оризови спагети, Скариди, Яйца, Фъстъци, Тамаринд сос"
+              },
+              "price": 14.99,
+              "tags": [
+                {
+                  "en": "thai",
+                  "bg": "тайландска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Lamb Gyro",
+                "bg": "Агнешки Джиро"
+              },
+              "description": {
+                "en": "Агнешко, Пита, Цацики, Маруля, Домати",
+                "bg": "Агнешко, Пита, Цацики, Маруля, Домати"
+              },
+              "price": 11.99,
+              "tags": [
+                {
+                  "en": "greek",
+                  "bg": "гръцка"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Falafel Wrap",
+                "bg": "Фалафел Врап"
+              },
+              "description": {
+                "en": "Фалафел, Пита, Хумус, Маруля, Домати",
+                "bg": "Фалафел, Пита, Хумус, Маруля, Домати"
+              },
+              "price": 9.99,
+              "tags": [
+                {
+                  "en": "middle eastern",
+                  "bg": "близкоизточна"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Beef Bourguignon",
+                "bg": "Бьоф Бургиньон"
+              },
+              "description": {
+                "en": "Телешко, Червено вино, Моркови, Лук, Гъби",
+                "bg": "Телешко, Червено вино, Моркови, Лук, Гъби"
+              },
+              "price": 19.99,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Pepperoni Pizza",
+                "bg": "Пеперони Пица"
+              },
+              "description": {
+                "en": "Доматен сос, Моцарела, Пеперони",
+                "bg": "Доматен сос, Моцарела, Пеперони"
+              },
+              "price": 13.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Fried Chicken",
+                "bg": "Пържено Пиле"
+              },
+              "description": {
+                "en": "Пиле, Брашно, Подправки, Олио",
+                "bg": "Пиле, Брашно, Подправки, Олио"
+              },
+              "price": 14.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Fish & Chips",
+                "bg": "Риба с Чипс"
+              },
+              "description": {
+                "en": "Риба, Картофи, Брашно, Олио",
+                "bg": "Риба, Картофи, Брашно, Олио"
+              },
+              "price": 12.99,
+              "tags": [
+                {
+                  "en": "british",
+                  "bg": "британска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Beef Phở",
+                "bg": "Телешко Фо"
+              },
+              "description": {
+                "en": "Телешко, Оризови спагети, Бульон, Подправки",
+                "bg": "Телешко, Оризови спагети, Бульон, Подправки"
+              },
+              "price": 11.99,
+              "tags": [
+                {
+                  "en": "vietnamese",
+                  "bg": "виетнамска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Butter Chicken",
+                "bg": "Бътър Чикен"
+              },
+              "description": {
+                "en": "Пиле, Масло, Сметана, Домати, Подправки",
+                "bg": "Пиле, Масло, Сметана, Домати, Подправки"
+              },
+              "price": 15.99,
+              "tags": [
+                {
+                  "en": "indian",
+                  "bg": "индийска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Shrimp Scampi",
+                "bg": "Скариди Скампи"
+              },
+              "description": {
+                "en": "Скариди, Чесън, Масло, Бяло вино, Паста",
+                "bg": "Скариди, Чесън, Масло, Бяло вино, Паста"
+              },
+              "price": 17.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Green Curry",
+                "bg": "Зелен Къри"
+              },
+              "description": {
+                "en": "Пиле, Кокосово мляко, Зелено къри, Зеленчуци",
+                "bg": "Пиле, Кокосово мляко, Зелено къри, Зеленчуци"
+              },
+              "price": 14.99,
+              "tags": [
+                {
+                  "en": "thai",
+                  "bg": "тайландска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Pork Ramen",
+                "bg": "Порк Рамен"
+              },
+              "description": {
+                "en": "Свинско, Нудъли, Бульон, Яйце, Зеленчуци",
+                "bg": "Свинско, Нудъли, Бульон, Яйце, Зеленчуци"
+              },
+              "price": 13.99,
+              "tags": [
+                {
+                  "en": "japanese",
+                  "bg": "японска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Beef Stroganoff",
+                "bg": "Бьоф Строганов"
+              },
+              "description": {
+                "en": "Телешко, Гъби, Лук, Заквасена сметана, Нудъли",
+                "bg": "Телешко, Гъби, Лук, Заквасена сметана, Нудъли"
+              },
+              "price": 16.99,
+              "tags": [
+                {
+                  "en": "russian",
+                  "bg": "руска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "BBQ Ribs",
+                "bg": "Барбекю ребра"
+              },
+              "description": {
+                "en": "Свински ребра, Барбекю сос, Подправки",
+                "bg": "Свински ребра, Барбекю сос, Подправки"
+              },
+              "price": 18.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Vegetarian Burrito",
+                "bg": "Вегетарианско бурито"
+              },
+              "description": {
+                "en": "Боб, Ориз, Сирене, Салса, Тортила",
+                "bg": "Боб, Ориз, Сирене, Салса, Тортила"
+              },
+              "price": 11.99,
+              "tags": [
+                {
+                  "en": "mexican",
+                  "bg": "мексиканска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Thai Basil Chicken",
+                "bg": "Тайландско пиле с босилек"
+              },
+              "description": {
+                "en": "Пиле, Босилек, Чесън, Люти чушки, Ориз",
+                "bg": "Пиле, Босилек, Чесън, Люти чушки, Ориз"
+              },
+              "price": 14.99,
+              "tags": [
+                {
+                  "en": "thai",
+                  "bg": "тайландска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "French Toast",
+                "bg": "Френски тост"
+              },
+              "description": {
+                "en": "Хляб, Яйца, Мляко, Канела",
+                "bg": "Хляб, Яйца, Мляко, Канела"
+              },
+              "price": 8.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Lasagna",
+                "bg": "Лазаня"
+              },
+              "description": {
+                "en": "Паста, Телешко, Доматен сос, Сирене",
+                "bg": "Паста, Телешко, Доматен сос, Сирене"
+              },
+              "price": 15.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Chicken Quesadilla",
+                "bg": "Пилешка кесадия"
+              },
+              "description": {
+                "en": "Пиле, Сирене, Тортила, Чушки",
+                "bg": "Пиле, Сирене, Тортила, Чушки"
+              },
+              "price": 10.99,
+              "tags": [
+                {
+                  "en": "mexican",
+                  "bg": "мексиканска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Falafel Plate",
+                "bg": "Фалафел чиния"
+              },
+              "description": {
+                "en": "Фалафел, Хумус, Пита, Салата",
+                "bg": "Фалафел, Хумус, Пита, Салата"
+              },
+              "price": 12.99,
+              "tags": [
+                {
+                  "en": "middle eastern",
+                  "bg": "близкоизточна"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Chicken Parmesan",
+                "bg": "Пиле Пармезан"
+              },
+              "description": {
+                "en": "Пиле, Доматен сос, Моцарела, Пармезан",
+                "bg": "Пиле, Доматен сос, Моцарела, Пармезан"
+              },
+              "price": 16.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Shepherd's Pie",
+                "bg": "Овчарски пай"
+              },
+              "description": {
+                "en": "Телешко, Картофи, Моркови, Грах, Грейви",
+                "bg": "Телешко, Картофи, Моркови, Грах, Грейви"
+              },
+              "price": 13.99,
+              "tags": [
+                {
+                  "en": "british",
+                  "bg": "британска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "BBQ Chicken Pizza",
+                "bg": "Пица с барбекю пиле"
+              },
+              "description": {
+                "en": "Пиле, Барбекю сос, Моцарела, Червен лук",
+                "bg": "Пиле, Барбекю сос, Моцарела, Червен лук"
+              },
+              "price": 14.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Enchiladas",
+                "bg": "Енчиладас"
+              },
+              "description": {
+                "en": "Пиле, Тортили, Сирене, Енчилада сос",
+                "bg": "Пиле, Тортили, Сирене, Енчилада сос"
+              },
+              "price": 13.99,
+              "tags": [
+                {
+                  "en": "mexican",
+                  "bg": "мексиканска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Chicken Alfredo",
+                "bg": "Пиле Алфредо"
+              },
+              "description": {
+                "en": "Пиле, Фетучини, Сметана, Пармезан",
+                "bg": "Пиле, Фетучини, Сметана, Пармезан"
+              },
+              "price": 15.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Sushi Rolls",
+                "bg": "Суши Ролца"
+              },
+              "description": {
+                "en": "Райс, Риба, Авокадо, Нори, Зеленчуци",
+                "bg": "Райс, Риба, Авокадо, Нори, Зеленчуци"
+              },
+              "price": 14.99,
+              "tags": [
+                {
+                  "en": "japanese",
+                  "bg": "японска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Duck in Orange Sauce",
+                "bg": "Патешко с портокалов сос"
+              },
+              "description": {
+                "en": "Патешко месо, Портокалов сок, Мед, Соев сос, Зеленчуци",
+                "bg": "Патешко месо, Портокалов сок, Мед, Соев сос, Зеленчуци"
+              },
+              "price": 19.99,
+              "tags": [
+                {
+                  "en": "chinese",
+                  "bg": "китайска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Vegan Pizza",
+                "bg": "Веганска пица"
+              },
+              "description": {
+                "en": "Веган тесто, Доматен сос, Веган сирене, Зеленчуци",
+                "bg": "Веган тесто, Доматен сос, Веган сирене, Зеленчуци"
+              },
+              "price": 12.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Stuffed Bell Peppers",
+                "bg": "Пълнени чушки"
+              },
+              "description": {
+                "en": "Чушки, Ориз, Телешко месо, Домати, Подправки",
+                "bg": "Чушки, Ориз, Телешко месо, Домати, Подправки"
+              },
+              "price": 11.99,
+              "tags": [
+                {
+                  "en": "balkan",
+                  "bg": "балканска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Tartiflette",
+                "bg": "Тартифлет"
+              },
+              "description": {
+                "en": "Картофи, Сирене, Бекон, Лук, Сметана",
+                "bg": "Картофи, Сирене, Бекон, Лук, Сметана"
+              },
+              "price": 15.99,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Vegan Burger",
+                "bg": "Вегански бургер"
+              },
+              "description": {
+                "en": "Веган пати, Хляб, Зеленчуци, Дресинг",
+                "bg": "Веган пати, Хляб, Зеленчуци, Дресинг"
+              },
+              "price": 13.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Ricotta Lasagna",
+                "bg": "Лазаня с рикота"
+              },
+              "description": {
+                "en": "Паста, Рикота, Доматен сос, Моцарела",
+                "bg": "Паста, Рикота, Доматен сос, Моцарела"
+              },
+              "price": 16.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Chili con Carne",
+                "bg": "Чили кон карне"
+              },
+              "description": {
+                "en": "Телешко, Червен боб, Лук, Подправки",
+                "bg": "Телешко, Червен боб, Лук, Подправки"
+              },
+              "price": 14.99,
+              "tags": [
+                {
+                  "en": "mexican",
+                  "bg": "мексиканска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Japanese Fish Pie",
+                "bg": "Японски рибен пай"
+              },
+              "description": {
+                "en": "Риба, Паста, Сметана, Подправки",
+                "bg": "Риба, Паста, Сметана, Подправки"
+              },
+              "price": 17.99,
+              "tags": [
+                {
+                  "en": "japanese",
+                  "bg": "японска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Spaghetti Pesto",
+                "bg": "Шпагети с песто"
+              },
+              "description": {
+                "en": "Шпагети, Песто, Пармезан, Лек сос",
+                "bg": "Шпагети, Песто, Пармезан, Лек сос"
+              },
+              "price": 12.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Lemon Roast Chicken",
+                "bg": "Печено пиле с лимон"
+              },
+              "description": {
+                "en": "Пиле, Лимон, Чесън, Подправки",
+                "bg": "Пиле, Лимон, Чесън, Подправки"
+              },
+              "price": 13.49,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Thai Curry Soup",
+                "bg": "Тайландски къри супа"
+              },
+              "description": {
+                "en": "Кокосово мляко, Къри паста, Пиле, Зеленчуци",
+                "bg": "Кокосово мляко, Къри паста, Пиле, Зеленчуци"
+              },
+              "price": 14.49,
+              "tags": [
+                {
+                  "en": "thai",
+                  "bg": "тайландска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Stuffed Peppers",
+                "bg": "Пълнени пиперки"
+              },
+              "description": {
+                "en": "Пиперки, Ориз, Сирене, Подправки",
+                "bg": "Пиперки, Ориз, Сирене, Подправки"
+              },
+              "price": 11.49,
+              "tags": [
+                {
+                  "en": "balkan",
+                  "bg": "балканска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Honey Duck Legs",
+                "bg": "Патешки бутчета с мед"
+              },
+              "description": {
+                "en": "Патешки бутчета, Мед, Соев сос, Подправки",
+                "bg": "Патешки бутчета, Мед, Соев сос, Подправки"
+              },
+              "price": 18.99,
+              "tags": [
+                {
+                  "en": "chinese",
+                  "bg": "китайска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Seafood Spaghetti",
+                "bg": "Спагети с морски дарове"
+              },
+              "description": {
+                "en": "Спагети, Риба, Скариди, Чесън, Лимонов сос",
+                "bg": "Спагети, Риба, Скариди, Чесън, Лимонов сос"
+              },
+              "price": 16.49,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "seafood",
+                  "bg": "морски дарове"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        },
+        {
+          "id": "desserts",
+          "name": {
+            "en": "Desserts",
+            "bg": "Десерти"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "New York Cheesecake",
+                "bg": "Ню Йорк Чийзкейк"
+              },
+              "description": {
+                "en": "Крем сирене, Захар, Яйца, Бисквити",
+                "bg": "Крем сирене, Захар, Яйца, Бисквити"
+              },
+              "price": 6.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Panna Cotta",
+                "bg": "Пана Кота"
+              },
+              "description": {
+                "en": "Сметана, Захар, Ванилия, Желатин",
+                "bg": "Сметана, Захар, Ванилия, Желатин"
+              },
+              "price": 6.49,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Chocolate Lava Cake",
+                "bg": "Шоколадово Лава Кейк"
+              },
+              "description": {
+                "en": "Шоколад, Масло, Захар, Яйца",
+                "bg": "Шоколад, Масло, Захар, Яйца"
+              },
+              "price": 7.49,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Apple Pie",
+                "bg": "Ябълков Пай"
+              },
+              "description": {
+                "en": "Ябълки, Захар, Брашно, Масло",
+                "bg": "Ябълки, Захар, Брашно, Масло"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Tiramisu",
+                "bg": "Тирамису"
+              },
+              "description": {
+                "en": "Маскарпоне, Еспресо, Бишкоти, Какао",
+                "bg": "Маскарпоне, Еспресо, Бишкоти, Какао"
+              },
+              "price": 6.99,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Chocolate Mousse",
+                "bg": "Шоколадов мус"
+              },
+              "description": {
+                "en": "Шоколад, Сметана, Захар, Яйца",
+                "bg": "Шоколад, Сметана, Захар, Яйца"
+              },
+              "price": 6.49,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Churros",
+                "bg": "Чурос"
+              },
+              "description": {
+                "en": "Брашно, Захар, Масло, Канела",
+                "bg": "Брашно, Захар, Масло, Канела"
+              },
+              "price": 4.99,
+              "tags": [
+                {
+                  "en": "spanish",
+                  "bg": "испанска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Blueberry Muffin",
+                "bg": "Боровинков мъфин"
+              },
+              "description": {
+                "en": "Боровинки, Брашно, Захар, Яйца",
+                "bg": "Боровинки, Брашно, Захар, Яйца"
+              },
+              "price": 3.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Pecan Pie",
+                "bg": "Орехов пай"
+              },
+              "description": {
+                "en": "Орехи, Захар, Масло, Яйца",
+                "bg": "Орехи, Захар, Масло, Яйца"
+              },
+              "price": 5.49,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Baklava",
+                "bg": "Баклава"
+              },
+              "description": {
+                "en": "Фило тесто, Ядки, Мед",
+                "bg": "Фило тесто, Ядки, Мед"
+              },
+              "price": 6.99,
+              "tags": [
+                {
+                  "en": "turkish",
+                  "bg": "турска"
+                },
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Banana Split",
+                "bg": "Бананов сплит"
+              },
+              "description": {
+                "en": "Банан, Сладолед, Шоколадов сироп, Сметана",
+                "bg": "Банан, Сладолед, Шоколадов сироп, Сметана"
+              },
+              "price": 7.49,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Strawberry Cake",
+                "bg": "Ягодова торта"
+              },
+              "description": {
+                "en": "Ягоди, Торта, Сметана",
+                "bg": "Ягоди, Торта, Сметана"
+              },
+              "price": 6.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Carrot Cake",
+                "bg": "Морковена торта"
+              },
+              "description": {
+                "en": "Моркови, Захар, Брашно, Крем сирене",
+                "bg": "Моркови, Захар, Брашно, Крем сирене"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Éclair",
+                "bg": "Еклер"
+              },
+              "description": {
+                "en": "Шу тесто, Крем, Шоколад",
+                "bg": "Шу тесто, Крем, Шоколад"
+              },
+              "price": 4.99,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Tres Leches Cake",
+                "bg": "Трес лечес торта"
+              },
+              "description": {
+                "en": "Мляко, Сметана, Гъба торта, Захар",
+                "bg": "Мляко, Сметана, Гъба торта, Захар"
+              },
+              "price": 6.49,
+              "tags": [
+                {
+                  "en": "mexican",
+                  "bg": "мексиканска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Key Lime Pie",
+                "bg": "Кей лайм пай"
+              },
+              "description": {
+                "en": "Лайм, Кондензирано мляко, Бисквитена основа",
+                "bg": "Лайм, Кондензирано мляко, Бисквитена основа"
+              },
+              "price": 5.49,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Mascarpone Cream",
+                "bg": "Крем с маскарпоне"
+              },
+              "description": {
+                "en": "Маскарпоне, Захар, Ванилия, Яйца",
+                "bg": "Маскарпоне, Захар, Ванилия, Яйца"
+              },
+              "price": 7.49,
+              "tags": [
+                {
+                  "en": "italian",
+                  "bg": "италианска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Hazelnut Crêpes",
+                "bg": "Палачинки с лешници"
+              },
+              "description": {
+                "en": "Палачинки, Лешници, Шоколад, Захар",
+                "bg": "Палачинки, Лешници, Шоколад, Захар"
+              },
+              "price": 5.49,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Chocolate Truffles",
+                "bg": "Шоколадови трюфели"
+              },
+              "description": {
+                "en": "Шоколад, Крем, Какао, Ликьор",
+                "bg": "Шоколад, Крем, Какао, Ликьор"
+              },
+              "price": 8.49,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Apple Piroshki",
+                "bg": "Пирожки с ябълки"
+              },
+              "description": {
+                "en": "Ябълки, Тесто, Захар, Канела",
+                "bg": "Ябълки, Тесто, Захар, Канела"
+              },
+              "price": 4.99,
+              "tags": [
+                {
+                  "en": "russian",
+                  "bg": "руска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Strawberry Tart",
+                "bg": "Тарт с ягоди"
+              },
+              "description": {
+                "en": "Тесто, Ягоди, Крем, Захар",
+                "bg": "Тесто, Ягоди, Крем, Захар"
+              },
+              "price": 6.49,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Banana Cupcakes",
+                "bg": "Бананови кексове"
+              },
+              "description": {
+                "en": "Банани, Брашно, Захар, Яйца",
+                "bg": "Банани, Брашно, Захар, Яйца"
+              },
+              "price": 4.99,
+              "tags": [
+                {
+                  "en": "american",
+                  "bg": "американска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Caramelised Pear",
+                "bg": "Кафява захарна круша"
+              },
+              "description": {
+                "en": "Круша, Кафява захар, Масло, Канела",
+                "bg": "Круша, Кафява захар, Масло, Канела"
+              },
+              "price": 5.49,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "French Macarons",
+                "bg": "Фалшиви макарони"
+              },
+              "description": {
+                "en": "Бадеми, Шоколад, Яйца, Захар",
+                "bg": "Бадеми, Шоколад, Яйца, Захар"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Honey Nut Cake",
+                "bg": "Торта с мед и ядки"
+              },
+              "description": {
+                "en": "Мед, Ядки, Брашно, Яйца",
+                "bg": "Мед, Ядки, Брашно, Яйца"
+              },
+              "price": 6.99,
+              "tags": [
+                {
+                  "en": "turkish",
+                  "bg": "турска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Crème Caramel",
+                "bg": "Крем карамел"
+              },
+              "description": {
+                "en": "Мляко, Захар, Яйца, Ванилия",
+                "bg": "Мляко, Захар, Яйца, Ванилия"
+              },
+              "price": 5.49,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Hazelnut Cake",
+                "bg": "Кекс с лешници"
+              },
+              "description": {
+                "en": "Лешници, Брашно, Захар, Яйца",
+                "bg": "Лешници, Брашно, Захар, Яйца"
+              },
+              "price": 5.99,
+              "tags": [
+                {
+                  "en": "french",
+                  "bg": "френска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Mango Ice Cream",
+                "bg": "Сладолед от манго"
+              },
+              "description": {
+                "en": "Манго, Мляко, Захар, Крем",
+                "bg": "Манго, Мляко, Захар, Крем"
+              },
+              "price": 4.99,
+              "tags": [
+                {
+                  "en": "indian",
+                  "bg": "индийска"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        },
+        {
+          "id": "drinks",
+          "name": {
+            "en": "Drinks",
+            "bg": "Напитки"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Margarita",
+                "bg": "Маргарита"
+              },
+              "description": {
+                "en": "Текила, Лайм, Трипъл сек, Сол",
+                "bg": "Текила, Лайм, Трипъл сек, Сол"
+              },
+              "price": 7.99,
+              "tags": [
+                {
+                  "en": "mexican",
+                  "bg": "мексиканска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Mango Lassi",
+                "bg": "Манго Ласи"
+              },
+              "description": {
+                "en": "Манго, Кисело мляко, Мляко, Захар",
+                "bg": "Манго, Кисело мляко, Мляко, Захар"
+              },
+              "price": 4.99,
+              "tags": [
+                {
+                  "en": "indian",
+                  "bg": "индийска"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Mojito",
+                "bg": "Мохито"
+              },
+              "description": {
+                "en": "Ром, Мента, Лайм, Захар, Газирана вода",
+                "bg": "Ром, Мента, Лайм, Захар, Газирана вода"
+              },
+              "price": 8.99,
+              "tags": [
+                {
+                  "en": "cuban",
+                  "bg": "кубинска"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
