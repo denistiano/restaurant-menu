@@ -61,6 +61,14 @@
       card.setAttribute('aria-label', r.name[currentLang] || r.name.en);
       card.style.transitionDelay = `${index * 80}ms`;
 
+      card.addEventListener('click', () => {
+        window.trackEvent?.('select_content', {
+          content_type: 'restaurant',
+          item_id:       r.id,
+          item_name:     r.name.en
+        });
+      });
+
       const nameLang = r.name[currentLang] || r.name.en;
       const descLang = r.description[currentLang] || r.description.en;
 
@@ -163,7 +171,9 @@
     const langBtn = document.getElementById('langToggle');
     if (langBtn) {
       langBtn.addEventListener('click', () => {
-        applyLang(currentLang === 'en' ? 'bg' : 'en');
+        const newLang = currentLang === 'en' ? 'bg' : 'en';
+        window.trackEvent?.('language_switch', { language: newLang, page: 'landing' });
+        applyLang(newLang);
       });
     }
 

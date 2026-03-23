@@ -123,6 +123,11 @@
       return;
     }
 
+    window.trackEvent?.('language_switch', {
+      language:      lang,
+      restaurant_id: RESTAURANT_ID
+    });
+
     // Fade content, swap text, fade back
     const content = document.getElementById('menuCategories');
     const filters = document.getElementById('filtersBar');
@@ -162,6 +167,11 @@
       }
       return;
     }
+
+    window.trackEvent?.('theme_switch', {
+      theme,
+      restaurant_id: RESTAURANT_ID
+    });
 
     menuEl.style.transition = 'opacity 0.18s ease';
     menuEl.style.opacity = '0';
@@ -227,6 +237,14 @@
 
   /* selectCategory — no DOM rebuild, just show/hide */
   function selectCategory(catId, categories) {
+    if (initialized) {
+      const cat = categories.find(c => c.id === catId);
+      window.trackEvent?.('category_select', {
+        restaurant_id:  RESTAURANT_ID,
+        category_id:    catId,
+        category_name:  cat ? (cat.name.en || catId) : catId
+      });
+    }
     activeCategory = catId;
     activeTags.clear();
 
@@ -275,10 +293,19 @@
   }
 
   function toggleTag(tagEn, categories) {
-    if (activeTags.has(tagEn)) {
-      activeTags.delete(tagEn);
-    } else {
+    const adding = !activeTags.has(tagEn);
+    if (adding) {
       activeTags.add(tagEn);
+    } else {
+      activeTags.delete(tagEn);
+    }
+    if (initialized) {
+      window.trackEvent?.('tag_filter', {
+        restaurant_id: RESTAURANT_ID,
+        tag_name:      tagEn,
+        action:        adding ? 'add' : 'remove',
+        active_tags:   Array.from(activeTags).join(',')
+      });
     }
     applyFilters(categories);
 
@@ -584,6 +611,14 @@
 
     // From here on, transitions are enabled
     initialized = true;
+
+    // Track restaurant view — queued if analytics hasn't loaded yet
+    window.trackEvent?.('restaurant_view', {
+      restaurant_id:   restaurant.id,
+      restaurant_name: restaurant.name.en || restaurant.id,
+      theme:           restaurant.menu.theme || 'classic',
+      language:        currentLang
+    });
   }
 
   /* ============================================================
