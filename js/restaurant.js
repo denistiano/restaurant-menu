@@ -20,23 +20,23 @@
 
   // ── Generic cache helpers ─────────────────────────────────
   /**
-   * Read an entry from localStorage.
+   * Read an entry from sessionStorage.
    * Returns { value, age_ms } when fresh, or null when missing/expired.
    * Pass stale:true to return expired entries too (offline fallback).
    */
   function cacheGet(key, ttl, { stale = false } = {}) {
     try {
-      const raw = localStorage.getItem(key);
+      const raw = sessionStorage.getItem(key);
       if (raw === null) return null;                      // nothing stored
       const entry = JSON.parse(raw);
       if (typeof entry !== 'object' || entry === null ||
           !('v' in entry) || !('ts' in entry)) {
-        localStorage.removeItem(key);                     // corrupt / old format
+        sessionStorage.removeItem(key);                   // corrupt / old format
         return null;
       }
       const age = Date.now() - entry.ts;
       if (!stale && age > ttl) {
-        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
         return null;                                      // expired
       }
       return { value: entry.v, age_ms: age };
@@ -45,16 +45,16 @@
     }
   }
 
-  /** Write a value to localStorage with a timestamp. Silent on quota errors. */
+  /** Write a value to sessionStorage with a timestamp. Silent on quota errors. */
   function cacheSet(key, value) {
     try {
-      localStorage.setItem(key, JSON.stringify({ v: value, ts: Date.now() }));
+      sessionStorage.setItem(key, JSON.stringify({ v: value, ts: Date.now() }));
     } catch { /* quota exceeded — degrade gracefully */ }
   }
 
-  /** Remove a cache entry (used by admin after save). */
+  /** Remove a cache entry. */
   function cacheBust(key) {
-    try { localStorage.removeItem(key); } catch { }
+    try { sessionStorage.removeItem(key); } catch { }
   }
 
   /** Expose bust function so admin page can call it after a save. */
@@ -590,7 +590,7 @@
      FETCH & INIT
      ============================================================ */
   async function init() {
-    // ── Layer 1: fresh localStorage cache (< 1 h) ────────────
+    // ── Layer 1: fresh sessionStorage cache (< 1 h) ──────────
     const menuCached = cacheGet(MENU_KEY, MENU_CACHE_TTL);
     if (menuCached) {
       console.debug(`[menu] cache HIT for "${RESTAURANT_ID}" (age ${Math.round(menuCached.age_ms / 60000)} min)`);

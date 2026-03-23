@@ -626,10 +626,10 @@
         throw new Error(err.message || `HTTP ${res.status}`);
       }
 
-      // Bust localStorage cache — matches the key in restaurant.js
+      // Bust sessionStorage cache for this tab (restaurant.js uses sessionStorage)
       const cacheVersion = 'v2';
-      try { localStorage.removeItem(`menu_${cacheVersion}_${r.id}`); } catch (_) {}
-      try { localStorage.removeItem(`binid_${cacheVersion}_${r.id}`); } catch (_) {}
+      try { sessionStorage.removeItem(`menu_${cacheVersion}_${r.id}`); } catch (_) {}
+      try { sessionStorage.removeItem(`binid_${cacheVersion}_${r.id}`); } catch (_) {}
 
       setDirty(false);
       showToast('Menu saved successfully! Changes are now live.', 'success');
