@@ -60,13 +60,14 @@
   /** Expose bust function so admin page can call it after a save. */
   window.__bustMenuCache = () => cacheBust(MENU_KEY);
 
-  let data           = null;
-  let currentLang    = localStorage.getItem('preferredLang')   || null;
-  let currentTheme   = localStorage.getItem('preferredTheme')  || null;
-  let activeCategory = 'all';
-  let activeTags     = new Set();
-  let allTags        = [];
-  let initialized    = false; // skip animations on first render
+  let data              = null;
+  let currentLang       = localStorage.getItem('preferredLang')   || null;
+  let currentTheme      = localStorage.getItem('preferredTheme')  || null;
+  let activeCategory    = 'all';
+  let activeTags        = new Set();
+  let allTags           = [];
+  let initialized       = false; // skip animations on first render
+  let currentModalItem  = null;  // item currently shown in the detail modal
 
   /* ============================================================
      HELPERS
@@ -88,6 +89,120 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  /* ============================================================
+     ITEM DETAIL MODAL
+     ============================================================ */
+  function ensureModal() {
+    if (document.getElementById('itemModal')) return;
+
+    const el = document.createElement('div');
+    el.className = 'item-modal';
+    el.id        = 'itemModal';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-labelledby', 'itemModalName');
+    el.innerHTML = `
+      <div class="item-modal__backdrop" id="itemModalBackdrop"></div>
+      <div class="item-modal__sheet" id="itemModalSheet">
+        <button class="item-modal__close" id="itemModalClose" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M1.5 1.5l13 13M14.5 1.5l-13 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="item-modal__img-wrap" id="itemModalImgWrap" style="display:none"></div>
+        <div class="item-modal__body" id="itemModalBody"></div>
+      </div>
+    `;
+    document.body.appendChild(el);
+
+    document.getElementById('itemModalClose')
+      .addEventListener('click', closeItemModal);
+    document.getElementById('itemModalBackdrop')
+      .addEventListener('click', closeItemModal);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeItemModal();
+    });
+  }
+
+  function populateModal(item) {
+    const imgWrap = document.getElementById('itemModalImgWrap');
+    const body    = document.getElementById('itemModalBody');
+    if (!imgWrap || !body) return;
+
+    const restaurantId = data?.restaurant?.id;
+    const imgSrc = (item.image && restaurantId)
+      ? `${RESOURCES_BASE}/${restaurantId}/menu-images/${item.image}`
+      : null;
+
+    if (imgSrc) {
+      imgWrap.style.display = '';
+      imgWrap.innerHTML = `<img src="${esc(imgSrc)}" alt="${esc(t(item.name))}" class="item-modal__img" onerror="this.parentElement.style.display='none'">`;
+    } else {
+      imgWrap.style.display = 'none';
+      imgWrap.innerHTML = '';
+    }
+
+    const tagsHtml = (item.tags && item.tags.length)
+      ? `<div class="item-modal__tags">${item.tags.map(tag =>
+          `<span class="item-modal__tag">${esc(t(tag))}</span>`
+        ).join('')}</div>`
+      : '';
+
+    const descText = item.description ? t(item.description) : '';
+    const descHtml = descText
+      ? `<p class="item-modal__desc">${esc(descText)}</p>`
+      : '';
+
+    const priceHtml = (item.price !== undefined && item.price !== null)
+      ? `<span class="item-modal__price">${esc(formatPrice(item.price))}</span>`
+      : '';
+
+    const unavailHtml = !item.availability
+      ? `<span class="item-modal__unavail"
+              data-en="Currently unavailable"
+              data-bg="Временно недостъпно">Currently unavailable</span>`
+      : '';
+
+    body.innerHTML = `
+      ${tagsHtml}
+      <h2 class="item-modal__name" id="itemModalName"
+          data-en="${esc(item.name.en || '')}"
+          data-bg="${esc(item.name.bg || item.name.en || '')}">${esc(t(item.name))}</h2>
+      ${descHtml}
+      <div class="item-modal__footer">
+        ${priceHtml}
+        ${unavailHtml}
+      </div>
+    `;
+  }
+
+  function openItemModal(item) {
+    ensureModal();
+    currentModalItem = item;
+    populateModal(item);
+
+    const modal = document.getElementById('itemModal');
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    window.trackEvent?.('item_view', {
+      restaurant_id: RESTAURANT_ID,
+      item_name:     item.name.en || ''
+    });
+
+    setTimeout(() => {
+      document.getElementById('itemModalClose')?.focus();
+    }, 350);
+  }
+
+  function closeItemModal() {
+    const modal = document.getElementById('itemModal');
+    if (!modal || !modal.classList.contains('open')) return;
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    currentModalItem = null;
   }
 
   /* ============================================================
@@ -139,6 +254,7 @@
 
     setTimeout(() => {
       updateTranslatables(lang);
+      if (currentModalItem) populateModal(currentModalItem);
       [content, filters, header].forEach(el => {
         if (el) el.style.opacity = '1';
       });
@@ -377,6 +493,9 @@
 
     const el = document.createElement('div');
     el.className = 'menu-item' + (!item.availability ? ' unavailable' : '');
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-label', t(item.name));
     el.innerHTML = `
       <span class="menu-item__number">${index + 1}.</span>
       <div class="menu-item__body">
@@ -387,6 +506,10 @@
       </div>
       ${priceHtml}
     `;
+    el.addEventListener('click', () => openItemModal(item));
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openItemModal(item); }
+    });
     return el;
   }
 
@@ -431,6 +554,9 @@
 
     const el = document.createElement('div');
     el.className = 'menu-item' + (!item.availability ? ' unavailable' : '');
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-label', t(item.name));
     el.innerHTML = `
       ${imgHtml}
       <div class="menu-item__body">
@@ -442,6 +568,10 @@
         </div>
       </div>
     `;
+    el.addEventListener('click', () => openItemModal(item));
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openItemModal(item); }
+    });
     return el;
   }
 
@@ -563,13 +693,26 @@
         <div id="menuCategories"></div>
       </main>
 
-      <footer class="site-footer">
-        <p data-en="Menus are for reference. Prices and availability may vary."
-           data-bg="Менютата са за справка. Цените и наличността може да варират.">
-          Menus are for reference. Prices and availability may vary.
-        </p>
+      <footer class="restaurant-footer">
+        <div class="rf__inner">
+          <a href="../" class="rf__back">
+            <span aria-hidden="true">&#8592;</span>
+            <span data-en="All restaurants" data-bg="Всички ресторанти">All restaurants</span>
+          </a>
+          <p class="rf__copy"
+             data-en="Menus are for reference. Prices and availability may vary."
+             data-bg="Менютата са за справка. Цените и наличността може да варират.">
+            Menus are for reference. Prices and availability may vary.
+          </p>
+          <div class="rf__contact">
+            <a href="tel:+359898513566" class="rf__link">+359 898 513 566</a>
+            <a href="mailto:denistiano@gmail.com" class="rf__link">denistiano@gmail.com</a>
+          </div>
+        </div>
       </footer>
     `;
+
+    ensureModal();
 
     /* Bind events */
     document.getElementById('langToggle')
