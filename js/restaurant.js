@@ -8,6 +8,7 @@
 
   const RESTAURANT_ID  = window.RESTAURANT_ID  || 'unknown';
   const RESOURCES_BASE = window.RESOURCES_BASE || '../resources';
+  const JSONBIN_BASE   = 'https://api.jsonbin.io/v3/b';
 
   let data           = null;
   let currentLang    = localStorage.getItem('preferredLang') || null;
@@ -540,9 +541,35 @@
      ============================================================ */
   async function init() {
     try {
-      const res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.json`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      data = await res.json();
+      // Resolve bin ID from restaurants.json index
+      let binId = window.MENU_BIN_ID || null;
+      if (!binId) {
+        try {
+          const idxRes = await fetch(`${RESOURCES_BASE}/restaurants.json`);
+          if (idxRes.ok) {
+            const list = await idxRes.json();
+            const entry = list.find(r => r.id === RESTAURANT_ID);
+            if (entry && entry.menu_bin_id && entry.menu_bin_id !== 'PASTE_BIN_ID_HERE') {
+              binId = entry.menu_bin_id;
+            }
+          }
+        } catch (_) { /* fall through to local */ }
+      }
+
+      let rawData;
+      if (binId) {
+        const res = await fetch(`${JSONBIN_BASE}/${binId}/latest`);
+        if (!res.ok) throw new Error(`Jsonbin HTTP ${res.status}`);
+        const wrapper = await res.json();
+        rawData = wrapper.record;
+      } else {
+        // Fallback to local file
+        const res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.json`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        rawData = await res.json();
+      }
+
+      data = rawData;
       if (!currentLang) {
         currentLang = data.restaurant.default_language || 'en';
       }

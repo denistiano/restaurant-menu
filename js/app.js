@@ -149,6 +149,8 @@
       const res = await fetch('resources/restaurants.json');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const restaurants = await res.json();
+      // Enrich each restaurant with live menu bin metadata if available
+      // (bin_id is resolved later per-restaurant when navigating)
       if (spinner) spinner.remove();
       renderRestaurants(restaurants);
     } catch (err) {
