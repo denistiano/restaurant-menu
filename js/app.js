@@ -72,13 +72,10 @@
       const nameLang = r.name[currentLang] || r.name.en;
       const descLang = r.description[currentLang] || r.description.en;
 
+      /* Render card immediately — image is injected async below */
       card.innerHTML = `
         <div class="l-card__accent"></div>
-        ${imgSrc
-          ? `<img class="l-card__img" src="${imgSrc}" alt="${escapeHtml(r.name.en)}" loading="lazy"
-               onerror="this.style.display='none'" />`
-          : '<div class="l-card__img-placeholder">🍽</div>'
-        }
+        <div class="l-card__img-placeholder">🍽</div>
         <div class="l-card__overlay"></div>
         <div class="l-card__body">
           <span class="l-card__tag" data-en="View menu" data-bg="Виж менюто">View menu</span>
@@ -92,6 +89,21 @@
       `;
 
       grid.appendChild(card);
+
+      /* Load image in the background; fade it in once ready */
+      if (imgSrc) {
+        const img = new Image();
+        img.className = 'l-card__img';
+        img.alt = escapeHtml(r.name.en);
+        img.onload = () => {
+          const placeholder = card.querySelector('.l-card__img-placeholder');
+          if (placeholder) placeholder.replaceWith(img);
+          /* tiny rAF so the browser registers the element before the transition */
+          requestAnimationFrame(() => img.classList.add('l-card__img--loaded'));
+        };
+        img.onerror = () => { /* keep the placeholder emoji */ };
+        img.src = imgSrc;
+      }
     });
 
     applyLang(currentLang);
