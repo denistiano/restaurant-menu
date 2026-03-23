@@ -626,8 +626,10 @@
         throw new Error(err.message || `HTTP ${res.status}`);
       }
 
-      // Bust the browser cache for this restaurant so next visit fetches fresh data
-      try { localStorage.removeItem(`menu_cache_${r.id}`); } catch (_) {}
+      // Bust localStorage cache — matches the key in restaurant.js
+      const cacheVersion = 'v2';
+      try { localStorage.removeItem(`menu_${cacheVersion}_${r.id}`); } catch (_) {}
+      try { localStorage.removeItem(`binid_${cacheVersion}_${r.id}`); } catch (_) {}
 
       setDirty(false);
       showToast('Menu saved successfully! Changes are now live.', 'success');

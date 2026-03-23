@@ -10,35 +10,55 @@
   const RESOURCES_BASE = window.RESOURCES_BASE || '../resources';
   const JSONBIN_BASE   = 'https://api.jsonbin.io/v3/b';
 
-  const CACHE_TTL = 60 * 60 * 1000;                      // 1 hour
-  const CACHE_KEY = `menu_cache_${RESTAURANT_ID}`;
+  // ── Cache config ─────────────────────────────────────────
+  // Bump CV whenever the stored shape changes to auto-bust old entries.
+  const CACHE_VERSION  = 'v2';
+  const MENU_CACHE_TTL = 60 * 60 * 1000;         // 1 h  — menu data
+  const BIN_CACHE_TTL  = 24 * 60 * 60 * 1000;    // 24 h — bin ID lookup
+  const MENU_KEY       = `menu_${CACHE_VERSION}_${RESTAURANT_ID}`;
+  const BIN_KEY        = `binid_${CACHE_VERSION}_${RESTAURANT_ID}`;
 
-  function getCached() {
+  // ── Generic cache helpers ─────────────────────────────────
+  /**
+   * Read an entry from localStorage.
+   * Returns { value, age_ms } when fresh, or null when missing/expired.
+   * Pass stale:true to return expired entries too (offline fallback).
+   */
+  function cacheGet(key, ttl, { stale = false } = {}) {
     try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (!raw) return null;
-      const { payload, ts } = JSON.parse(raw);
-      if (Date.now() - ts > CACHE_TTL) {
-        localStorage.removeItem(CACHE_KEY);
+      const raw = localStorage.getItem(key);
+      if (raw === null) return null;                      // nothing stored
+      const entry = JSON.parse(raw);
+      if (typeof entry !== 'object' || entry === null ||
+          !('v' in entry) || !('ts' in entry)) {
+        localStorage.removeItem(key);                     // corrupt / old format
+        return null;
+      }
+      const age = Date.now() - entry.ts;
+      if (!stale && age > ttl) {
+        localStorage.removeItem(key);
         return null;                                      // expired
       }
-      return payload;
-    } catch { return null; }
+      return { value: entry.v, age_ms: age };
+    } catch {
+      return null;
+    }
   }
 
-  function getStaleCached() {
+  /** Write a value to localStorage with a timestamp. Silent on quota errors. */
+  function cacheSet(key, value) {
     try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw).payload || null;             // ignore TTL
-    } catch { return null; }
+      localStorage.setItem(key, JSON.stringify({ v: value, ts: Date.now() }));
+    } catch { /* quota exceeded — degrade gracefully */ }
   }
 
-  function setCached(payload) {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ payload, ts: Date.now() }));
-    } catch { /* localStorage full — skip silently */ }
+  /** Remove a cache entry (used by admin after save). */
+  function cacheBust(key) {
+    try { localStorage.removeItem(key); } catch { }
   }
+
+  /** Expose bust function so admin page can call it after a save. */
+  window.__bustMenuCache = () => cacheBust(MENU_KEY);
 
   let data           = null;
   let currentLang    = localStorage.getItem('preferredLang') || null;
@@ -570,79 +590,100 @@
      FETCH & INIT
      ============================================================ */
   async function init() {
+    // ── Layer 1: fresh localStorage cache (< 1 h) ────────────
+    const menuCached = cacheGet(MENU_KEY, MENU_CACHE_TTL);
+    if (menuCached) {
+      console.debug(`[menu] cache HIT for "${RESTAURANT_ID}" (age ${Math.round(menuCached.age_ms / 60000)} min)`);
+      data = menuCached.value;
+      if (!currentLang) currentLang = data.restaurant.default_language || 'en';
+      buildPage(data.restaurant);
+      return;
+    }
+    console.debug(`[menu] cache MISS for "${RESTAURANT_ID}" — fetching…`);
+
     try {
-      // ── 1. Serve from cache if fresh ─────────────────────
-      const cached = getCached();
-      if (cached) {
-        data = cached;
-        if (!currentLang) currentLang = data.restaurant.default_language || 'en';
-        buildPage(data.restaurant);
-        return;
-      }
-
-      // ── 2. Resolve bin ID ─────────────────────────────────
+      // ── Layer 2: resolve bin ID (cached 24 h) ──────────────
       let binId = window.MENU_BIN_ID || null;
+
       if (!binId) {
-        try {
-          const idxRes = await fetch(`${RESOURCES_BASE}/restaurants.json`);
-          if (idxRes.ok) {
-            const list = await idxRes.json();
-            const entry = list.find(r => r.id === RESTAURANT_ID);
-            if (entry && entry.menu_bin_id && entry.menu_bin_id !== 'PASTE_BIN_ID_HERE') {
-              binId = entry.menu_bin_id;
+        const binCached = cacheGet(BIN_KEY, BIN_CACHE_TTL);
+        if (binCached) {
+          binId = binCached.value;
+          console.debug(`[menu] bin ID from cache: ${binId}`);
+        } else {
+          try {
+            const idxRes = await fetch(`${RESOURCES_BASE}/restaurants.json`);
+            if (idxRes.ok) {
+              const list = await idxRes.json();
+              const entry = list.find(r => r.id === RESTAURANT_ID);
+              if (entry && entry.menu_bin_id && entry.menu_bin_id !== 'PASTE_BIN_ID_HERE') {
+                binId = entry.menu_bin_id;
+                cacheSet(BIN_KEY, binId);               // cache bin ID for 24 h
+                console.debug(`[menu] bin ID fetched & cached: ${binId}`);
+              }
             }
-          }
-        } catch (_) { /* fall through */ }
+          } catch (_) { /* fall through to local file */ }
+        }
       }
 
-      // ── 3. Fetch live data ────────────────────────────────
+      // ── Layer 3: fetch live menu data ──────────────────────
       let rawData;
       if (binId) {
         const res = await fetch(`${JSONBIN_BASE}/${binId}/latest`);
         if (!res.ok) throw new Error(`Jsonbin HTTP ${res.status}`);
         const wrapper = await res.json();
         rawData = wrapper.record;
+        if (!rawData) throw new Error('Jsonbin returned empty record');
       } else {
+        // No bin configured — fall back to local JSON file
         const res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.json`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error(`Local file HTTP ${res.status}`);
         rawData = await res.json();
       }
 
-      setCached(rawData);                                 // store with timestamp
+      cacheSet(MENU_KEY, rawData);                       // store with 1 h TTL
+      console.debug(`[menu] fetched & cached for 1 h`);
+
       data = rawData;
       if (!currentLang) currentLang = data.restaurant.default_language || 'en';
       buildPage(data.restaurant);
 
     } catch (err) {
-      // ── 4. Network failed — try stale cache as fallback ───
-      const stale = getStaleCached();
+      // ── Layer 4: network failed — serve stale cache ────────
+      console.warn(`[menu] fetch failed (${err.message}) — trying stale cache…`);
+      const stale = cacheGet(MENU_KEY, Infinity, { stale: true });
       if (stale) {
-        data = stale;
+        console.debug(`[menu] serving stale cache (age ${Math.round(stale.age_ms / 60000)} min)`);
+        data = stale.value;
         if (!currentLang) currentLang = data.restaurant.default_language || 'en';
         buildPage(data.restaurant);
-        // Non-blocking banner so user knows they're seeing cached content
         setTimeout(() => {
           const banner = document.createElement('div');
-          banner.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);' +
+          banner.style.cssText =
+            'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);' +
             'background:rgba(20,20,36,0.95);border:1px solid rgba(255,255,255,0.1);' +
-            'color:rgba(240,236,228,0.6);font-size:12px;padding:8px 18px;border-radius:999px;' +
-            'z-index:9999;pointer-events:none;';
+            'color:rgba(240,236,228,0.6);font-size:12px;padding:8px 18px;' +
+            'border-radius:999px;z-index:9999;pointer-events:none;';
           banner.textContent = 'Showing cached menu — could not reach server.';
           document.body.appendChild(banner);
           setTimeout(() => banner.remove(), 5000);
         }, 500);
         return;
       }
+
+      // ── Layer 5: nothing at all — show error ───────────────
+      console.error('[menu] no cache, no network:', err);
       const root = document.getElementById('restaurant-root');
       if (root) {
         root.innerHTML = `
-          <div class="empty-state" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-            <div class="empty-state__icon">🍽</div>
-            <p class="empty-state__msg" style="color:var(--color-text-muted)">Could not load menu. Please try again later.</p>
-            <a href="../" style="margin-top:20px;color:var(--color-accent)">← Back to restaurants</a>
+          <div style="min-height:100vh;display:flex;flex-direction:column;
+               align-items:center;justify-content:center;gap:16px;padding:40px;">
+            <div style="font-size:40px">🍽</div>
+            <p style="color:var(--color-text-muted);text-align:center">
+              Could not load menu. Please try again later.</p>
+            <a href="../" style="color:var(--color-accent)">← Back to restaurants</a>
           </div>`;
       }
-      console.error('Failed to load menu.json:', err);
     }
   }
 
