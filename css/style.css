@@ -512,11 +512,16 @@ html:has(.landing-page) {
   box-shadow: 0 12px 40px rgba(0,0,0,0.4);
   transform: translateY(-3px);
 }
-.l-feature-card__icon {
-  font-size: 32px;
-  margin-bottom: 18px;
-  display: block;
-  line-height: 1;
+.l-feature-card__icon-wrap {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 22px;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+.l-feature-card__icon-wrap svg {
+  width: 100%;
+  height: 100%;
 }
 .l-feature-card__title {
   font-family: var(--font-serif);
@@ -692,7 +697,11 @@ html:has(.landing-page) {
   border-color: rgba(196,149,90,0.4);
   color: var(--color-accent);
 }
-.l-cta-block__link-icon { font-size: 20px; line-height: 1; }
+.l-cta-block__link-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
 @media (min-width: 480px) {
   .l-cta-block__contacts {
     flex-direction: row;
