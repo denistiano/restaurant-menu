@@ -9,7 +9,7 @@
       "en": "Home-cooked with love, served with care — just like home.",
       "bg": "Готвено с любов, поднесено с грижа — като у дома."
     },
-    "image": "cover.png",
+    "image": "https://res.cloudinary.com/duopd4plb/image/upload/v1774391937/restaurant_menu/retur/fgj9zy6xmx8vmfxeumuc.png",
     "theme": "classic",
     "menu_bin_id": "69c10241c3097a1dd54f0ada",
     "password_hash": "faf43cb4335314f0836edbbb1270401ef2ef5af147ff0b496913ccc7b9f3f21a"
@@ -24,7 +24,7 @@
       "en": "A world of flavours — international cuisine with a warm, welcoming spirit.",
       "bg": "Свят от вкусове — интернационална кухня с топъл и гостоприемен дух."
     },
-    "image": "cover.png",
+    "image": "https://res.cloudinary.com/duopd4plb/image/upload/v1774391890/restaurant_menu/tavernaki/oacogrufzhiwwbbt56gd.png",
     "theme": "classic",
     "menu_bin_id": "69c13206c3097a1dd54febc8",
     "password_hash": "7024ea91e0986c0574d82972376b073079ab0ae023fb378ee1f0fa90299b5743"
