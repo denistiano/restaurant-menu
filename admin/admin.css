@@ -890,24 +890,66 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .qr-preview-scaler {
   display: flex;
   justify-content: center;
-  overflow: auto;
+  align-items: flex-start;
+  overflow: hidden;
   padding: 16px;
   background: rgba(0,0,0,0.25);
   border-radius: var(--radius);
   border: 1px solid var(--border-2);
 }
-.qr-preview-host {
-  transform: scale(0.42);
-  transform-origin: top center;
-  width: 210mm;
-  min-height: 100px;
+
+/*
+ * Preview viewport: exact pixel size of a scaled A4 page so transform does not
+ * leave a huge layout box (transform does not affect flow). Inner sheet stays
+ * true mm-based layout; QR must match PRINT_CSS — those rules only exist in
+ * the print window unless duplicated here.
+ */
+.qr-preview-zoom {
+  --qr-preview-scale: 0.45;
+  width: calc(210mm * var(--qr-preview-scale));
+  height: calc(297mm * var(--qr-preview-scale));
+  max-width: 100%;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  margin: 0 auto;
   flex-shrink: 0;
 }
+.qr-preview-host {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 210mm;
+  min-height: 297mm;
+  box-sizing: border-box;
+  transform: scale(var(--qr-preview-scale));
+  transform-origin: top left;
+}
+
+/* Mirror PRINT_CSS for on-screen preview (print window still uses PRINT_CSS). */
 .qr-preview-host .qr-sheet {
+  width: 210mm;
+  min-height: 277mm;
+  box-sizing: border-box;
+  margin: 0;
+  position: relative;
   box-shadow: 0 12px 48px rgba(0,0,0,0.45);
 }
+.qr-preview-host .qr-sheet__qr {
+  display: block !important;
+  width: 46mm !important;
+  height: 46mm !important;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
 @media (max-width: 560px) {
-  .qr-preview-host { transform: scale(0.32); }
+  .qr-preview-zoom {
+    --qr-preview-scale: 0.32;
+  }
 }
 
 /* ── RESPONSIVE ─────────────────────────────────────────── */

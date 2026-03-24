@@ -71,7 +71,7 @@
         <p style="text-align:center;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6a6a6a;margin:0 0 2mm;font-weight:600;">Сканирайте за менюто</p>
         <p style="text-align:center;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#888;margin:0 0 8mm;">Scan for the menu</p>
         <div style="border:2px dashed #b8b4a8;border-radius:10px;padding:7mm 6mm;max-width:62mm;margin:0 auto 6mm;text-align:center;background:rgba(255,255,255,.35);">
-          <img class="qr-sheet__qr" src="${esc(d.qrDataUrl)}" alt="" width="512" height="512"/>
+          <img class="qr-sheet__qr" src="${esc(d.qrDataUrl)}" alt=""/>
         </div>
         <p style="text-align:center;font-size:12px;color:#666;line-height:1.5;margin:0 0 10mm;max-width:160mm;margin-left:auto;margin-right:auto;">${esc(d.hintLine)}</p>
         <div style="border-top:1px solid #c9c5bb;padding-top:5mm;margin-top:auto;">
