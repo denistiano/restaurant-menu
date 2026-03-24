@@ -381,20 +381,20 @@
     const hasBin = r.menu_bin_id && r.menu_bin_id !== 'PASTE_BIN_ID_HERE';
 
     try {
-      if (hasBin) {
-        const res = await fetch(`${JSONBIN_BASE}/${r.menu_bin_id}/latest`, {
-          headers: { 'X-Master-Key': getMasterKey() }
-        });
-        if (!res.ok) throw new Error(`Jsonbin HTTP ${res.status}`);
-        const wrapper = await res.json();
-        menuData = wrapper.record;
-      } else {
-        // Fallback: load from local file
-        const res = await fetch(`../resources/${r.id}/menu.json`);
-        if (!res.ok) throw new Error(`Local HTTP ${res.status}`);
-        menuData = await res.json();
-        showToast('No bin configured — loaded local file (changes won\'t be saved to cloud)', 'error');
+      if (!hasBin) {
+        showToast(
+          'No menu_bin_id for this restaurant. Set menu_bin_id in resources/restaurants.json, then reload.',
+          'error'
+        );
+        saveBtn.disabled = false;
+        return;
       }
+      const res = await fetch(`${JSONBIN_BASE}/${r.menu_bin_id}/latest`, {
+        headers: { 'X-Master-Key': getMasterKey() }
+      });
+      if (!res.ok) throw new Error(`Jsonbin HTTP ${res.status}`);
+      const wrapper = await res.json();
+      menuData = wrapper.record;
       openEditor();
     } catch (err) {
       adminTrack('admin_menu_load_fail', {
@@ -402,6 +402,8 @@
         message:         err.message || 'error'
       });
       showToast('Failed to load menu: ' + err.message, 'error');
+    } finally {
+      saveBtn.disabled = false;
     }
   }
 

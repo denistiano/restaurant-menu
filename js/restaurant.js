@@ -1260,18 +1260,16 @@
 
       // ── Layer 3: fetch live menu data ──────────────────────
       let rawData;
-      if (binId) {
-        const res = await fetch(`${JSONBIN_BASE}/${binId}/latest`);
-        if (!res.ok) throw new Error(`Jsonbin HTTP ${res.status}`);
-        const wrapper = await res.json();
-        rawData = wrapper.record;
-        if (!rawData) throw new Error('Jsonbin returned empty record');
-      } else {
-        // No bin configured — fall back to local JSON file
-        const res = await fetch(`${RESOURCES_BASE}/${RESTAURANT_ID}/menu.json`);
-        if (!res.ok) throw new Error(`Local file HTTP ${res.status}`);
-        rawData = await res.json();
+      if (!binId) {
+        throw new Error(
+          'No menu_bin_id for this restaurant. Add it in resources/restaurants.json (source of truth).'
+        );
       }
+      const res = await fetch(`${JSONBIN_BASE}/${binId}/latest`);
+      if (!res.ok) throw new Error(`Jsonbin HTTP ${res.status}`);
+      const wrapper = await res.json();
+      rawData = wrapper.record;
+      if (!rawData) throw new Error('Jsonbin returned empty record');
 
       cacheSet(MENU_KEY, rawData);                       // store with 1 h TTL
       console.debug(`[menu] fetched & cached for 1 h`);

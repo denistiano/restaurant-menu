@@ -1,0 +1,36 @@
+# Build static site (generate /{restaurantId}/ routes) then deploy to GitHub Pages.
+# Requires: Settings → Pages → Source = GitHub Actions.
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: ['main', 'master']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate restaurant page shells
+        run: bash scripts/generate-restaurant-pages.sh
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - uses: actions/deploy-pages@v4
+        id: deployment
