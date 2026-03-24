@@ -156,19 +156,6 @@ html:has(.landing-page) {
   overflow-x: hidden;
 }
 
-/* Restaurant menu pages — same app-like feel: no horizontal pan/zoom drift */
-.restaurant-page {
-  overflow-x: hidden;
-  touch-action: pan-y;
-  overscroll-behavior-x: none;
-  min-height: 100dvh;
-  min-height: 100vh;
-}
-html:has(.restaurant-page) {
-  overflow-x: hidden;
-  overscroll-behavior-x: none;
-}
-
 /* --- NAV --- */
 .l-nav {
   position: fixed;
@@ -1167,7 +1154,6 @@ html:has(.restaurant-page) {
   overflow-x: auto;
   padding: 12px 0 0;
   scrollbar-width: none;
-  touch-action: pan-x pan-y;
   -webkit-overflow-scrolling: touch;
   -webkit-mask-image: linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%);
   mask-image: linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%);
@@ -1206,8 +1192,6 @@ html:has(.restaurant-page) {
   padding: 8px 0 12px;
   scrollbar-width: none;
   min-height: 44px;
-  touch-action: pan-x pan-y;
-  -webkit-overflow-scrolling: touch;
   -webkit-mask-image: linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%);
   mask-image: linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%);
 }
