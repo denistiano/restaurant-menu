@@ -254,6 +254,36 @@
     });
   }
 
+  /* ── URL PREVIEW HELPER ──────────────────────────────────── */
+  function resolveUrl(val) {
+    /* A full URL is used as-is; a bare filename is resolved relative to
+       the current restaurant's resource folder so the admin can preview it. */
+    if (!val) return null;
+    if (/^https?:\/\//i.test(val) || val.startsWith('/')) return val;
+    return currentRestaurant
+      ? `../resources/${currentRestaurant.id}/${val}`
+      : null;
+  }
+
+  function bindUrlField(inputId, previewId) {
+    const input   = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+
+    function refresh() {
+      const src = resolveUrl(input.value.trim());
+      if (src) {
+        preview.innerHTML = `<img src="${esc(src)}" alt="" onerror="this.parentElement.innerHTML='<span class=\\'url-preview-err\\'>Image not found</span>'" />`;
+      } else {
+        preview.innerHTML = '';
+      }
+      setDirty(true);
+    }
+
+    input.addEventListener('input', refresh);
+    /* Show preview on load */
+    if (input.value) refresh();
+  }
+
   /* ── POPULATE INFO ───────────────────────────────────────── */
   function populateInfo(r) {
     document.getElementById('infoNameEn').value  = r.name.en || '';
@@ -262,10 +292,17 @@
     document.getElementById('infoDescBg').value  = r.description.bg || '';
     document.getElementById('infoTheme').value   = r.menu.theme || 'classic';
     document.getElementById('infoLang').value    = r.default_language || 'en';
+    document.getElementById('infoLogo').value    = r.logo || '';
+    document.getElementById('infoImage').value   = r.image || '';
+    document.getElementById('infoBgImage').value = r.background_image || '';
 
     ['infoNameEn','infoNameBg','infoDescEn','infoDescBg','infoTheme','infoLang'].forEach(id => {
       document.getElementById(id).addEventListener('input', () => setDirty(true));
     });
+
+    bindUrlField('infoLogo',    'infoLogoPreview');
+    bindUrlField('infoImage',   'infoImagePreview');
+    bindUrlField('infoBgImage', 'infoBgImagePreview');
   }
 
   /* ── POPULATE CONFIG ─────────────────────────────────────── */
@@ -587,6 +624,9 @@
     r.description.bg = document.getElementById('infoDescBg').value.trim();
     r.menu.theme = document.getElementById('infoTheme').value;
     r.default_language = document.getElementById('infoLang').value;
+    r.logo             = document.getElementById('infoLogo').value.trim();
+    r.image            = document.getElementById('infoImage').value.trim();
+    r.background_image = document.getElementById('infoBgImage').value.trim();
     r.menu.config.show_price       = document.getElementById('cfgPrice').checked;
     r.menu.config.show_description = document.getElementById('cfgDesc').checked;
     r.menu.config.show_tags        = document.getElementById('cfgTags').checked;

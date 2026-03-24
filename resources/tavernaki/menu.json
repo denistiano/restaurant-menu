@@ -9,9 +9,9 @@
       "en": "Authentic Greek tavern in Plovdiv — fresh seafood, grilled meats and Mediterranean flavours.",
       "bg": "Автентична гръцка таверна в Пловдив — прясна морска храна, меса на скара и средиземноморски вкусове."
     },
-    "logo": "",
-    "image": "cover.jpg",
-    "background_image": "cover.jpg",
+    "logo": "logo.jpg",
+    "image": "cover.png",
+    "background_image": "cover.png",
     "default_language": "bg",
     "menu": {
       "theme": "classic",

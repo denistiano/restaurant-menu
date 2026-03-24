@@ -640,6 +640,36 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 }
 .modal__confirm:hover { background: rgba(224,92,92,0.25); }
 
+/* ── URL FIELD WITH PREVIEW ──────────────────────────────── */
+.field-label__hint {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(240,236,228,0.3);
+  margin-top: 2px;
+}
+.field-url-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.field-url-preview {
+  min-height: 0;
+}
+.field-url-preview img {
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.08);
+  display: block;
+}
+.url-preview-err {
+  font-size: 11px;
+  color: var(--danger);
+  font-style: italic;
+}
+
 /* ── RESPONSIVE ─────────────────────────────────────────── */
 @media (max-width: 560px) {
   .auth-main { padding: 36px 16px 60px; }

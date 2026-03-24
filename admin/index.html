@@ -112,6 +112,40 @@
             </select>
           </div>
         </div>
+        <div class="form-section">
+          <h3 class="form-section__title">Media</h3>
+          <p class="form-section__desc">Use a filename (e.g. <code>cover.jpg</code>) for images stored in your restaurant's resource folder, or paste a full URL (e.g. <code>https://…</code>) for external images.</p>
+          <div class="field-row">
+            <label class="field-label">
+              Logo
+              <span class="field-label__hint">Shown as a circle thumbnail in the header</span>
+            </label>
+            <div class="field-url-row">
+              <input class="field-input" id="infoLogo" type="text" placeholder="logo.jpg or https://…" autocomplete="off" spellcheck="false" />
+              <div class="field-url-preview" id="infoLogoPreview"></div>
+            </div>
+          </div>
+          <div class="field-row">
+            <label class="field-label">
+              Cover image
+              <span class="field-label__hint">Card thumbnail on the restaurant listing page</span>
+            </label>
+            <div class="field-url-row">
+              <input class="field-input" id="infoImage" type="text" placeholder="cover.jpg or https://…" autocomplete="off" spellcheck="false" />
+              <div class="field-url-preview" id="infoImagePreview"></div>
+            </div>
+          </div>
+          <div class="field-row">
+            <label class="field-label">
+              Header background
+              <span class="field-label__hint">Full-bleed banner behind the restaurant name</span>
+            </label>
+            <div class="field-url-row">
+              <input class="field-input" id="infoBgImage" type="text" placeholder="cover.jpg or https://…" autocomplete="off" spellcheck="false" />
+              <div class="field-url-preview" id="infoBgImagePreview"></div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- CONFIG panel -->

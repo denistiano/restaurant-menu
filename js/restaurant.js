@@ -68,6 +68,7 @@
   let allTags           = [];
   let initialized       = false; // skip animations on first render
   let currentModalItem  = null;  // item currently shown in the detail modal
+  let searchQuery       = '';    // live search string
 
   /* ============================================================
      HELPERS
@@ -89,6 +90,44 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  /**
+   * Resolve a menu image / logo / bg-image value:
+   * - Full URL (http/https) or absolute path → use as-is
+   * - Otherwise → prefix with the resources base path
+   */
+  function resolveImageSrc(val, restaurantId) {
+    if (!val) return null;
+    if (/^https?:\/\//i.test(val) || val.startsWith('/')) return val;
+    return `${RESOURCES_BASE}/${restaurantId}/${val}`;
+  }
+
+  /**
+   * Liberal "contains" search across all searchable text fields.
+   * Returns true if any field contains the query (case-insensitive).
+   */
+  function matchesSearch(item, query) {
+    if (!query) return true;
+    const q = query.toLowerCase();
+
+    // name (both languages)
+    const names = [item.name?.en, item.name?.bg].filter(Boolean);
+    if (names.some(n => n.toLowerCase().includes(q))) return true;
+
+    // description (both languages)
+    if (item.description) {
+      const descs = [item.description.en, item.description.bg].filter(Boolean);
+      if (descs.some(d => d.toLowerCase().includes(q))) return true;
+    }
+
+    // tags (both languages)
+    if (item.tags?.length) {
+      const tagTexts = item.tags.flatMap(t => [t.en, t.bg]).filter(Boolean);
+      if (tagTexts.some(t => t.toLowerCase().includes(q))) return true;
+    }
+
+    return false;
   }
 
   /* ============================================================
@@ -246,10 +285,11 @@
      ============================================================ */
   function updateTranslatables(lang) {
     document.querySelectorAll('[data-en]').forEach(el => {
-      if (el.childElementCount === 0) {
-        el.textContent = (lang === 'bg' && el.dataset.bg)
-          ? el.dataset.bg
-          : (el.dataset.en || '');
+      const text = (lang === 'bg' && el.dataset.bg) ? el.dataset.bg : (el.dataset.en || '');
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        el.placeholder = text;
+      } else if (el.childElementCount === 0) {
+        el.textContent = text;
       }
     });
   }
@@ -471,6 +511,11 @@
      APPLY FILTERS (show/hide items & categories)
      ============================================================ */
   function applyFilters(categories) {
+    const hasTagFilter    = activeTags.size > 0;
+    const hasSearchFilter = searchQuery.trim() !== '';
+    const anyFilter       = hasTagFilter || hasSearchFilter;
+    let totalVisible      = 0;
+
     categories.forEach(cat => {
       const catEl = document.getElementById(`cat-${cat.id}`);
       if (!catEl) return;
@@ -480,23 +525,52 @@
         catEl.classList.add('hidden');
         return;
       }
-      catEl.classList.remove('hidden');
 
       let visibleCount = 0;
       const items = catEl.querySelectorAll('.menu-item');
       items.forEach((itemEl, idx) => {
         const item = cat.items[idx];
         if (!item) return;
-        const passesTag = activeTags.size === 0 ||
+        const passesTag = !hasTagFilter ||
           Array.from(activeTags).every(activeTag =>
             (item.tags || []).some(tag => tag.en === activeTag));
-        itemEl.classList.toggle('filtered-out', !passesTag);
-        if (passesTag) visibleCount++;
+        const passesSearch = matchesSearch(item, searchQuery.trim());
+        const passes = passesTag && passesSearch;
+        itemEl.classList.toggle('filtered-out', !passes);
+        if (passes) visibleCount++;
       });
 
-      const emptyEl = catEl.querySelector('.category-empty');
-      if (emptyEl) emptyEl.style.display = visibleCount === 0 ? 'block' : 'none';
+      totalVisible += visibleCount;
+
+      // When any filter is active and a category has no matching items, hide it entirely
+      if (anyFilter && visibleCount === 0) {
+        catEl.classList.add('hidden');
+      } else {
+        catEl.classList.remove('hidden');
+        // The per-category empty message is superseded by hiding — keep it hidden
+        const emptyEl = catEl.querySelector('.category-empty');
+        if (emptyEl) emptyEl.style.display = 'none';
+      }
     });
+
+    // Global "no results" banner
+    let noResultsEl = document.getElementById('noResultsBanner');
+    if (anyFilter && totalVisible === 0) {
+      if (!noResultsEl) {
+        noResultsEl = document.createElement('p');
+        noResultsEl.id = 'noResultsBanner';
+        noResultsEl.className = 'no-results-banner';
+        noResultsEl.dataset.en = 'No items match your search.';
+        noResultsEl.dataset.bg = 'Няма намерени продукти.';
+        noResultsEl.textContent = currentLang === 'bg'
+          ? 'Няма намерени продукти.'
+          : 'No items match your search.';
+        document.getElementById('menuCategories')?.after(noResultsEl);
+      }
+      noResultsEl.style.display = 'block';
+    } else if (noResultsEl) {
+      noResultsEl.style.display = 'none';
+    }
   }
 
   /* ============================================================
@@ -683,13 +757,8 @@
     const spinner = document.getElementById('loadingSpinner');
     if (spinner) spinner.remove();
 
-    const bgSrc = restaurant.background_image
-      ? `${RESOURCES_BASE}/${restaurant.id}/${restaurant.background_image}`
-      : (restaurant.image ? `${RESOURCES_BASE}/${restaurant.id}/${restaurant.image}` : null);
-
-    const logoSrc = restaurant.logo
-      ? `${RESOURCES_BASE}/${restaurant.id}/${restaurant.logo}`
-      : null;
+    const bgSrc   = resolveImageSrc(restaurant.background_image || restaurant.image, restaurant.id);
+    const logoSrc = resolveImageSrc(restaurant.logo, restaurant.id);
 
     const bgStyle = bgSrc ? `background-image: url('${bgSrc}')` : '';
 
@@ -720,6 +789,24 @@
 
       <div class="filters-bar" id="filtersBar" role="navigation" aria-label="Menu filters">
         <div class="filters-bar__inner">
+          <div class="search-bar-wrap">
+            <div class="search-bar" role="search">
+              <svg class="search-bar__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M10 10l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+              <input class="search-bar__input" id="searchInput" type="search"
+                     data-en="Search menu…" data-bg="Търси в менюто…"
+                     placeholder="Търси в менюто…"
+                     autocomplete="off" autocorrect="off" spellcheck="false"
+                     aria-label="Search menu" />
+              <button class="search-bar__clear hidden" id="searchClear" aria-label="Clear search" type="button">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
           <div class="category-tabs" id="categoryTabs" role="tablist" aria-label="Categories"></div>
           <div class="tag-filters"   id="tagFilters"   aria-label="Tag filters"></div>
         </div>
@@ -756,6 +843,26 @@
 
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+    });
+
+    /* Search bar */
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
+    let searchDebounce;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        searchQuery = searchInput.value;
+        searchClear.classList.toggle('hidden', !searchQuery);
+        if (data) applyFilters(data.restaurant.menu.categories);
+      }, 180);
+    });
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchQuery = '';
+      searchClear.classList.add('hidden');
+      searchInput.focus();
+      if (data) applyFilters(data.restaurant.menu.categories);
     });
 
     /* Initial render — honour saved preference, fall back to JSON default */
