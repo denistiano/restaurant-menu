@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Menu Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Nunito:wght@400;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="admin.css" />
 </head>
 <body>
@@ -104,6 +104,7 @@
       <button class="editor-tab active" data-tab="info">Restaurant</button>
       <button class="editor-tab" data-tab="config">Settings</button>
       <button class="editor-tab" data-tab="categories">Menu</button>
+      <button class="editor-tab" data-tab="qr">QR flyers</button>
     </nav>
 
     <!-- Panels -->
@@ -253,6 +254,33 @@
         <div class="categories-list" id="categoriesList"></div>
       </section>
 
+      <!-- QR FLYERS panel -->
+      <section class="editor-panel hidden" id="panel-qr">
+        <div class="form-section">
+          <h3 class="form-section__title">Printable QR flyers (A4)</h3>
+          <p class="form-section__desc">Choose a template, check the preview, then print. The QR opens your live menu URL. Text uses your restaurant name and description from the <strong>Restaurant</strong> tab (by default language).</p>
+          <div class="field-row">
+            <label class="field-label">Menu URL (encoded in QR)</label>
+            <input class="field-input" id="qrMenuUrl" type="url" placeholder="https://…" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="field-row">
+            <label class="field-label">Template</label>
+            <div class="qr-tpl-picker" id="qrTemplatePicker"></div>
+          </div>
+          <div class="qr-flyer__actions">
+            <button type="button" class="btn-qr-secondary" id="qrBtnUpdate">Refresh preview</button>
+            <button type="button" class="btn-qr-primary" id="qrBtnPrint">Print A4</button>
+          </div>
+          <p class="qr-flyer__status" id="qrFlyerStatus" aria-live="polite"></p>
+        </div>
+        <div class="qr-preview-outer">
+          <p class="qr-preview-outer__label">Preview (scaled — not actual print size)</p>
+          <div class="qr-preview-scaler" id="qrPreviewScaler">
+            <div class="qr-preview-host" id="qrPreviewHost"></div>
+          </div>
+        </div>
+      </section>
+
     </div><!-- /editor-body -->
   </div><!-- /editorScreen -->
 
@@ -271,6 +299,8 @@
   </div>
 
   <script type="module" src="../js/analytics.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" crossorigin="anonymous"></script>
+  <script src="qr-flyers.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

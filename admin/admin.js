@@ -146,9 +146,11 @@
         targetInput.value = url;
         targetInput.dispatchEvent(new Event('input'));   // triggers preview & dirty
         showToast('Image uploaded!', 'success');
+        adminTrack('admin_cloudinary_upload_ok', { folder: String(folder).slice(0, 60) });
       } catch (err) {
         previewEl.innerHTML = `<span class="url-preview-err">${esc(err.message)}</span>`;
         showToast('Upload failed: ' + err.message, 'error');
+        adminTrack('admin_cloudinary_upload_fail', { message: err.message || 'error' });
       }
     });
 
@@ -166,6 +168,20 @@
   let currentRestaurant = null;   // entry from restaurants.json
   let menuData        = null;     // the full { restaurant: {...} } object
   let isDirty         = false;
+  let editorSessionStart = 0;
+
+  /** Firebase / GA4 — all admin events include restaurant_id when in editor. */
+  function adminTrack(name, params = {}) {
+    const rid = (currentRestaurant && currentRestaurant.id) ? String(currentRestaurant.id).slice(0, 40) : '';
+    const merged = { restaurant_id: rid, ...params };
+    for (const k of Object.keys(merged)) {
+      const v = merged[k];
+      if (typeof v === 'string' && v.length > 100) merged[k] = v.slice(0, 100);
+    }
+    if (typeof window.trackEvent === 'function') window.trackEvent(name, merged);
+  }
+
+  let adminEditDebounce = null;
 
   /* ── DOM REFS ───────────────────────────────────────────── */
   const masterKeyInput  = document.getElementById('masterKeyInput');
@@ -343,6 +359,7 @@
 
     const hash = await hashPassword(restaurantEntry.id, pw);
     if (hash !== restaurantEntry.password_hash) {
+      adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40) });
       errEl.style.display = 'block';
       inputEl.value = '';
       inputEl.focus();
@@ -350,6 +367,7 @@
     }
 
     // Correct — store key for this session and open editor
+    adminTrack('admin_auth_ok', { restaurant_id: String(restaurantEntry.id).slice(0, 40) });
     setMasterKey(key);
     inputEl.value = '';
     currentRestaurant = restaurantEntry;
@@ -379,7 +397,20 @@
       }
       openEditor();
     } catch (err) {
+      adminTrack('admin_menu_load_fail', {
+        restaurant_id: String(r.id).slice(0, 40),
+        message:         err.message || 'error'
+      });
       showToast('Failed to load menu: ' + err.message, 'error');
+    }
+  }
+
+  function getPublicMenuUrl() {
+    if (!currentRestaurant) return '';
+    try {
+      return new URL('../' + encodeURI(currentRestaurant.id) + '/', window.location.href).href;
+    } catch (_) {
+      return '';
     }
   }
 
@@ -393,15 +424,19 @@
     editorTitle.textContent = 'Editing: ' + (r.name.en || r.id);
     previewLink.href = '../' + r.id + '/';
     setDirty(false);
+    editorSessionStart = Date.now();
+    adminTrack('admin_editor_open', {});
 
     populateInfo(r);
     populateConfig(r.menu.config);
     renderCategories(r.menu.categories);
 
-    // Tab switching
-    document.querySelectorAll('.editor-tab').forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
+    if (window.AdminQrFlyers) {
+      window.AdminQrFlyers.init({
+        getRestaurant: () => (menuData && menuData.restaurant) || {},
+        getMenuUrl:    getPublicMenuUrl
+      });
+    }
   }
 
   /* ── BACK BUTTON ─────────────────────────────────────────── */
@@ -410,15 +445,26 @@
       const ok = await confirm('You have unsaved changes. Leave without saving?');
       if (!ok) return;
     }
+    if (editorSessionStart) {
+      adminTrack('admin_editor_close', {
+        duration_sec: Math.round((Date.now() - editorSessionStart) / 1000),
+        had_unsaved:  isDirty ? 1 : 0
+      });
+      editorSessionStart = 0;
+    }
     editorScreen.classList.add('hidden');
     authScreen.classList.remove('hidden');
     menuData = null;
     currentRestaurant = null;
     setDirty(false);
-    // Reset tabs
-    document.querySelectorAll('.editor-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
-    document.querySelectorAll('.editor-panel').forEach((p, i) => p.classList.toggle('active', i === 0));
-    document.querySelectorAll('.editor-panel').forEach((p, i) => p.classList.toggle('hidden', i !== 0));
+    document.querySelectorAll('.editor-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === 'info');
+    });
+    document.querySelectorAll('.editor-panel').forEach(p => {
+      const on = p.id === 'panel-info';
+      p.classList.toggle('active', on);
+      p.classList.toggle('hidden', !on);
+    });
   });
 
   /* ── TABS ────────────────────────────────────────────────── */
@@ -429,6 +475,8 @@
       p.classList.toggle('active', active);
       p.classList.toggle('hidden', !active);
     });
+    adminTrack('admin_tab_view', { tab: String(tabId).slice(0, 40) });
+    if (tabId === 'qr' && window.AdminQrFlyers) window.AdminQrFlyers.refresh();
   }
 
   /* ── URL PREVIEW HELPER ──────────────────────────────────── */
@@ -599,6 +647,7 @@
       e.stopPropagation();
       const ok = await confirm(`Delete category "${cat.name.en}"? All ${itemCount} items will be removed.`);
       if (!ok) return;
+      adminTrack('admin_category_delete', { category: String(cat.name.en || cat.id).slice(0, 80) });
       menuData.restaurant.menu.categories.splice(catIdx, 1);
       renderCategories(menuData.restaurant.menu.categories);
       setDirty(true);
@@ -772,6 +821,7 @@
       enInput.value = ''; bgInput.value = '';
       renderItemTags(block, item, catIdx, itemIdx);
       setDirty(true);
+      adminTrack('admin_tag_add', { tag_en: enVal.slice(0, 60) });
     });
     block.querySelector('.tag-en-input').addEventListener('keydown', e => {
       if (e.key === 'Enter') block.querySelector('.tag-add-btn').click();
@@ -799,6 +849,7 @@
     block.querySelector('.btn-delete-item').addEventListener('click', async () => {
       const ok = await confirm(`Delete "${item.name.en || 'this item'}"?`);
       if (!ok) return;
+      adminTrack('admin_item_delete', { item_name: String(item.name.en || '').slice(0, 80) });
       cat.items.splice(itemIdx, 1);
       refreshItemsList(catBlock, cat, catIdx);
       setDirty(true);
@@ -820,6 +871,7 @@
       `;
       chip.querySelector('.item-tag-chip__del').addEventListener('click', e => {
         e.stopPropagation();
+        adminTrack('admin_tag_remove', { tag_en: String(tag.en || '').slice(0, 60) });
         item.tags.splice(tagIdx, 1);
         renderItemTags(itemBlock, item, catIdx, itemIdx);
         setDirty(true);
@@ -830,6 +882,7 @@
 
   /* ── ADD CATEGORY ────────────────────────────────────────── */
   document.getElementById('addCategoryBtn').addEventListener('click', () => {
+    adminTrack('admin_category_add', {});
     switchTab('categories');
     const cats = menuData.restaurant.menu.categories;
     const newId = 'category_' + Date.now();
@@ -870,11 +923,13 @@
     collectFormData();
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving…';
+    adminTrack('admin_save_attempt', {});
 
     const r = currentRestaurant;
     const hasBin = r.menu_bin_id && r.menu_bin_id !== 'PASTE_BIN_ID_HERE';
 
     if (!hasBin) {
+      adminTrack('admin_save_blocked', { reason: 'no_bin' });
       showToast('No bin ID configured — cannot save to cloud.', 'error');
       saveBtn.disabled = false;
       saveBtn.textContent = 'Save';
@@ -902,8 +957,10 @@
       try { sessionStorage.removeItem(`binid_${cacheVersion}_${r.id}`); } catch (_) {}
 
       setDirty(false);
+      adminTrack('admin_save_success', {});
       showToast('Menu saved successfully! Changes are now live.', 'success');
     } catch (err) {
+      adminTrack('admin_save_fail', { message: err.message || 'error' });
       showToast('Save failed: ' + err.message, 'error');
     } finally {
       saveBtn.textContent = 'Save';
@@ -923,6 +980,45 @@
   /* ── WARN ON UNLOAD ──────────────────────────────────────── */
   window.addEventListener('beforeunload', e => {
     if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  /* ── Tab bar (single delegation — avoids duplicate listeners on re-open) ── */
+  document.getElementById('editorTabs').addEventListener('click', e => {
+    const tab = e.target.closest('.editor-tab');
+    if (!tab || !tab.dataset.tab) return;
+    switchTab(tab.dataset.tab);
+  });
+
+  /* ── Debounced “any field changed” while editor is open ── */
+  editorScreen.addEventListener('input', e => {
+    if (editorScreen.classList.contains('hidden')) return;
+    const el = e.target;
+    const hint = el.id || (el.className && String(el.className).split(/\s+/)[0]) || el.name || el.tagName;
+    clearTimeout(adminEditDebounce);
+    adminEditDebounce = setTimeout(() => {
+      adminTrack('admin_change', {
+        field:      String(hint).slice(0, 80),
+        change_src: 'input'
+      });
+    }, 1400);
+  }, true);
+
+  editorScreen.addEventListener('change', e => {
+    if (editorScreen.classList.contains('hidden')) return;
+    const el = e.target;
+    const hint = el.id || el.type || el.tagName;
+    adminTrack('admin_change', {
+      field:      String(hint).slice(0, 80),
+      change_src: 'change'
+    });
+  }, true);
+
+  previewLink.addEventListener('click', () => {
+    adminTrack('admin_preview_click', { target: 'menu' });
+  });
+
+  window.addEventListener('load', () => {
+    adminTrack('admin_app_ready', { surface: 'admin_panel' });
   });
 
   /* ── INIT ────────────────────────────────────────────────── */
