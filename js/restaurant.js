@@ -535,6 +535,80 @@
     });
   }
 
+  /**
+   * Keep <title>, meta description, Open Graph, Twitter, canonical, and favicon
+   * aligned with live menu JSON + current language (static HTML is the crawler baseline).
+   */
+  function syncRestaurantSeo(restaurant) {
+    const seo = window.__SEO__;
+    if (!seo || !restaurant) return;
+
+    const siteLabel = currentLang === 'bg' ? (seo.siteNameBg || seo.siteName) : seo.siteName;
+    const fullTitle = `${t(restaurant.name)} — ${siteLabel}`;
+    document.title = fullTitle;
+
+    const desc = t(restaurant.description).trim();
+    const descEl = document.getElementById('seo-meta-desc');
+    if (descEl && desc) descEl.setAttribute('content', desc);
+
+    const setProp = (prop, val) => {
+      if (!val) return;
+      const el = document.querySelector(`meta[property="${prop}"]`);
+      if (el) el.setAttribute('content', val);
+    };
+    const setName = (name, val) => {
+      if (!val) return;
+      const el = document.querySelector(`meta[name="${name}"]`);
+      if (el) el.setAttribute('content', val);
+    };
+
+    setProp('og:title', fullTitle);
+    setProp('og:description', desc);
+    setName('twitter:title', fullTitle);
+    setName('twitter:description', desc);
+
+    const base = seo.baseUrl && String(seo.baseUrl).replace(/\/$/, '');
+    if (base && seo.canonicalPath) {
+      const canon = base + seo.canonicalPath;
+      const link = document.querySelector('link[rel="canonical"]');
+      if (link) link.setAttribute('href', canon);
+      setProp('og:url', canon);
+    }
+
+    const rawHero = restaurant.image || restaurant.logo;
+    const heroSrc = rawHero ? resolveImageSrc(rawHero, restaurant.id) : null;
+    let ogImg = null;
+    if (heroSrc && /^https?:\/\//i.test(heroSrc)) {
+      ogImg = optimizeCloudinaryUrl(heroSrc, 1200);
+    } else if (heroSrc && base && rawHero && !/^https?:\/\//i.test(String(rawHero).trim())) {
+      ogImg = `${base}/resources/${restaurant.id}/${String(rawHero).trim()}`;
+    }
+    if (ogImg) {
+      setProp('og:image', ogImg);
+      setName('twitter:image', ogImg);
+    }
+
+    const logoRaw = restaurant.logo || restaurant.image;
+    const iconSrc = logoRaw ? resolveImageSrc(logoRaw, restaurant.id) : null;
+    if (iconSrc) {
+      document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(l => {
+        l.setAttribute('href', iconSrc);
+      });
+    }
+
+    const loc = document.querySelector('meta[property="og:locale"]');
+    const alt = document.querySelector('meta[property="og:locale:alternate"]');
+    if (loc && alt) {
+      if (currentLang === 'bg') {
+        loc.setAttribute('content', seo.defaultOgLocale || 'bg_BG');
+        alt.setAttribute('content', seo.alternateOgLocale || 'en_US');
+      } else {
+        loc.setAttribute('content', seo.alternateOgLocale || 'en_US');
+        alt.setAttribute('content', seo.defaultOgLocale || 'bg_BG');
+      }
+    }
+  }
+
   /* ============================================================
      LANGUAGE — smooth crossfade, no DOM rebuild
      ============================================================ */
@@ -574,6 +648,7 @@
 
     setTimeout(() => {
       updateTranslatables(lang);
+      updatePageTitle();
       if (currentModalItem) populateModal(currentModalItem);
       [content, filters, header].forEach(el => {
         if (el) el.style.opacity = '1';
@@ -1005,7 +1080,8 @@
      ============================================================ */
   function updatePageTitle() {
     if (!data) return;
-    document.title = t(data.restaurant.name);
+    if (window.__SEO__) syncRestaurantSeo(data.restaurant);
+    else document.title = t(data.restaurant.name);
     const nameEl = document.getElementById('restaurantName');
     if (nameEl) nameEl.textContent = t(data.restaurant.name);
     const taglineEl = document.getElementById('restaurantTagline');

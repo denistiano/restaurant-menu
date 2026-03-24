@@ -25,7 +25,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate restaurant page shells
+      # If resources/seo-config.json has empty base_url, use default GitHub Pages project URL
+      # (https://<owner>.github.io/<repo>/). Override base_url in the file for a custom domain.
+      - name: Default SEO base URL for GitHub Pages
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 <<'PY'
+          import json, os
+          repo = os.environ["GITHUB_REPOSITORY"]
+          owner, name = repo.split("/", 1)
+          base = f"https://{owner}.github.io/{name}"
+          path = "resources/seo-config.json"
+          with open(path, encoding="utf-8") as f:
+              cfg = json.load(f)
+          if not (cfg.get("base_url") or "").strip():
+              cfg["base_url"] = base
+              with open(path, "w", encoding="utf-8") as f:
+                  json.dump(cfg, f, indent=2, ensure_ascii=False)
+                  f.write("\n")
+              print("Set seo-config base_url to", base)
+          else:
+              print("Keeping committed base_url:", cfg.get("base_url"))
+          PY
+
+      - name: Generate restaurant pages, sitemap, robots.txt
         run: bash scripts/generate-restaurant-pages.sh
 
       - uses: actions/upload-pages-artifact@v3
