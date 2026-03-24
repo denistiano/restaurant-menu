@@ -1,6 +1,23 @@
 /* ============================================================
-   restaurant.js — Restaurant page logic
+   restaurant.js — Restaurant page logic + Analytics
    Expects: window.RESTAURANT_ID, window.RESOURCES_BASE
+
+   EVENTS FIRED ON THIS PAGE
+   ┌──────────────────────┬──────────────────────────────────────────────────┐
+   │ Event                │ Key params                                       │
+   ├──────────────────────┼──────────────────────────────────────────────────┤
+   │ menu_view            │ restaurant_id/name, theme, language,             │
+   │                      │ category_count, item_count                       │
+   │ category_select      │ restaurant_id, category_id, category_name        │
+   │ tag_filter           │ restaurant_id, tag, action, active_count         │
+   │ search  (GA4 std)    │ search_term, restaurant_id, results_count        │
+   │ item_view            │ restaurant_id, item_name, item_price,            │
+   │                      │ category_id, category_name                       │
+   │ theme_change         │ restaurant_id, from_theme, to_theme              │
+   │ language_change      │ restaurant_id, from_lang, to_lang                │
+   │ contact_click        │ restaurant_id, contact_type (phone|email)        │
+   │ menu_exit            │ restaurant_id, duration_sec, interaction_count   │
+   └──────────────────────┴──────────────────────────────────────────────────┘
    ============================================================ */
 
 (function () {
@@ -60,15 +77,35 @@
   /** Expose bust function so admin page can call it after a save. */
   window.__bustMenuCache = () => cacheBust(MENU_KEY);
 
+  /* ── Analytics: fire menu_exit exactly once ─────────────── */
+  function fireMenuExit() {
+    if (menuExitFired || !initialized) return;
+    menuExitFired = true;
+    window.trackEvent?.('menu_exit', {
+      restaurant_id:     RESTAURANT_ID,
+      duration_sec:      Math.round((Date.now() - pageStartMs) / 1000),
+      interaction_count: interactionCount
+    });
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') fireMenuExit();
+  });
+  window.addEventListener('pagehide', fireMenuExit);
+
   let data              = null;
   let currentLang       = localStorage.getItem('preferredLang')   || null;
   let currentTheme      = localStorage.getItem('preferredTheme')  || null;
   let activeCategory    = 'all';
   let activeTags        = new Set();
   let allTags           = [];
-  let initialized       = false; // skip animations on first render
-  let currentModalItem  = null;  // item currently shown in the detail modal
-  let searchQuery       = '';    // live search string
+  let initialized       = false;  // skip animations on first render
+  let currentModalItem  = null;   // item currently shown in the detail modal
+  let searchQuery       = '';     // live search string
+
+  /* ── Per-session analytics state ────────────────────────── */
+  const pageStartMs      = window._sessionStartMs || Date.now();
+  let   interactionCount = 0;   // incremented on every meaningful interaction
+  let   menuExitFired    = false;
 
   /* ============================================================
      HELPERS
@@ -260,10 +297,25 @@
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
 
+    /* Look up the category that owns this item (reference equality) */
+    let categoryId = '', categoryName = '';
+    for (const cat of data?.restaurant?.menu?.categories || []) {
+      if (cat.items?.some(i => i === item)) {
+        categoryId   = cat.id;
+        categoryName = cat.name.en || cat.id;
+        break;
+      }
+    }
+
     window.trackEvent?.('item_view', {
-      restaurant_id: RESTAURANT_ID,
-      item_name:     item.name.en || ''
+      restaurant_id:  RESTAURANT_ID,
+      item_name:      (item.name.en || '').slice(0, 100),
+      item_name_bg:   (item.name.bg || '').slice(0, 100),
+      item_price:     item.price ?? 0,
+      category_id:    categoryId,
+      category_name:  categoryName
     });
+    interactionCount++;
 
     setTimeout(() => {
       document.getElementById('itemModalClose')?.focus();
@@ -298,6 +350,7 @@
      LANGUAGE — smooth crossfade, no DOM rebuild
      ============================================================ */
   function applyLang(lang) {
+    const prevLang = currentLang;
     currentLang = lang;
     localStorage.setItem('preferredLang', lang);
     document.documentElement.lang = lang;
@@ -314,10 +367,12 @@
       return;
     }
 
-    window.trackEvent?.('language_switch', {
-      language:      lang,
-      restaurant_id: RESTAURANT_ID
+    window.trackEvent?.('language_change', {
+      restaurant_id: RESTAURANT_ID,
+      from_lang:     prevLang || 'unknown',
+      to_lang:       lang
     });
+    interactionCount++;
 
     // Fade content, swap text, fade back
     const content = document.getElementById('menuCategories');
@@ -341,6 +396,7 @@
      THEME — fade menu, rebuild, fade back
      ============================================================ */
   function applyTheme(theme) {
+    const prevTheme = currentTheme;
     currentTheme = theme;
     localStorage.setItem('preferredTheme', theme);
     const menuEl = document.getElementById('menuContent');
@@ -361,10 +417,12 @@
       return;
     }
 
-    window.trackEvent?.('theme_switch', {
-      theme,
-      restaurant_id: RESTAURANT_ID
+    window.trackEvent?.('theme_change', {
+      restaurant_id: RESTAURANT_ID,
+      from_theme:    prevTheme || 'unknown',
+      to_theme:      theme
     });
+    interactionCount++;
 
     menuEl.style.transition = 'opacity 0.18s ease';
     menuEl.style.opacity = '0';
@@ -435,8 +493,10 @@
       window.trackEvent?.('category_select', {
         restaurant_id:  RESTAURANT_ID,
         category_id:    catId,
-        category_name:  cat ? (cat.name.en || catId) : catId
+        category_name:  cat ? (cat.name.en || catId) : catId,
+        item_count:     cat ? (cat.items?.length || 0) : 0
       });
+      interactionCount++;
     }
     activeCategory = catId;
     activeTags.clear();
@@ -495,10 +555,12 @@
     if (initialized) {
       window.trackEvent?.('tag_filter', {
         restaurant_id: RESTAURANT_ID,
-        tag_name:      tagEn,
+        tag:           tagEn,
         action:        adding ? 'add' : 'remove',
-        active_tags:   Array.from(activeTags).join(',')
+        active_count:  activeTags.size,
+        active_tags:   Array.from(activeTags).join(',').slice(0, 100)
       });
+      interactionCount++;
     }
     applyFilters(categories);
 
@@ -849,14 +911,41 @@
     const searchInput = document.getElementById('searchInput');
     const searchClear = document.getElementById('searchClear');
     let searchDebounce;
+    let searchTrackDebounce;
+
     searchInput.addEventListener('input', () => {
+      /* Fast debounce — update filter results */
       clearTimeout(searchDebounce);
       searchDebounce = setTimeout(() => {
         searchQuery = searchInput.value;
         searchClear.classList.toggle('hidden', !searchQuery);
         if (data) applyFilters(data.restaurant.menu.categories);
       }, 180);
+
+      /* Slower debounce — fire analytics only after user pauses typing */
+      clearTimeout(searchTrackDebounce);
+      if (searchInput.value.trim()) {
+        searchTrackDebounce = setTimeout(() => {
+          const term = searchInput.value.trim();
+          if (!term) return;
+          /* Count matching items for results_count */
+          let resultsCount = 0;
+          data?.restaurant?.menu?.categories?.forEach(cat => {
+            cat.items?.forEach(item => {
+              if (matchesSearch(item, term)) resultsCount++;
+            });
+          });
+          /* Use GA4 standard 'search' event so it populates built-in reports */
+          window.trackEvent?.('search', {
+            search_term:    term.slice(0, 100),
+            restaurant_id:  RESTAURANT_ID,
+            results_count:  resultsCount
+          });
+          interactionCount++;
+        }, 1200);
+      }
     });
+
     searchClear.addEventListener('click', () => {
       searchInput.value = '';
       searchQuery = '';
@@ -899,12 +988,27 @@
     // From here on, transitions are enabled
     initialized = true;
 
-    // Track restaurant view — queued if analytics hasn't loaded yet
-    window.trackEvent?.('restaurant_view', {
-      restaurant_id:   restaurant.id,
-      restaurant_name: restaurant.name.en || restaurant.id,
-      theme:           restaurant.menu.theme || 'classic',
-      language:        currentLang
+    /* Bind footer contact links */
+    document.querySelectorAll('.restaurant-footer .rf__link').forEach(link => {
+      link.addEventListener('click', () => {
+        window.trackEvent?.('contact_click', {
+          restaurant_id: RESTAURANT_ID,
+          contact_type:  link.href.startsWith('tel:') ? 'phone' : 'email'
+        });
+      });
+    });
+
+    /* Fire menu_view — queued if analytics module hasn't loaded yet */
+    const allItems = restaurant.menu.categories.reduce(
+      (sum, cat) => sum + (cat.items?.length || 0), 0
+    );
+    window.trackEvent?.('menu_view', {
+      restaurant_id:    restaurant.id,
+      restaurant_name:  (restaurant.name.en || restaurant.id).slice(0, 100),
+      theme:            restaurant.menu.theme || 'classic',
+      language:         currentLang,
+      category_count:   restaurant.menu.categories.length,
+      item_count:       allItems
     });
   }
 
