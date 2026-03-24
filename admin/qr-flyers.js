@@ -1,16 +1,63 @@
 /**
- * admin/qr-flyers.js — A4 QR flyer templates + print (uses global QRious from CDN)
+ * admin/qr-flyers.js — QR media: starters, formats, light page builder, localStorage customs
+ * (global QRious from CDN)
  */
 (function (window) {
   'use strict';
 
   const SERVICE = {
-    brand:     'e-Menu',
-    phone:     '+359 898 513 566',
-    email:     'denistiano@gmail.com',
-    lineBg:    'Дигитално меню, QR код и админ панел за вашия ресторант.',
-    lineEn:    'Digital menu, QR codes & admin for your restaurant.'
+    brand:  'e-Menu',
+    phone:  '+359 898 513 566',
+    email:  'denistiano@gmail.com',
+    lineBg: 'Дигитално меню, QR код и админ панел за вашия ресторант.',
+    lineEn: 'Digital menu, QR codes & admin for your restaurant.'
   };
+
+  const STORAGE_KEY = 'qr_media_designs_v2';
+
+  /** ISO & common print sizes (mm) */
+  const FORMATS = {
+    a4:   { id: 'a4',   label: 'A4 portrait',     w: 210,   h: 297,   qr: 46,  pad: 12, scale: 1,    page: '210mm 297mm' },
+    a5:   { id: 'a5',   label: 'A5 portrait',     w: 148,   h: 210,   qr: 36,  pad: 10, scale: 0.82, page: '148mm 210mm' },
+    a6:   { id: 'a6',   label: 'A6 portrait',     w: 105,   h: 148,   qr: 28,  pad: 7,  scale: 0.68, page: '105mm 148mm' },
+    dl:   { id: 'dl',   label: 'DL / flyer',      w: 110,   h: 220,   qr: 38,  pad: 9,  scale: 0.72, page: '110mm 220mm' },
+    card: { id: 'card', label: 'ISO card 85×54', w: 85.6,  h: 53.98, qr: 22,  pad: 3,  scale: 0.42, page: '85.6mm 53.98mm' }
+  };
+
+  const STARTERS = [
+    { id: 'classic', label: 'Classic', labelBg: 'Класика', build: buildClassic },
+    { id: 'fine',    label: 'Fine dining', labelBg: 'Фино', build: buildFine },
+    { id: 'family',  label: 'Family / café', labelBg: 'Семейно', build: buildFamily },
+    { id: 'terrace', label: 'Terrace', labelBg: 'Тераса', build: buildTerrace },
+    { id: 'bistro',  label: 'Bistro', labelBg: 'Бистро', build: buildBistro }
+  ];
+
+  const PRESETS = [
+    { id: 'p1', starterId: 'classic', formatId: 'a4',   label: 'Classic · A4' },
+    { id: 'p2', starterId: 'fine',    formatId: 'a5',   label: 'Fine · A5' },
+    { id: 'p3', starterId: 'family',  formatId: 'a6',   label: 'Family · A6' },
+    { id: 'p4', starterId: 'classic', formatId: 'card', label: 'Minimal · card' },
+    { id: 'p5', starterId: 'bistro',  formatId: 'dl',   label: 'Bistro · DL' }
+  ];
+
+  const FONT_OPTIONS = [
+    { v: '', l: '— template default —' },
+    { v: "'Great Vibes',cursive", l: 'Great Vibes' },
+    { v: "'Playfair Display',Georgia,serif", l: 'Playfair Display' },
+    { v: "'Cormorant Garamond',Georgia,serif", l: 'Cormorant Garamond' },
+    { v: "'Nunito',sans-serif", l: 'Nunito' },
+    { v: "'Inter',system-ui,sans-serif", l: 'Inter' },
+    { v: 'Georgia,serif', l: 'Georgia' }
+  ];
+
+  const ZONES = [
+    { id: 'sheet',    label: 'Page background' },
+    { id: 'title',    label: 'Title (restaurant name)' },
+    { id: 'subtitle', label: 'Subtitle / tagline' },
+    { id: 'cta',      label: 'Scan / call-to-action lines' },
+    { id: 'body',     label: 'Hint paragraph' },
+    { id: 'footer',   label: 'Footer (contact block)' }
+  ];
 
   function esc(s) {
     return String(s || '')
@@ -24,172 +71,296 @@
     if (typeof window.trackEvent === 'function') window.trackEvent(name, params || {});
   }
 
-  /* ── Shared print + base sheet styles (injected into print window) ── */
-  const PRINT_CSS = `
-    @page { size: A4; margin: 10mm; }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .qr-sheet {
-      width: 210mm;
-      min-height: 277mm;
-      padding: 12mm 14mm;
-      margin: 0 auto;
-      font-family: 'Inter', system-ui, sans-serif;
-      color: #3d3d3d;
-      position: relative;
-    }
-    .qr-sheet__qr {
-      display: block;
-      width: 46mm;
-      height: 46mm;
-      margin: 0 auto;
-      image-rendering: pixelated;
-    }
-  `;
+  let getRestaurant = null;
+  let getMenuUrlFn  = null;
+  let editMode      = false;
 
-  function forkKnifeRow() {
+  let designState = {
+    starterId: 'classic',
+    formatId:  'a4',
+    styles:    {},
+    text:      { title: '', subtitle: '' }
+  };
+
+  function getFmt() {
+    return FORMATS[designState.formatId] || FORMATS.a4;
+  }
+
+  function deepClone(o) {
+    return JSON.parse(JSON.stringify(o || {}));
+  }
+
+  function defaultZoneStyle(zone) {
+    const z = {};
+    if (zone === 'sheet') {
+      return { background: '', paddingMm: null };
+    }
+    return {
+      fontFamily: '',
+      fontSize:   null,
+      color:      '',
+      textAlign:  '',
+      fontWeight: ''
+    };
+  }
+
+  function getEffectiveStyles() {
+    const out = {};
+    ZONES.forEach(z => {
+      const def = defaultZoneStyle(z.id);
+      const raw = designState.styles[z.id] || {};
+      out[z.id] = { ...def };
+      Object.keys(raw).forEach(k => {
+        const v = raw[k];
+        if (v !== '' && v != null) out[z.id][k] = v;
+      });
+    });
+    return out;
+  }
+
+  /** Flex column shell: fixed height page, main grows, footer pinned bottom */
+  function sheetShellOpen(fmt, es, extraSheetStyle) {
+    const sh = es.sheet || {};
+    const bg = sh.background || extraSheetStyle.bg || '#f4f2eb';
+    const pad = sh.paddingMm != null ? sh.paddingMm : fmt.pad;
     return `
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:0 8mm 6mm;">
-        <svg width="22" height="52" viewBox="0 0 22 52" fill="none" aria-hidden="true" style="opacity:.45">
+      <div class="qr-sheet" data-fmt="${esc(fmt.id)}"
+           style="width:${fmt.w}mm;height:${fmt.h}mm;min-height:${fmt.h}mm;max-height:${fmt.h}mm;
+                  box-sizing:border-box;padding:${pad}mm;margin:0;
+                  display:flex;flex-direction:column;align-items:stretch;
+                  font-family:'Inter',system-ui,sans-serif;color:#3d3d3d;position:relative;
+                  ${extraSheetStyle.extra || ''} background:${bg};">`;
+  }
+
+  function sheetMainOpen() {
+    return '<div class="qr-sheet__main" style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:stretch;">';
+  }
+
+  function sheetMainClose() {
+    return '</div>';
+  }
+
+  function sheetShellClose() {
+    return '</div>';
+  }
+
+  function qrImgTag(qrDataUrl, fmt) {
+    return `<img class="qr-sheet__qr" src="${esc(qrDataUrl)}" alt="" style="width:${fmt.qr}mm;height:${fmt.qr}mm;display:block;margin:0 auto;object-fit:contain;image-rendering:pixelated;"/>`;
+  }
+
+  function sPx(basePx, fmt) {
+    return Math.max(8, Math.round(basePx * fmt.scale));
+  }
+
+  function forkKnifeRow(fmt) {
+    if (fmt.id === 'card') return '';
+    const s = fmt.scale;
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:0 ${4 * s}mm ${3 * s}mm;opacity:.45;">
+        <svg width="${18 * s}" height="${44 * s}" viewBox="0 0 22 52" fill="none" aria-hidden="true">
           <path d="M6 2v14M10 2v14M6 16v34" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
         </svg>
-        <svg width="22" height="52" viewBox="0 0 22 52" fill="none" aria-hidden="true" style="opacity:.45">
+        <svg width="${18 * s}" height="${44 * s}" viewBox="0 0 22 52" fill="none" aria-hidden="true">
           <path d="M11 2v50M8 8h6M8 14h6M8 20h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
         </svg>
       </div>`;
   }
 
-  function buildClassic(d) {
-    const bg = '#f4f2eb';
+  function buildClassic(d, fmt, es) {
+    const sc = fmt.scale;
+    if (fmt.id === 'card') {
+      const extra = { bg: '#f4f2eb', extra: 'background-image:radial-gradient(rgba(0,0,0,.02) 1px,transparent 1px);background-size:3px 3px;' };
+      return sheetShellOpen(fmt, es, extra) +
+        sheetMainOpen() +
+        `<div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:1.5mm;">
+          <h1 data-qr="title" style="font-family:'Great Vibes',cursive;font-size:${sPx(28, fmt)}px;font-weight:400;margin:0;line-height:1.1;color:#5c5c5c;">${esc(d.nameLine)}</h1>
+          <div style="border:1.5px dashed #b8b4a8;border-radius:6px;padding:2mm;background:rgba(255,255,255,.4);">${qrImgTag(d.qrDataUrl, fmt)}</div>
+        </div>` +
+        classicFooter(d, fmt, es) +
+        sheetMainClose() + sheetShellClose();
+    }
+
+    const extra = {
+      bg: '#f4f2eb',
+      extra: 'background-image:radial-gradient(rgba(0,0,0,.025) 1px,transparent 1px);background-size:4px 4px;'
+    };
+    return sheetShellOpen(fmt, es, extra) +
+      sheetMainOpen() +
+      forkKnifeRow(fmt) +
+      `<h1 data-qr="title" style="font-family:'Great Vibes',cursive;font-size:${sPx(42, fmt)}px;font-weight:400;text-align:center;color:#5c5c5c;margin:0 0 ${2 * sc}mm;line-height:1.1;">${esc(d.nameLine)}</h1>
+      <svg viewBox="0 0 400 24" style="width:72%;height:${12 * sc}px;margin:0 auto ${4 * sc}mm;display:block;opacity:.35" preserveAspectRatio="none">
+        <path d="M0 18 Q 200 4 400 18" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      </svg>
+      <p data-qr="cta" style="text-align:center;font-size:${sPx(11, fmt)}px;letter-spacing:.28em;text-transform:uppercase;color:#6a6a6a;margin:0 0 1mm;font-weight:600;">Сканирайте за менюто</p>
+      <p data-qr="cta" style="text-align:center;font-size:${sPx(10, fmt)}px;letter-spacing:.22em;text-transform:uppercase;color:#888;margin:0 0 ${6 * sc}mm;">Scan for the menu</p>
+      <div style="border:2px dashed #b8b4a8;border-radius:10px;padding:${5 * sc}mm;max-width:${fmt.id === 'a6' ? 48 : 62}mm;margin:0 auto ${4 * sc}mm;text-align:center;background:rgba(255,255,255,.35);">
+        ${qrImgTag(d.qrDataUrl, fmt)}
+      </div>
+      <p data-qr="body" style="text-align:center;font-size:${sPx(12, fmt)}px;color:#666;line-height:1.5;margin:0 ${2 * sc}mm ${6 * sc}mm;max-width:100%;">${esc(d.hintLine)}</p>` +
+      classicFooter(d, fmt, es) +
+      sheetMainClose() + sheetShellClose();
+  }
+
+  function classicFooter(d, fmt, es) {
+    const sc = fmt.scale;
     return `
-      <div class="qr-sheet" style="background:${bg};background-image:radial-gradient(rgba(0,0,0,.025) 1px,transparent 1px);background-size:4px 4px;">
-        ${forkKnifeRow()}
-        <h1 style="font-family:'Great Vibes',cursive;font-size:42px;font-weight:400;text-align:center;color:#5c5c5c;margin:0 0 4mm;line-height:1.1;">${esc(d.nameLine)}</h1>
-        <svg viewBox="0 0 400 24" style="width:72%;height:16px;margin:0 auto 5mm;display:block;opacity:.35" preserveAspectRatio="none">
-          <path d="M0 18 Q 200 4 400 18" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <footer data-qr="footer" class="qr-sheet__footer" style="flex-shrink:0;margin-top:auto;width:100%;box-sizing:border-box;border-top:1px solid #c9c5bb;padding-top:${3 * sc}mm;padding-bottom:0;">
+        <p data-qr="subtitle" style="text-align:center;font-size:${sPx(10, fmt)}px;color:#888;margin:0 0 1mm;">${esc(d.descLine)}</p>
+        <p style="text-align:center;font-size:${sPx(9, fmt)}px;color:#999;margin:0 0 2mm;">Powered by <strong>${esc(SERVICE.brand)}</strong> · ${esc(SERVICE.lineBg)}</p>
+        <p style="text-align:center;font-size:${sPx(11, fmt)}px;font-weight:600;color:#444;margin:0;">${esc(SERVICE.phone)} · ${esc(SERVICE.email)}</p>
+      </footer>`;
+  }
+
+  function buildFine(d, fmt, es) {
+    const sc = fmt.scale;
+    return sheetShellOpen(fmt, es, { bg: 'linear-gradient(180deg,#faf9f7 0%,#f0ebe3 100%)', extra: 'border:1px solid #d9d3c8;' }) +
+      sheetMainOpen() +
+      `<div style="text-align:center;padding:${3 * sc}mm 0 1mm;">
+        <svg width="${32 * sc}" height="${32 * sc}" viewBox="0 0 24 24" fill="none" style="opacity:.4;margin-bottom:2mm" aria-hidden="true">
+          <path d="M8 22h8M12 15v7M9 2h6l-1 8h-4L9 2z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <p style="text-align:center;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6a6a6a;margin:0 0 2mm;font-weight:600;">Сканирайте за менюто</p>
-        <p style="text-align:center;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#888;margin:0 0 8mm;">Scan for the menu</p>
-        <div style="border:2px dashed #b8b4a8;border-radius:10px;padding:7mm 6mm;max-width:62mm;margin:0 auto 6mm;text-align:center;background:rgba(255,255,255,.35);">
-          <img class="qr-sheet__qr" src="${esc(d.qrDataUrl)}" alt=""/>
-        </div>
-        <p style="text-align:center;font-size:12px;color:#666;line-height:1.5;margin:0 0 10mm;max-width:160mm;margin-left:auto;margin-right:auto;">${esc(d.hintLine)}</p>
-        <div style="border-top:1px solid #c9c5bb;padding-top:5mm;margin-top:auto;">
-          <p style="text-align:center;font-size:10px;color:#888;margin:0 0 2mm;">${esc(d.descLine)}</p>
-          <p style="text-align:center;font-size:9px;color:#999;margin:0 0 4mm;">Powered by <strong>${esc(SERVICE.brand)}</strong> · ${esc(SERVICE.lineBg)}</p>
-          <p style="text-align:center;font-size:11px;font-weight:600;color:#444;margin:0;">${esc(SERVICE.phone)} · ${esc(SERVICE.email)}</p>
-        </div>
-      </div>`;
+        <h1 data-qr="title" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:${sPx(38, fmt)}px;font-weight:600;color:#2c2c2c;margin:0;letter-spacing:.02em;">${esc(d.nameLine)}</h1>
+        <p data-qr="subtitle" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:${sPx(15, fmt)}px;font-style:italic;color:#666;margin:${2 * sc}mm 0 0;">${esc(d.tagline)}</p>
+      </div>
+      <div style="width:${40 * sc}mm;height:1px;background:linear-gradient(90deg,transparent,#8a7a68,transparent);margin:${4 * sc}mm auto;"></div>
+      <p data-qr="cta" style="text-align:center;font-size:${sPx(10, fmt)}px;letter-spacing:.25em;text-transform:uppercase;color:#7a6f62;margin:0 0 ${6 * sc}mm;">Digital menu</p>
+      <div style="text-align:center;padding:${4 * sc}mm;border:1px solid #c4b8a8;border-radius:2px;max-width:${fmt.w - 2 * fmt.pad - 10}mm;margin:0 auto ${6 * sc}mm;background:#fff;">
+        ${qrImgTag(d.qrDataUrl, fmt)}
+      </div>
+      <p data-qr="body" style="text-align:center;font-size:${sPx(12, fmt)}px;color:#555;max-width:100%;margin:0 auto ${8 * sc}mm;line-height:1.55;">${esc(d.hintLine)}</p>` +
+      `<footer data-qr="footer" class="qr-sheet__footer" style="flex-shrink:0;margin-top:auto;width:100%;box-sizing:border-box;border-top:1px solid #d9d3c8;padding-top:${4 * sc}mm;">
+        <p style="text-align:center;font-size:${sPx(10, fmt)}px;color:#888;margin:0 0 2mm;">${esc(SERVICE.lineEn)}</p>
+        <p style="text-align:center;font-family:'Cormorant Garamond',serif;font-size:${sPx(14, fmt)}px;font-weight:600;color:#3a342c;">${esc(SERVICE.brand)} · ${esc(SERVICE.phone)}</p>
+        <p style="text-align:center;font-size:${sPx(11, fmt)}px;color:#666;margin:${1 * sc}mm 0 0;">${esc(SERVICE.email)}</p>
+      </footer>` +
+      sheetMainClose() + sheetShellClose();
   }
 
-  function buildFine(d) {
+  function buildFamily(d, fmt, es) {
+    const sc = fmt.scale;
+    return sheetShellOpen(fmt, es, { bg: '#fffaf3', extra: '' }) +
+      sheetMainOpen() +
+      (fmt.id === 'card' ? '' : `<div style="display:flex;justify-content:center;gap:${10 * sc}px;padding:${4 * sc}mm 0 2mm;opacity:.5;">
+        <svg width="${24 * sc}" height="${24 * sc}" viewBox="0 0 24 24" fill="none"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" stroke="currentColor" stroke-width="1.4"/></svg>
+        <svg width="${24 * sc}" height="${24 * sc}" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M5 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2" stroke="currentColor" stroke-width="1.4"/></svg>
+      </div>`) +
+      `<h1 data-qr="title" style="font-family:'Nunito',sans-serif;font-size:${sPx(32, fmt)}px;font-weight:700;text-align:center;color:#4a4038;margin:0 0 ${2 * sc}mm;">${esc(d.nameLine)}</h1>
+      <p data-qr="subtitle" style="text-align:center;font-family:'Nunito',sans-serif;font-size:${sPx(14, fmt)}px;color:#7a6b5c;margin:0 0 ${6 * sc}mm;font-weight:500;">${esc(d.tagline)}</p>
+      <p data-qr="cta" style="text-align:center;font-size:${sPx(12, fmt)}px;color:#8a7d6f;margin:0 0 ${4 * sc}mm;">Сканирай · Scan</p>
+      <div style="background:#fff;border:3px solid #e8dfd0;border-radius:${14 * sc}px;padding:${4 * sc}mm;max-width:${fmt.w - 2 * fmt.pad - 8}mm;margin:0 auto ${6 * sc}mm;text-align:center;">
+        ${qrImgTag(d.qrDataUrl, fmt)}
+      </div>
+      <p data-qr="body" style="text-align:center;font-size:${sPx(13, fmt)}px;color:#5c534c;line-height:1.5;max-width:100%;margin:0 auto ${6 * sc}mm;">${esc(d.hintLine)}</p>` +
+      `<footer data-qr="footer" class="qr-sheet__footer" style="flex-shrink:0;margin-top:auto;width:100%;box-sizing:border-box;background:#efe6d8;border-radius:${10 * sc}px;padding:${4 * sc}mm;text-align:center;">
+        <p style="font-size:${sPx(11, fmt)}px;color:#6a5f54;margin:0 0 1mm;font-weight:600;">Нуждаете се от е-меню?</p>
+        <p style="font-size:${sPx(10, fmt)}px;color:#7a6f66;margin:0 0 2mm;">${esc(SERVICE.lineBg)}</p>
+        <p style="font-size:${sPx(12, fmt)}px;font-weight:700;color:#3d3530;">${esc(SERVICE.phone)}</p>
+        <p style="font-size:${sPx(11, fmt)}px;color:#5a5048;margin:${1 * sc}mm 0 0;">${esc(SERVICE.email)}</p>
+      </footer>` +
+      sheetMainClose() + sheetShellClose();
+  }
+
+  function buildTerrace(d, fmt, es) {
+    const sc = fmt.scale;
+    return sheetShellOpen(fmt, es, { bg: 'linear-gradient(165deg,#fff9e6 0%,#f5ecd8 45%,#faf6ef 100%)', extra: '' }) +
+      sheetMainOpen() +
+      (fmt.id === 'card' ? '' : `<div style="text-align:center;padding-top:1mm;">
+        <svg width="${36 * sc}" height="${36 * sc}" viewBox="0 0 24 24" fill="none" style="opacity:.55;color:#c9a227" aria-hidden="true">
+          <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+        </svg>
+      </div>`) +
+      `<h1 data-qr="title" style="font-family:'Playfair Display',Georgia,serif;font-size:${sPx(34, fmt)}px;font-weight:700;text-align:center;color:#3d3528;margin:${2 * sc}mm 0 1mm;">${esc(d.nameLine)}</h1>
+      <p data-qr="subtitle" style="text-align:center;font-size:${sPx(13, fmt)}px;color:#7a6a4a;font-style:italic;margin:0 0 1mm;">${esc(d.tagline)}</p>
+      <p data-qr="cta" style="text-align:center;font-size:${sPx(11, fmt)}px;letter-spacing:.12em;text-transform:uppercase;color:#9a8548;margin:0 0 ${6 * sc}mm;">Лятно меню · Summer</p>
+      <div style="border:2px solid #d4c49a;border-radius:8px;padding:${4 * sc}mm;max-width:${fmt.w - 2 * fmt.pad - 6}mm;margin:0 auto ${5 * sc}mm;background:rgba(255,255,255,.65);text-align:center;">
+        ${qrImgTag(d.qrDataUrl, fmt)}
+      </div>
+      <p data-qr="body" style="text-align:center;font-size:${sPx(12, fmt)}px;color:#5c5344;line-height:1.55;max-width:100%;margin:0 auto ${6 * sc}mm;">${esc(d.hintLine)}</p>` +
+      `<footer data-qr="footer" class="qr-sheet__footer" style="flex-shrink:0;margin-top:auto;width:100%;box-sizing:border-box;border-top:2px solid #e0d4b8;padding-top:${4 * sc}mm;">
+        <p style="text-align:center;font-size:${sPx(10, fmt)}px;color:#8a7a58;margin:0 0 2mm;">${esc(SERVICE.lineEn)}</p>
+        <p style="text-align:center;font-size:${sPx(12, fmt)}px;font-weight:600;color:#4a4030;">${esc(SERVICE.brand)} — ${esc(SERVICE.phone)}</p>
+        <p style="text-align:center;font-size:${sPx(11, fmt)}px;color:#6a5a40;margin-top:1mm;">${esc(SERVICE.email)}</p>
+      </footer>` +
+      sheetMainClose() + sheetShellClose();
+  }
+
+  function buildBistro(d, fmt, es) {
+    const sc = fmt.scale;
+    const mainPad = `${fmt.pad}mm ${fmt.pad + 2}mm`;
+    return sheetShellOpen(fmt, es, { bg: '#f2f0ec', extra: 'padding:0;' }) +
+      sheetMainOpen() +
+      `<div style="padding:${mainPad};flex:1 1 auto;display:flex;flex-direction:column;min-height:0;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:${3 * sc}mm;opacity:.4;">
+          <svg width="${28 * sc}" height="${28 * sc}" viewBox="0 0 24 24" fill="none"><path d="M9 2v6M12 2v20M15 2v6M9 8h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </div>
+        <h1 data-qr="title" style="font-family:'Playfair Display',Georgia,serif;font-size:${sPx(36, fmt)}px;font-weight:700;text-align:center;color:#1e1c1a;margin:0 0 ${2 * sc}mm;">${esc(d.nameLine)}</h1>
+        <p data-qr="subtitle" style="text-align:center;font-size:${sPx(13, fmt)}px;color:#5a5650;margin:0 0 ${6 * sc}mm;">${esc(d.tagline)}</p>
+        <p data-qr="cta" style="text-align:center;font-size:${sPx(10, fmt)}px;letter-spacing:.2em;text-transform:uppercase;color:#777;margin:0 0 ${5 * sc}mm;">Taproom · QR menu</p>
+        <div style="background:#fff;border:1px solid #c8c4bc;padding:${4 * sc}mm;max-width:${fmt.w - 2 * fmt.pad - 8}mm;margin:0 auto ${6 * sc}mm;text-align:center;">
+          ${qrImgTag(d.qrDataUrl, fmt)}
+        </div>
+        <p data-qr="body" style="text-align:center;font-size:${sPx(12, fmt)}px;color:#444;line-height:1.5;max-width:100%;margin:0 auto;">${esc(d.hintLine)}</p>
+      </div>` +
+      `<footer data-qr="footer" class="qr-sheet__footer" style="flex-shrink:0;margin-top:auto;width:100%;box-sizing:border-box;background:#2a2826;color:#e8e4dc;padding:${5 * sc}mm ${fmt.pad + 2}mm;">
+        <p style="text-align:center;font-size:${sPx(10, fmt)}px;letter-spacing:.15em;text-transform:uppercase;color:#a09890;margin:0 0 2mm;">Need a digital menu?</p>
+        <p style="text-align:center;font-size:${sPx(12, fmt)}px;line-height:1.45;margin:0 0 3mm;color:#d0c8c0;">${esc(SERVICE.lineEn)}</p>
+        <p style="text-align:center;font-size:${sPx(14, fmt)}px;font-weight:700;color:#fff;">${esc(SERVICE.phone)}</p>
+        <p style="text-align:center;font-size:${sPx(12, fmt)}px;color:#c5bdb5;margin-top:1mm;">${esc(SERVICE.email)}</p>
+        <p style="text-align:center;font-size:${sPx(10, fmt)}px;color:#8a8580;margin-top:3mm;">${esc(SERVICE.brand)}</p>
+      </footer>` +
+      sheetMainClose() + sheetShellClose();
+  }
+
+  function buildHtml(d, qrDataUrl) {
+    const starter = STARTERS.find(s => s.id === designState.starterId) || STARTERS[0];
+    const fmt = getFmt();
+    const copy = { ...d, qrDataUrl };
+    return starter.build(copy, fmt, getEffectiveStyles());
+  }
+
+  function applyDesignToDom(host) {
+    const es = getEffectiveStyles();
+    ZONES.forEach(z => {
+      const cfg = es[z.id];
+      if (!cfg) return;
+      const nodes = host.querySelectorAll(`[data-qr="${z.id}"]`);
+      nodes.forEach(el => {
+        if (z.id === 'sheet') return;
+        if (cfg.fontFamily) el.style.fontFamily = cfg.fontFamily;
+        if (cfg.fontSize != null && cfg.fontSize !== '') el.style.fontSize = typeof cfg.fontSize === 'number' ? cfg.fontSize + 'px' : cfg.fontSize;
+        if (cfg.color) el.style.color = cfg.color;
+        if (cfg.textAlign) el.style.textAlign = cfg.textAlign;
+        if (cfg.fontWeight) el.style.fontWeight = cfg.fontWeight;
+      });
+    });
+    const sheet = host.querySelector('.qr-sheet');
+    if (sheet && es.sheet) {
+      if (es.sheet.background) sheet.style.background = es.sheet.background;
+      if (es.sheet.paddingMm != null) sheet.style.padding = es.sheet.paddingMm + 'mm';
+    }
+  }
+
+  function patchTitleSubtitle(host, d) {
+    const t = designState.text.title && designState.text.title.trim();
+    const s = designState.text.subtitle && designState.text.subtitle.trim();
+    if (t) {
+      host.querySelectorAll('[data-qr="title"]').forEach(el => { el.textContent = t; });
+    }
+    if (s) {
+      host.querySelectorAll('[data-qr="subtitle"]').forEach(el => { el.textContent = s; });
+    }
+  }
+
+  function getPrintCss(fmt) {
     return `
-      <div class="qr-sheet" style="background:linear-gradient(180deg,#faf9f7 0%,#f0ebe3 100%);border:1px solid #d9d3c8;">
-        <div style="text-align:center;padding:4mm 0 2mm;">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style="opacity:.4;margin-bottom:3mm" aria-hidden="true">
-            <path d="M8 22h8M12 15v7M9 2h6l-1 8h-4L9 2z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <h1 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:38px;font-weight:600;color:#2c2c2c;margin:0;letter-spacing:.02em;">${esc(d.nameLine)}</h1>
-          <p style="font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;font-style:italic;color:#666;margin:3mm 0 0;">${esc(d.tagline)}</p>
-        </div>
-        <div style="width:50mm;height:1px;background:linear-gradient(90deg,transparent,#8a7a68,transparent);margin:6mm auto;"></div>
-        <p style="text-align:center;font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:#7a6f62;margin:0 0 8mm;">Digital menu</p>
-        <div style="text-align:center;padding:5mm;border:1px solid #c4b8a8;border-radius:2px;max-width:58mm;margin:0 auto 8mm;background:#fff;">
-          <img class="qr-sheet__qr" src="${esc(d.qrDataUrl)}" alt=""/>
-        </div>
-        <p style="text-align:center;font-size:12px;color:#555;max-width:150mm;margin:0 auto 12mm;line-height:1.55;">${esc(d.hintLine)}</p>
-        <div style="margin-top:auto;padding-top:6mm;border-top:1px solid #d9d3c8;">
-          <p style="text-align:center;font-size:10px;color:#888;margin:0 0 3mm;">${esc(SERVICE.lineEn)}</p>
-          <p style="text-align:center;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:600;color:#3a342c;">${esc(SERVICE.brand)} · ${esc(SERVICE.phone)}</p>
-          <p style="text-align:center;font-size:11px;color:#666;margin:2mm 0 0;">${esc(SERVICE.email)}</p>
-        </div>
-      </div>`;
+    @page { size: ${fmt.page}; margin: 3mm; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .qr-sheet { page-break-after: always; }
+    .qr-sheet__qr { image-rendering: pixelated; }
+    `;
   }
-
-  function buildFamily(d) {
-    return `
-      <div class="qr-sheet" style="background:#fffaf3;border-radius:0;">
-        <div style="display:flex;justify-content:center;gap:14px;padding:5mm 0 3mm;opacity:.5;">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" stroke="currentColor" stroke-width="1.4"/></svg>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M5 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2" stroke="currentColor" stroke-width="1.4"/></svg>
-        </div>
-        <h1 style="font-family:'Nunito',sans-serif;font-size:32px;font-weight:700;text-align:center;color:#4a4038;margin:0 0 3mm;">${esc(d.nameLine)}</h1>
-        <p style="text-align:center;font-family:'Nunito',sans-serif;font-size:14px;color:#7a6b5c;margin:0 0 8mm;font-weight:500;">${esc(d.tagline)}</p>
-        <p style="text-align:center;font-size:12px;color:#8a7d6f;margin:0 0 6mm;">Сканирай с телефона · Scan with your phone</p>
-        <div style="background:#fff;border:3px solid #e8dfd0;border-radius:20px;padding:6mm;max-width:64mm;margin:0 auto 8mm;box-shadow:0 8px 24px rgba(74,64,56,.08);">
-          <img class="qr-sheet__qr" src="${esc(d.qrDataUrl)}" alt=""/>
-        </div>
-        <p style="text-align:center;font-size:13px;color:#5c534c;line-height:1.5;max-width:155mm;margin:0 auto 10mm;">${esc(d.hintLine)}</p>
-        <div style="background:#efe6d8;border-radius:14px;padding:5mm 6mm;text-align:center;">
-          <p style="font-size:11px;color:#6a5f54;margin:0 0 2mm;font-weight:600;">Нуждаете се от е-меню?</p>
-          <p style="font-size:10px;color:#7a6f66;margin:0 0 3mm;">${esc(SERVICE.lineBg)}</p>
-          <p style="font-size:12px;font-weight:700;color:#3d3530;">${esc(SERVICE.phone)}</p>
-          <p style="font-size:11px;color:#5a5048;margin:1mm 0 0;">${esc(SERVICE.email)}</p>
-        </div>
-      </div>`;
-  }
-
-  function buildTerrace(d) {
-    return `
-      <div class="qr-sheet" style="background:linear-gradient(165deg,#fff9e6 0%,#f5ecd8 45%,#faf6ef 100%);">
-        <div style="text-align:center;padding-top:2mm;">
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" style="opacity:.55;color:#c9a227" aria-hidden="true">
-            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.3"/>
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:34px;font-weight:700;text-align:center;color:#3d3528;margin:4mm 0 2mm;">${esc(d.nameLine)}</h1>
-        <p style="text-align:center;font-size:13px;color:#7a6a4a;font-style:italic;margin:0 0 2mm;">${esc(d.tagline)}</p>
-        <p style="text-align:center;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9a8548;margin:0 0 8mm;">Лятно меню · Summer menu</p>
-        <div style="border:2px solid #d4c49a;border-radius:8px;padding:5mm;max-width:56mm;margin:0 auto 7mm;background:rgba(255,255,255,.65);">
-          <img class="qr-sheet__qr" src="${esc(d.qrDataUrl)}" alt=""/>
-        </div>
-        <p style="text-align:center;font-size:12px;color:#5c5344;line-height:1.55;max-width:158mm;margin:0 auto 11mm;">${esc(d.hintLine)}</p>
-        <div style="border-top:2px solid #e0d4b8;padding-top:5mm;">
-          <p style="text-align:center;font-size:10px;color:#8a7a58;margin:0 0 3mm;">${esc(SERVICE.lineEn)}</p>
-          <p style="text-align:center;font-size:12px;font-weight:600;color:#4a4030;">${esc(SERVICE.brand)} — ${esc(SERVICE.phone)}</p>
-          <p style="text-align:center;font-size:11px;color:#6a5a40;margin-top:2mm;">${esc(SERVICE.email)}</p>
-        </div>
-      </div>`;
-  }
-
-  function buildBistro(d) {
-    return `
-      <div class="qr-sheet" style="background:#f2f0ec;padding:0;">
-        <div style="padding:12mm 14mm 8mm;">
-          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:5mm;opacity:.4;">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M9 2v6M12 2v20M15 2v6M9 8h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          </div>
-          <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:36px;font-weight:700;text-align:center;color:#1e1c1a;margin:0 0 3mm;">${esc(d.nameLine)}</h1>
-          <p style="text-align:center;font-size:13px;color:#5a5650;margin:0 0 8mm;">${esc(d.tagline)}</p>
-          <p style="text-align:center;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#777;margin:0 0 7mm;">Taproom & kitchen · QR menu</p>
-          <div style="background:#fff;border:1px solid #c8c4bc;padding:6mm;max-width:58mm;margin:0 auto 8mm;">
-            <img class="qr-sheet__qr" src="${esc(d.qrDataUrl)}" alt=""/>
-          </div>
-          <p style="text-align:center;font-size:12px;color:#444;line-height:1.5;max-width:155mm;margin:0 auto;">${esc(d.hintLine)}</p>
-        </div>
-        <div style="background:#2a2826;color:#e8e4dc;padding:7mm 14mm;margin-top:8mm;">
-          <p style="text-align:center;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#a09890;margin:0 0 3mm;">Need a digital menu?</p>
-          <p style="text-align:center;font-size:12px;line-height:1.45;margin:0 0 4mm;color:#d0c8c0;">${esc(SERVICE.lineEn)}</p>
-          <p style="text-align:center;font-size:14px;font-weight:700;color:#fff;">${esc(SERVICE.phone)}</p>
-          <p style="text-align:center;font-size:12px;color:#c5bdb5;margin-top:2mm;">${esc(SERVICE.email)}</p>
-          <p style="text-align:center;font-size:10px;color:#8a8580;margin-top:4mm;">${esc(SERVICE.brand)}</p>
-        </div>
-      </div>`;
-  }
-
-  const TEMPLATES = [
-    { id: 'classic', label: 'Classic table tent', labelBg: 'Класическа шаблон — маса', build: buildClassic },
-    { id: 'fine',    label: 'Fine dining',         labelBg: 'Фино гастрономия',       build: buildFine },
-    { id: 'family',  label: 'Family & café',       labelBg: 'Семейно / кафе',         build: buildFamily },
-    { id: 'terrace', label: 'Terrace / summer',    labelBg: 'Тераса / лято',          build: buildTerrace },
-    { id: 'bistro',  label: 'Bistro & pub',        labelBg: 'Бистро / пъб',           build: buildBistro }
-  ];
-
-  let selectedId = 'classic';
-  let lastQrUrl = '';
-  let getRestaurant = null;
-  let getMenuUrlFn  = null;
 
   function gatherCopy() {
     const r = getRestaurant ? getRestaurant() : {};
@@ -207,32 +378,44 @@
   }
 
   function getMenuUrl() {
-    if (typeof getMenuUrlFn === 'function') return getMenuUrlFn();
-    return window.location.href;
+    return typeof getMenuUrlFn === 'function' ? getMenuUrlFn() : window.location.href;
   }
 
   function generateQrDataUrl(url) {
     return new Promise((resolve, reject) => {
       try {
         if (typeof QRious === 'undefined') {
-          reject(new Error('QR library not loaded. Check your connection.'));
+          reject(new Error('QR library not loaded.'));
           return;
         }
         const canvas = document.createElement('canvas');
         new QRious({
-          element:   canvas,
-          value:     url,
-          size:      512,
-          padding:   20,
-          background: '#ffffff',
-          foreground: '#2a2a2a',
-          level:     'M'
+          element: canvas, value: url, size: 512, padding: 20,
+          background: '#ffffff', foreground: '#2a2a2a', level: 'M'
         });
         resolve(canvas.toDataURL('image/png'));
-      } catch (e) {
-        reject(e);
-      }
+      } catch (e) { reject(e); }
     });
+  }
+
+  function previewScaleFor(fmt) {
+    if (fmt.id === 'card') return 0.92;
+    if (fmt.id === 'a6') return 0.58;
+    if (fmt.id === 'a5') return 0.52;
+    if (fmt.id === 'dl') return 0.48;
+    return 0.46;
+  }
+
+  function updatePreviewChrome() {
+    const fmt = getFmt();
+    const zoom = document.querySelector('.qr-preview-zoom');
+    if (zoom) {
+      zoom.style.setProperty('--qr-w-mm', fmt.w + 'mm');
+      zoom.style.setProperty('--qr-h-mm', fmt.h + 'mm');
+      zoom.style.setProperty('--qr-preview-scale', String(previewScaleFor(fmt)));
+    }
+    const urlEl = document.getElementById('qrUrlDisplay');
+    if (urlEl) urlEl.textContent = getMenuUrl();
   }
 
   function renderPreview() {
@@ -240,21 +423,22 @@
     const status = document.getElementById('qrFlyerStatus');
     if (!host) return;
 
-    const url = (document.getElementById('qrMenuUrl') && document.getElementById('qrMenuUrl').value.trim()) || getMenuUrl();
-    lastQrUrl = url;
-
+    const url = getMenuUrl();
+    updatePreviewChrome();
     status.textContent = 'Generating QR…';
 
     generateQrDataUrl(url)
       .then(qrDataUrl => {
         const copy = gatherCopy();
-        const tpl = TEMPLATES.find(t => t.id === selectedId) || TEMPLATES[0];
-        const html = tpl.build({ ...copy, qrDataUrl });
-        host.innerHTML = html;
-        status.textContent = 'Preview updated.';
+        host.innerHTML = buildHtml(copy, qrDataUrl);
+        patchTitleSubtitle(host, copy);
+        applyDesignToDom(host);
+        host.classList.toggle('qr-preview-host--editing', editMode);
+        status.textContent = editMode ? 'Edit mode — adjust the panel below.' : 'Preview updated.';
         track('admin_qr_preview_ok', {
           restaurant_id: String((getRestaurant && getRestaurant().id) || '').slice(0, 40),
-          template_id:   selectedId.slice(0, 40)
+          template_id:   designState.starterId.slice(0, 24),
+          format_id:     designState.formatId.slice(0, 24)
         });
       })
       .catch(e => {
@@ -265,31 +449,35 @@
   }
 
   function printSelected() {
-    const url = (document.getElementById('qrMenuUrl') && document.getElementById('qrMenuUrl').value.trim()) || getMenuUrl();
     track('admin_qr_print', {
       restaurant_id: String((getRestaurant && getRestaurant().id) || '').slice(0, 40),
-      template_id:   selectedId.slice(0, 40)
+      template_id:   designState.starterId.slice(0, 24),
+      format_id:     designState.formatId.slice(0, 24)
     });
+
+    const url = getMenuUrl();
+    const fmt = getFmt();
 
     generateQrDataUrl(url)
       .then(qrDataUrl => {
         const copy = gatherCopy();
-        const tpl = TEMPLATES.find(t => t.id === selectedId) || TEMPLATES[0];
-        const bodyHtml = tpl.build({ ...copy, qrDataUrl });
+        const bodyHtml = buildHtml({ ...copy, qrDataUrl }, qrDataUrl);
         const fontLink = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&family=Inter:wght@400;500;600&family=Nunito:wght@400;600;700&family=Playfair+Display:wght@400;700&display=swap';
         const w = window.open('', '_blank');
         if (!w) {
           showToastLocal('Pop-up blocked — allow pop-ups to print.');
           return;
         }
-        w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>QR Flyer</title>
+        const holder = document.createElement('div');
+        holder.innerHTML = bodyHtml;
+        patchTitleSubtitle(holder, copy);
+        applyDesignToDom(holder);
+        w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>QR media</title>
           <link rel="stylesheet" href="${fontLink}"/>
-          <style>${PRINT_CSS}</style></head><body>${bodyHtml}</body></html>`);
+          <style>${getPrintCss(fmt)}</style></head><body>${holder.innerHTML}</body></html>`);
         w.document.close();
         w.focus();
-        setTimeout(() => {
-          try { w.print(); } catch (_) {}
-        }, 400);
+        setTimeout(() => { try { w.print(); } catch (_) {} }, 450);
       })
       .catch(e => showToastLocal(e.message));
   }
@@ -300,28 +488,324 @@
       t.textContent = msg;
       t.className = 'toast error';
       setTimeout(() => { t.className = 'toast hidden'; }, 4000);
-    } else {
-      alert(msg);
+    } else alert(msg);
+  }
+
+  /* ── localStorage: per-restaurant custom layouts ── */
+  function storeRoot() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    } catch (_) {
+      return {};
     }
   }
 
-  function buildTemplatePicker() {
+  function saveStore(root) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(root));
+    } catch (_) {}
+  }
+
+  function listCustoms() {
+    const rid = (getRestaurant && getRestaurant().id) || '';
+    const root = storeRoot();
+    return Array.isArray(root[rid]) ? root[rid] : [];
+  }
+
+  function persistCustom(entry) {
+    const rid = (getRestaurant && getRestaurant().id) || 'default';
+    const root = storeRoot();
+    if (!Array.isArray(root[rid])) root[rid] = [];
+    const i = root[rid].findIndex(x => x.id === entry.id);
+    if (i >= 0) root[rid][i] = entry;
+    else root[rid].push(entry);
+    saveStore(root);
+  }
+
+  function deleteCustom(id) {
+    const rid = (getRestaurant && getRestaurant().id) || 'default';
+    const root = storeRoot();
+    if (!Array.isArray(root[rid])) return;
+    root[rid] = root[rid].filter(x => x.id !== id);
+    saveStore(root);
+  }
+
+  function snapshotDesign(name) {
+    return {
+      id:        'c_' + Date.now(),
+      name:      name || 'Custom layout',
+      updatedAt: Date.now(),
+      state:     deepClone(designState)
+    };
+  }
+
+  function applySnapshot(entry) {
+    if (!entry || !entry.state) return;
+    designState = deepClone(entry.state);
+    syncEditorControlsFromState();
+    buildStarterPicker();
+    buildPresetBar();
+    if (editMode) {
+      const zs = document.getElementById('qrZoneSelect');
+      if (zs) fillZoneEditor(zs.value);
+    }
+    renderPreview();
+  }
+
+  function syncEditorControlsFromState() {
+    const fmtSel = document.getElementById('qrFormatSelect');
+    const stSel  = document.getElementById('qrStarterSelect');
+    if (fmtSel) fmtSel.value = designState.formatId;
+    if (stSel) stSel.value = designState.starterId;
+
+    const z = document.getElementById('qrZoneSelect') && document.getElementById('qrZoneSelect').value;
+    if (z) fillZoneEditor(z);
+
+    const t1 = document.getElementById('qrTextTitle');
+    const t2 = document.getElementById('qrTextSubtitle');
+    if (t1) t1.value = designState.text.title || '';
+    if (t2) t2.value = designState.text.subtitle || '';
+  }
+
+  function ensureStyleZone(zone) {
+    if (!designState.styles[zone]) designState.styles[zone] = {};
+    return designState.styles[zone];
+  }
+
+  function fillZoneEditor(zone) {
+    const es = getEffectiveStyles()[zone];
+    const panel = document.getElementById('qrZoneFields');
+    if (!panel) return;
+
+    if (zone === 'sheet') {
+      panel.innerHTML = `
+        <div class="qr-field-grid">
+          <label class="qr-mini-label">Background</label>
+          <input type="color" id="qrFldBg" class="field-input" value="${sheetBgToColorInput(es.background)}" />
+          <label class="qr-mini-label">Padding (mm)</label>
+          <input type="number" id="qrFldPad" class="field-input" min="0" max="30" step="0.5" value="${es.paddingMm != null ? es.paddingMm : ''}" placeholder="auto" />
+        </div>`;
+      panel.querySelector('#qrFldBg').addEventListener('input', e => {
+        ensureStyleZone('sheet').background = e.target.value;
+        renderPreview();
+      });
+      panel.querySelector('#qrFldPad').addEventListener('input', e => {
+        const v = e.target.value.trim();
+        ensureStyleZone('sheet').paddingMm = v === '' ? null : parseFloat(v);
+        renderPreview();
+      });
+      return;
+    }
+
+    const ff = es.fontFamily || '';
+    const fs = es.fontSize != null ? es.fontSize : '';
+    let optsHtml = '';
+    FONT_OPTIONS.forEach(o => {
+      const selAttr = o.v === ff ? ' selected' : '';
+      optsHtml += '<option value="' + String(o.v).replace(/"/g, '&quot;') + '"' + selAttr + '>' + esc(o.l) + '</option>';
+    });
+    panel.innerHTML = `
+      <div class="qr-field-grid">
+        <label class="qr-mini-label">Font</label>
+        <select id="qrFldFont" class="field-input field-select">${optsHtml}</select>
+        <label class="qr-mini-label">Size (px)</label>
+        <input type="number" id="qrFldSize" class="field-input" min="8" max="120" step="1" value="${fs === '' ? '' : fs}" placeholder="auto" />
+        <label class="qr-mini-label">Color</label>
+        <input type="color" id="qrFldColor" class="field-input" value="${colorToHex(es.color || '#333333')}" />
+        <label class="qr-mini-label">Align</label>
+        <select id="qrFldAlign" class="field-input field-select">
+          <option value="" ${!es.textAlign ? 'selected' : ''}>— default —</option>
+          <option value="left" ${es.textAlign === 'left' ? 'selected' : ''}>Left</option>
+          <option value="center" ${es.textAlign === 'center' ? 'selected' : ''}>Center</option>
+          <option value="right" ${es.textAlign === 'right' ? 'selected' : ''}>Right</option>
+        </select>
+        <label class="qr-mini-label">Weight</label>
+        <select id="qrFldWeight" class="field-input field-select">
+          <option value="" ${!es.fontWeight ? 'selected' : ''}>— default —</option>
+          <option value="400" ${es.fontWeight === '400' ? 'selected' : ''}>Normal</option>
+          <option value="600" ${es.fontWeight === '600' ? 'selected' : ''}>Semi-bold</option>
+          <option value="700" ${es.fontWeight === '700' ? 'selected' : ''}>Bold</option>
+        </select>
+      </div>`;
+
+    const zcfg = ensureStyleZone(zone);
+    const bind = (id, key, parse) => {
+      const el = panel.querySelector(id);
+      if (!el) return;
+      el.addEventListener('input', () => {
+        let v = el.value;
+        if (parse === 'num') v = v === '' ? null : parseFloat(v);
+        if (v === '' || v == null) delete zcfg[key];
+        else zcfg[key] = v;
+        renderPreview();
+      });
+    };
+    bind('#qrFldFont', 'fontFamily');
+    bind('#qrFldSize', 'fontSize', 'num');
+    bind('#qrFldColor', 'color');
+    bind('#qrFldAlign', 'textAlign');
+    bind('#qrFldWeight', 'fontWeight');
+  }
+
+  function colorToHex(c) {
+    if (!c || typeof c !== 'string' || !c.startsWith('#') || c.includes('gradient')) return '#333333';
+    if (c.length === 4) return '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+    return c.slice(0, 7);
+  }
+
+  function sheetBgToColorInput(c) {
+    if (!c || typeof c !== 'string' || c.includes('gradient')) return '#f4f2eb';
+    return colorToHex(c) === '#333333' ? '#f4f2eb' : colorToHex(c);
+  }
+
+  function buildStarterPicker() {
     const wrap = document.getElementById('qrTemplatePicker');
     if (!wrap) return;
     wrap.innerHTML = '';
-    TEMPLATES.forEach(t => {
+    STARTERS.forEach(t => {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'qr-tpl-card' + (t.id === selectedId ? ' qr-tpl-card--active' : '');
+      btn.className = 'qr-tpl-chip' + (t.id === designState.starterId ? ' qr-tpl-chip--active' : '');
       btn.dataset.tpl = t.id;
-      btn.innerHTML = `<span class="qr-tpl-card__name">${esc(t.label)}</span><span class="qr-tpl-card__bg">${esc(t.labelBg)}</span>`;
+      btn.innerHTML = `<span>${esc(t.label)}</span>`;
+      btn.title = t.labelBg;
       btn.addEventListener('click', () => {
-        selectedId = t.id;
-        wrap.querySelectorAll('.qr-tpl-card').forEach(b => b.classList.toggle('qr-tpl-card--active', b.dataset.tpl === selectedId));
+        designState.starterId = t.id;
         track('admin_qr_template_select', { template_id: t.id.slice(0, 40) });
+        buildStarterPicker();
+        buildPresetBar();
         renderPreview();
       });
       wrap.appendChild(btn);
+    });
+  }
+
+  function buildPresetBar() {
+    const bar = document.getElementById('qrPresetBar');
+    if (!bar) return;
+    bar.innerHTML = '';
+    PRESETS.forEach(p => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'qr-preset-chip';
+      b.textContent = p.label;
+      b.addEventListener('click', () => {
+        designState.starterId = p.starterId;
+        designState.formatId = p.formatId;
+        syncEditorControlsFromState();
+        buildStarterPicker();
+        buildPresetBar();
+        renderPreview();
+        track('admin_qr_preset', { preset: p.id });
+      });
+      bar.appendChild(b);
+    });
+  }
+
+  function populateSavedSelect() {
+    const sel = document.getElementById('qrSavedSelect');
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Load saved —</option>';
+    listCustoms().forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id;
+      o.textContent = c.name;
+      sel.appendChild(o);
+    });
+    if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+  }
+
+  function wireEditorPanel() {
+    const fmtSel = document.getElementById('qrFormatSelect');
+    const stSel  = document.getElementById('qrStarterSelect');
+    const zoneSel = document.getElementById('qrZoneSelect');
+
+    if (fmtSel && !fmtSel.dataset.bound) {
+      fmtSel.dataset.bound = '1';
+      fmtSel.innerHTML = Object.values(FORMATS).map(f =>
+        `<option value="${esc(f.id)}">${esc(f.label)} (${f.w}×${f.h} mm)</option>`).join('');
+      fmtSel.addEventListener('change', () => {
+        designState.formatId = fmtSel.value;
+        renderPreview();
+        track('admin_qr_format', { format_id: fmtSel.value.slice(0, 24) });
+      });
+    }
+
+    if (stSel && !stSel.dataset.bound) {
+      stSel.dataset.bound = '1';
+      stSel.innerHTML = STARTERS.map(s => `<option value="${esc(s.id)}">${esc(s.label)}</option>`).join('');
+      stSel.addEventListener('change', () => {
+        designState.starterId = stSel.value;
+        buildStarterPicker();
+        buildPresetBar();
+        renderPreview();
+      });
+    }
+
+    if (zoneSel && !zoneSel.dataset.bound) {
+      zoneSel.dataset.bound = '1';
+      zoneSel.innerHTML = ZONES.map(z => `<option value="${esc(z.id)}">${esc(z.label)}</option>`).join('');
+      zoneSel.addEventListener('change', () => fillZoneEditor(zoneSel.value));
+    }
+
+    document.getElementById('qrBtnEditToggle')?.addEventListener('click', () => {
+      editMode = !editMode;
+      const p = document.getElementById('qrEditorPanel');
+      const b = document.getElementById('qrBtnEditToggle');
+      if (p) p.classList.toggle('hidden', !editMode);
+      if (b) b.textContent = editMode ? 'Done editing' : 'Edit layout';
+      renderPreview();
+      if (editMode) fillZoneEditor(zoneSel ? zoneSel.value : 'title');
+      track('admin_qr_edit_toggle', { on: editMode ? 1 : 0 });
+    });
+
+    document.getElementById('qrTextTitle')?.addEventListener('input', e => {
+      designState.text.title = e.target.value;
+      renderPreview();
+    });
+    document.getElementById('qrTextSubtitle')?.addEventListener('input', e => {
+      designState.text.subtitle = e.target.value;
+      renderPreview();
+    });
+
+    document.getElementById('qrBtnSaveCustom')?.addEventListener('click', () => {
+      const name = (document.getElementById('qrCustomName')?.value || '').trim() || 'My layout';
+      const entry = snapshotDesign(name);
+      persistCustom(entry);
+      populateSavedSelect();
+      document.getElementById('qrSavedSelect').value = entry.id;
+      const t = document.getElementById('toast');
+      if (t) {
+        t.textContent = 'Saved “' + name + '” on this device.';
+        t.className = 'toast success';
+        setTimeout(() => { t.className = 'toast hidden'; }, 3200);
+      }
+      track('admin_qr_custom_save', { name: name.slice(0, 60) });
+    });
+
+    document.getElementById('qrSavedSelect')?.addEventListener('change', e => {
+      const id = e.target.value;
+      if (!id) return;
+      const list = listCustoms();
+      const found = list.find(x => x.id === id);
+      if (found) applySnapshot(found);
+      track('admin_qr_custom_load', {});
+    });
+
+    document.getElementById('qrBtnDeleteCustom')?.addEventListener('click', () => {
+      const sel = document.getElementById('qrSavedSelect');
+      const id = sel && sel.value;
+      if (!id) return;
+      deleteCustom(id);
+      populateSavedSelect();
+      showToastLocal('Layout removed from this device.');
+      track('admin_qr_custom_delete', {});
+    });
+
+    document.getElementById('qrBtnRefresh')?.addEventListener('click', () => {
+      track('admin_qr_regenerate', {});
+      renderPreview();
     });
   }
 
@@ -329,40 +813,26 @@
     getRestaurant = opts.getRestaurant;
     getMenuUrlFn  = opts.getMenuUrl;
 
-    const urlInput = document.getElementById('qrMenuUrl');
-    if (urlInput && !urlInput.dataset.bound) {
-      urlInput.dataset.bound = '1';
-      urlInput.addEventListener('change', () => {
-        track('admin_qr_url_change', {});
-        renderPreview();
-      });
-    }
+    wireEditorPanel();
+    syncEditorControlsFromState();
+    buildStarterPicker();
+    buildPresetBar();
+    populateSavedSelect();
 
-    const btnUpd = document.getElementById('qrBtnUpdate');
     const btnPrt = document.getElementById('qrBtnPrint');
-    if (btnUpd && !btnUpd.dataset.bound) {
-      btnUpd.dataset.bound = '1';
-      btnUpd.addEventListener('click', () => {
-        track('admin_qr_regenerate', {});
-        renderPreview();
-      });
-    }
     if (btnPrt && !btnPrt.dataset.bound) {
       btnPrt.dataset.bound = '1';
       btnPrt.addEventListener('click', printSelected);
     }
 
-    buildTemplatePicker();
     renderPreview();
   }
 
   function refresh() {
-    const urlInput = document.getElementById('qrMenuUrl');
-    if (urlInput && getMenuUrlFn) {
-      urlInput.value = getMenuUrlFn();
-    }
+    populateSavedSelect();
+    updatePreviewChrome();
     renderPreview();
   }
 
-  window.AdminQrFlyers = { init, refresh, TEMPLATES };
+  window.AdminQrFlyers = { init, refresh, STARTERS, FORMATS, PRESETS };
 })(window);

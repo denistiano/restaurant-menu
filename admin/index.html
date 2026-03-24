@@ -104,7 +104,7 @@
       <button class="editor-tab active" data-tab="info">Restaurant</button>
       <button class="editor-tab" data-tab="config">Settings</button>
       <button class="editor-tab" data-tab="categories">Menu</button>
-      <button class="editor-tab" data-tab="qr">QR flyers</button>
+      <button class="editor-tab" data-tab="qr">QR media</button>
     </nav>
 
     <!-- Panels -->
@@ -254,33 +254,75 @@
         <div class="categories-list" id="categoriesList"></div>
       </section>
 
-      <!-- QR FLYERS panel -->
+      <!-- QR MEDIA panel -->
       <section class="editor-panel hidden" id="panel-qr">
-        <div class="form-section">
-          <h3 class="form-section__title">Printable QR flyers (A4)</h3>
-          <p class="form-section__desc">Choose a template, check the preview, then print. The QR opens your live menu URL. Text uses your restaurant name and description from the <strong>Restaurant</strong> tab (by default language).</p>
-          <div class="field-row">
-            <label class="field-label">Menu URL (encoded in QR)</label>
-            <input class="field-input" id="qrMenuUrl" type="url" placeholder="https://…" autocomplete="off" spellcheck="false" />
+        <div class="qr-media-hero">
+          <div class="qr-preview-outer qr-preview-outer--hero">
+            <div class="qr-hero-toolbar">
+              <button type="button" class="btn-qr-secondary" id="qrBtnEditToggle">Edit layout</button>
+              <button type="button" class="btn-qr-secondary" id="qrBtnRefresh">Refresh QR</button>
+              <button type="button" class="btn-qr-primary" id="qrBtnPrint">Print</button>
+            </div>
+            <p class="qr-preview-hero__label">Preview <span class="qr-preview-hero__hint">(scaled)</span></p>
+            <div class="qr-preview-scaler qr-preview-scaler--hero" id="qrPreviewScaler">
+              <div class="qr-preview-zoom" aria-hidden="true">
+                <div class="qr-preview-host" id="qrPreviewHost"></div>
+              </div>
+            </div>
+            <p class="qr-url-note">Menu link in QR: <code id="qrUrlDisplay" class="qr-url-code"></code></p>
           </div>
-          <div class="field-row">
-            <label class="field-label">Template</label>
-            <div class="qr-tpl-picker" id="qrTemplatePicker"></div>
-          </div>
-          <div class="qr-flyer__actions">
-            <button type="button" class="btn-qr-secondary" id="qrBtnUpdate">Refresh preview</button>
-            <button type="button" class="btn-qr-primary" id="qrBtnPrint">Print A4</button>
-          </div>
-          <p class="qr-flyer__status" id="qrFlyerStatus" aria-live="polite"></p>
-        </div>
-        <div class="qr-preview-outer">
-          <p class="qr-preview-outer__label">Preview (scaled — not actual print size)</p>
-          <div class="qr-preview-scaler" id="qrPreviewScaler">
-            <div class="qr-preview-zoom" aria-hidden="true">
-              <div class="qr-preview-host" id="qrPreviewHost"></div>
+
+          <div id="qrEditorPanel" class="qr-editor-panel hidden">
+            <h4 class="qr-editor-panel__title">Layout editor</h4>
+            <p class="qr-editor-panel__hint">Pick a zone, then adjust typography or page background. Title/subtitle overrides below apply only to this media (not your saved restaurant profile).</p>
+            <div class="qr-editor-grid">
+              <div class="field-row">
+                <label class="field-label">Paper size</label>
+                <select class="field-input field-select" id="qrFormatSelect"></select>
+              </div>
+              <div class="field-row">
+                <label class="field-label">Starter look</label>
+                <select class="field-input field-select" id="qrStarterSelect"></select>
+              </div>
+              <div class="field-row">
+                <label class="field-label">Edit zone</label>
+                <select class="field-input field-select" id="qrZoneSelect"></select>
+              </div>
+            </div>
+            <div id="qrZoneFields" class="qr-zone-fields"></div>
+            <div class="qr-text-overrides">
+              <div class="field-row">
+                <label class="field-label">Title override <span class="field-label__hint">optional</span></label>
+                <input type="text" class="field-input" id="qrTextTitle" placeholder="Leave empty to use restaurant name" autocomplete="off" />
+              </div>
+              <div class="field-row">
+                <label class="field-label">Subtitle override <span class="field-label__hint">optional</span></label>
+                <input type="text" class="field-input" id="qrTextSubtitle" placeholder="Leave empty to use tagline from profile" autocomplete="off" />
+              </div>
             </div>
           </div>
         </div>
+
+        <details class="qr-media-details">
+          <summary class="qr-media-details__summary">Quick starters <span class="qr-media-details__meta">presets by size</span></summary>
+          <div class="qr-preset-bar" id="qrPresetBar"></div>
+          <p class="qr-media-details__hint">Or pick a base look (you can still change paper size above).</p>
+          <div class="qr-tpl-picker qr-tpl-picker--compact" id="qrTemplatePicker"></div>
+        </details>
+
+        <details class="qr-media-details">
+          <summary class="qr-media-details__summary">Saved on this device <span class="qr-media-details__meta">per restaurant</span></summary>
+          <div class="qr-saved-row">
+            <select class="field-input field-select qr-saved-select" id="qrSavedSelect">
+              <option value="">— Load saved —</option>
+            </select>
+            <input type="text" class="field-input qr-saved-name" id="qrCustomName" placeholder="Name for save…" maxlength="80" autocomplete="off" />
+            <button type="button" class="btn-qr-secondary" id="qrBtnSaveCustom">Save current</button>
+            <button type="button" class="btn-qr-danger" id="qrBtnDeleteCustom">Delete</button>
+          </div>
+        </details>
+
+        <p class="qr-flyer__status" id="qrFlyerStatus" aria-live="polite"></p>
       </section>
 
     </div><!-- /editor-body -->
