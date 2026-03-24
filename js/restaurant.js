@@ -430,15 +430,27 @@
       imgWrap.style.display = 'none';
     }
 
-    const tagsHtml = (item.tags && item.tags.length)
+    const config = data?.restaurant?.menu?.config || {};
+
+    const tagsHtml = (config.show_tags !== false && item.tags && item.tags.length)
       ? `<div class="item-modal__tags">${item.tags.map(tag =>
           `<span class="item-modal__tag">${esc(t(tag))}</span>`
         ).join('')}</div>`
       : '';
 
-    const descText = item.description ? t(item.description) : '';
+    const descText = (config.show_description !== false && item.description) ? t(item.description) : '';
     const descHtml = descText
       ? `<p class="item-modal__desc">${esc(descText)}</p>`
+      : '';
+
+    const ingredientsHtml = (config.show_ingredients && item.ingredients && item.ingredients.length)
+      ? `<div class="item-modal__ingredients">
+           <span class="item-modal__ingredients-label"
+                 data-en="Ingredients" data-bg="Съставки">${currentLang === 'bg' ? 'Съставки' : 'Ingredients'}</span>
+           <div class="item-modal__ingredients-list">${item.ingredients.map(ing =>
+             `<span class="item-modal__ingredient">${esc(t(ing))}</span>`
+           ).join('')}</div>
+         </div>`
       : '';
 
     const priceHtml = (item.price !== undefined && item.price !== null)
@@ -457,6 +469,7 @@
           data-en="${esc(item.name.en || '')}"
           data-bg="${esc(item.name.bg || item.name.en || '')}">${esc(t(item.name))}</h2>
       ${descHtml}
+      ${ingredientsHtml}
       <div class="item-modal__footer">
         ${priceHtml}
         ${unavailHtml}

@@ -981,6 +981,12 @@
   /**
    * Wires up the smart autocomplete combobox for tags or ingredients on an item block.
    * field: 'tags' | 'ingredients'
+   *
+   * UX flow:
+   *  - Typing shows a dropdown of matching dict entries (search in EN or BG).
+   *  - Selecting an existing entry adds it immediately (both langs auto-filled).
+   *  - Typing something not in the dict reveals a second BG input so the user
+   *    can optionally provide the translation before hitting "+ Add".
    */
   function wireEnumCombobox(block, field, item, catIdx, itemIdx) {
     const combobox = block.querySelector(`.enum-combobox[data-enum="${field}"]`);
@@ -989,8 +995,18 @@
     const input    = combobox.querySelector('.enum-combobox__input');
     const addBtn   = combobox.querySelector('.enum-combobox__add-btn');
     const dropdown = combobox.querySelector('.enum-combobox__dropdown');
+    // BG translation row — shown only for brand-new entries
+    const bgRow    = combobox.querySelector('.enum-combobox__bg-row');
+    const bgInput  = combobox.querySelector('.enum-combobox__bg-input');
 
-    let highlightIdx = -1;
+    let highlightIdx  = -1;
+    let isNewEntry    = false; // true when typed text doesn't match any dict entry
+
+    function setNewEntryMode(on) {
+      isNewEntry = on;
+      if (bgRow) bgRow.classList.toggle('hidden', !on);
+      if (!on && bgInput) bgInput.value = '';
+    }
 
     function renderDropdown(results) {
       dropdown.innerHTML = '';
@@ -1032,12 +1048,13 @@
       const already = item[field].some(
         e => (e.en || '').toLowerCase() === (entry.en || '').toLowerCase()
       );
-      if (already) { input.value = ''; closeDropdown(); return; }
+      if (already) { input.value = ''; setNewEntryMode(false); closeDropdown(); return; }
 
       // Ensure in dict and get canonical entry (may backfill bg)
       const canonical = ensureInDict(field, entry);
       item[field].push({ en: canonical.en, bg: canonical.bg || canonical.en });
       input.value = '';
+      setNewEntryMode(false);
       closeDropdown();
       if (field === 'tags') {
         renderItemTags(block, item, catIdx, itemIdx);
@@ -1060,8 +1077,9 @@
       if (match) {
         selectEntry(match);
       } else {
-        // New entry — en = raw, bg = '' (user can fill later)
-        selectEntry({ en: raw, bg: '' });
+        // New entry — use bgInput value if provided
+        const bgVal = bgInput ? bgInput.value.trim() : '';
+        selectEntry({ en: raw, bg: bgVal });
       }
     }
 
@@ -1072,8 +1090,20 @@
     }
 
     input.addEventListener('input', () => {
-      const results = searchEnums(field, input.value);
+      const raw = input.value.trim();
+      const results = searchEnums(field, raw);
       renderDropdown(results);
+
+      // Show BG input only when text is non-empty AND not an exact dict match
+      if (raw) {
+        const exactMatch = getSortedEnums(field).some(
+          e => (e.en || '').toLowerCase() === raw.toLowerCase() ||
+               (e.bg || '').toLowerCase() === raw.toLowerCase()
+        );
+        setNewEntryMode(!exactMatch);
+      } else {
+        setNewEntryMode(false);
+      }
     });
 
     input.addEventListener('focus', () => {
@@ -1105,6 +1135,12 @@
       // Small delay so mousedown on dropdown item fires first
       setTimeout(closeDropdown, 150);
     });
+
+    if (bgInput) {
+      bgInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); addFromInput(); }
+      });
+    }
 
     addBtn.addEventListener('click', addFromInput);
   }
@@ -1183,6 +1219,9 @@
                   <input type="text" class="enum-combobox__input" placeholder="Search or add tag…" autocomplete="off" />
                   <button class="enum-combobox__add-btn" type="button">+ Add</button>
                 </div>
+                <div class="enum-combobox__bg-row hidden">
+                  <input type="text" class="enum-combobox__bg-input" placeholder="БГ превод (незадължително)" autocomplete="off" />
+                </div>
                 <ul class="enum-combobox__dropdown hidden"></ul>
               </div>
             </div>
@@ -1195,6 +1234,9 @@
                 <div class="enum-combobox__input-row">
                   <input type="text" class="enum-combobox__input" placeholder="Search or add ingredient…" autocomplete="off" />
                   <button class="enum-combobox__add-btn" type="button">+ Add</button>
+                </div>
+                <div class="enum-combobox__bg-row hidden">
+                  <input type="text" class="enum-combobox__bg-input" placeholder="БГ превод (незадължително)" autocomplete="off" />
                 </div>
                 <ul class="enum-combobox__dropdown hidden"></ul>
               </div>

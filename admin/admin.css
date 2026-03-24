@@ -663,6 +663,21 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 }
 .enum-combobox__add-btn:hover { color: var(--text); border-color: var(--border-2); }
 
+.enum-combobox__bg-row {
+  margin-top: 5px;
+}
+.enum-combobox__bg-row.hidden { display: none; }
+.enum-combobox__bg-input {
+  width: 100%; padding: 6px 10px; font-size: 12px;
+  background: var(--surface-2);
+  border: 1px solid rgba(196,149,90,0.3);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  transition: border-color var(--transition);
+}
+.enum-combobox__bg-input:focus { border-color: rgba(196,149,90,0.6); outline: none; }
+.enum-combobox__bg-input::placeholder { color: var(--muted); }
+
 .enum-combobox__dropdown {
   position: absolute; top: calc(100% + 4px); left: 0; right: 0;
   background: var(--surface);
