@@ -203,7 +203,8 @@
             if (titleEl) titleEl.appendChild(badge);
           }
           if (s) {
-            badge.textContent = currentLang === 'bg' ? 'Сервира се сега' : 'Now serving';
+            badge.textContent = currentLang === 'bg' ? 'Сервира се между' : 'Serving between';
+            badge.textContent += ` ${cat.schedule.start_time} - ${cat.schedule.end_time}`;
             badge.dataset.active = '1';
           } else {
             const st = cat.schedule.start_time || '', et = cat.schedule.end_time || '';
