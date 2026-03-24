@@ -560,10 +560,7 @@
       tzEl.value = cfg.timezone || 'Europe/Sofia';
       if (!tzEl.value) tzEl.value = 'Europe/Sofia'; // fallback if not in list
     }
-    const arEl = document.getElementById('cfgAutoReorder');
-    if (arEl) arEl.checked = cfg.timed_sections_auto_reorder !== false;
-
-    ['cfgPrice','cfgDesc','cfgTags','cfgIngredients','cfgAllergens','cfgTimezone','cfgAutoReorder']
+    ['cfgPrice','cfgDesc','cfgTags','cfgIngredients','cfgAllergens','cfgTimezone']
       .forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -1125,8 +1122,6 @@
     r.menu.config.show_allergens   = document.getElementById('cfgAllergens').checked;
     const tzEl = document.getElementById('cfgTimezone');
     if (tzEl) r.menu.config.timezone = tzEl.value || 'Europe/Sofia';
-    const arEl = document.getElementById('cfgAutoReorder');
-    if (arEl) r.menu.config.timed_sections_auto_reorder = arEl.checked;
     // Categories and items are already mutated in-place
   }
 

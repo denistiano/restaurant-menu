@@ -134,23 +134,20 @@
   }
 
   /**
-   * Returns categories sorted so active timed sections float to front
-   * and inactive timed sections sink to back, based on per-category settings.
-   * The global `timed_sections_auto_reorder` acts as a master on/off switch.
+   * Returns categories sorted so timed sections float to top / sink to bottom
+   * only when their per-section behaviour toggles allow it.
    */
   function getSortedCategories(categories) {
-    const cfg        = (data && data.restaurant.menu.config) || {};
-    const tz         = cfg.timezone || 'Europe/Sofia';
-    const masterAuto = cfg.timed_sections_auto_reorder !== false; // default true
-    if (!masterAuto) return categories;
+    const cfg = (data && data.restaurant.menu.config) || {};
+    const tz  = cfg.timezone || 'Europe/Sofia';
 
     const active = [], normal = [], inactive = [];
     categories.forEach(cat => {
-      const s           = isTimedSectionActive(cat, tz);
-      const moveTop     = !cat.schedule || cat.schedule.move_active_top    !== false;
-      const moveBottom  = !cat.schedule || cat.schedule.move_inactive_bottom !== false;
+      const s          = isTimedSectionActive(cat, tz);
+      const moveTop    = cat.schedule && cat.schedule.enabled && cat.schedule.move_active_top !== false;
+      const moveBottom = cat.schedule && cat.schedule.enabled && cat.schedule.move_inactive_bottom !== false;
 
-      if (s === true  && moveTop)    active.push(cat);
+      if (s === true && moveTop) active.push(cat);
       else if (s === false && moveBottom) inactive.push(cat);
       else normal.push(cat);
     });
@@ -163,12 +160,11 @@
    */
   function applyTimedStates() {
     if (!data) return;
-    const cfg         = data.restaurant.menu.config || {};
-    const tz          = cfg.timezone || 'Europe/Sofia';
-    const autoReorder = cfg.timed_sections_auto_reorder !== false;
-    const categories  = data.restaurant.menu.categories;
+    const cfg        = data.restaurant.menu.config || {};
+    const tz         = cfg.timezone || 'Europe/Sofia';
+    const categories = data.restaurant.menu.categories;
 
-    /* ── Update tab visual state & reorder tabs ── */
+    /* ── Update tab visual state & reorder tabs (per-section move rules) ── */
     const tabsContainer = document.getElementById('categoryTabs');
     if (tabsContainer) {
       categories.forEach(cat => {
@@ -178,15 +174,13 @@
         tab.classList.toggle('timed-active',   s === true);
         tab.classList.toggle('timed-inactive', s === false);
       });
-      if (autoReorder) {
-        const sorted = getSortedCategories(categories);
-        const allBtn = tabsContainer.querySelector('[data-cat="all"]');
-        sorted.forEach(cat => {
-          const tab = tabsContainer.querySelector(`[data-cat="${cat.id}"]`);
-          if (tab) tabsContainer.appendChild(tab);
-        });
-        if (allBtn) tabsContainer.insertBefore(allBtn, tabsContainer.firstChild);
-      }
+      const sorted = getSortedCategories(categories);
+      const allBtn = tabsContainer.querySelector('[data-cat="all"]');
+      sorted.forEach(cat => {
+        const tab = tabsContainer.querySelector(`[data-cat="${cat.id}"]`);
+        if (tab) tabsContainer.appendChild(tab);
+      });
+      if (allBtn) tabsContainer.insertBefore(allBtn, tabsContainer.firstChild);
     }
 
     /* ── Update section visual state, badges & reorder sections ── */
@@ -221,13 +215,11 @@
         }
       });
 
-      if (autoReorder) {
-        const sorted = getSortedCategories(categories);
-        sorted.forEach(cat => {
-          const section = document.getElementById(`cat-${cat.id}`);
-          if (section) sectionsContainer.appendChild(section);
-        });
-      }
+      const sorted = getSortedCategories(categories);
+      sorted.forEach(cat => {
+        const section = document.getElementById(`cat-${cat.id}`);
+        if (section) sectionsContainer.appendChild(section);
+      });
     }
   }
 
