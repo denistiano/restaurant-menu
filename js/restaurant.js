@@ -135,19 +135,23 @@
 
   /**
    * Returns categories sorted so active timed sections float to front
-   * and inactive timed sections sink to back (when auto_reorder is on).
+   * and inactive timed sections sink to back, based on per-category settings.
+   * The global `timed_sections_auto_reorder` acts as a master on/off switch.
    */
   function getSortedCategories(categories) {
-    const cfg         = (data && data.restaurant.menu.config) || {};
-    const tz          = cfg.timezone || 'Europe/Sofia';
-    const autoReorder = cfg.timed_sections_auto_reorder !== false;
-    if (!autoReorder) return categories;
+    const cfg        = (data && data.restaurant.menu.config) || {};
+    const tz         = cfg.timezone || 'Europe/Sofia';
+    const masterAuto = cfg.timed_sections_auto_reorder !== false; // default true
+    if (!masterAuto) return categories;
 
     const active = [], normal = [], inactive = [];
     categories.forEach(cat => {
-      const s = isTimedSectionActive(cat, tz);
-      if (s === true)  active.push(cat);
-      else if (s === false) inactive.push(cat);
+      const s           = isTimedSectionActive(cat, tz);
+      const moveTop     = !cat.schedule || cat.schedule.move_active_top    !== false;
+      const moveBottom  = !cat.schedule || cat.schedule.move_inactive_bottom !== false;
+
+      if (s === true  && moveTop)    active.push(cat);
+      else if (s === false && moveBottom) inactive.push(cat);
       else normal.push(cat);
     });
     return [...active, ...normal, ...inactive];

@@ -719,6 +719,21 @@
                 <input type="time" class="cat-schedule-end field-input" value="${esc((cat.schedule && cat.schedule.end_time) || '14:00')}" />
               </div>
             </div>
+            <div class="cat-schedule-behavior">
+              <span class="cat-schedule-behavior-label">Behaviour</span>
+              <label class="cat-behavior-row">
+                <input type="checkbox" class="cat-schedule-cb cat-schedule-active-top"
+                  ${(cat.schedule && cat.schedule.move_active_top !== false) ? 'checked' : ''} />
+                <span class="toggle-switch"></span>
+                <span>Move to top when currently active</span>
+              </label>
+              <label class="cat-behavior-row">
+                <input type="checkbox" class="cat-schedule-cb cat-schedule-inactive-bottom"
+                  ${(cat.schedule && cat.schedule.move_inactive_bottom !== false) ? 'checked' : ''} />
+                <span class="toggle-switch"></span>
+                <span>Move to bottom when currently inactive</span>
+              </label>
+            </div>
             <span class="cat-schedule-status"></span>
           </div>
         </div>
@@ -776,6 +791,9 @@
         statusEl.dataset.active = active ? '1' : '0';
       }
 
+      const activeTopCb      = block.querySelector('.cat-schedule-active-top');
+      const inactiveBottomCb = block.querySelector('.cat-schedule-inactive-bottom');
+
       scheduleCb.addEventListener('change', () => {
         if (!cat.schedule) cat.schedule = { start_time: '12:00', end_time: '14:00' };
         cat.schedule.enabled = scheduleCb.checked;
@@ -795,6 +813,20 @@
         updateStatus();
         setDirty(true);
       });
+      if (activeTopCb) {
+        activeTopCb.addEventListener('change', () => {
+          if (!cat.schedule) cat.schedule = { enabled: true };
+          cat.schedule.move_active_top = activeTopCb.checked;
+          setDirty(true);
+        });
+      }
+      if (inactiveBottomCb) {
+        inactiveBottomCb.addEventListener('change', () => {
+          if (!cat.schedule) cat.schedule = { enabled: true };
+          cat.schedule.move_inactive_bottom = inactiveBottomCb.checked;
+          setDirty(true);
+        });
+      }
       updateStatus();
     })();
 
