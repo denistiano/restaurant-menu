@@ -84,6 +84,14 @@
     });
   }
 
+  /* ── Restaurant card image: local path or absolute URL ───── */
+  function resolveLandingImageUrl(r) {
+    const raw = (r.image || '').trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('//')) return raw;
+    return `resources/${r.id}/${raw}`;
+  }
+
   /* ============================================================
      LANGUAGE
      ============================================================ */
@@ -134,7 +142,7 @@
     }
 
     restaurants.forEach((r, index) => {
-      const imgSrc    = r.image ? `resources/${r.id}/${r.image}` : null;
+      const imgSrc = resolveLandingImageUrl(r);
       const isFeatured = index === 0;
 
       const card = document.createElement('a');
