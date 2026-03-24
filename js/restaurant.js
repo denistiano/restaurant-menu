@@ -535,6 +535,15 @@
     });
   }
 
+  /** Tab / share title: {Name} - {Description} - Menu (localized Menu/Меню). */
+  function buildTabTitle(restaurant) {
+    const name = t(restaurant.name);
+    const desc = t(restaurant.description).trim();
+    const menuWord = currentLang === 'bg' ? 'Меню' : 'Menu';
+    if (desc) return `${name} - ${desc} - ${menuWord}`;
+    return `${name} - ${menuWord}`;
+  }
+
   /**
    * Keep <title>, meta description, Open Graph, Twitter, canonical, and favicon
    * aligned with live menu JSON + current language (static HTML is the crawler baseline).
@@ -543,8 +552,7 @@
     const seo = window.__SEO__;
     if (!seo || !restaurant) return;
 
-    const siteLabel = currentLang === 'bg' ? (seo.siteNameBg || seo.siteName) : seo.siteName;
-    const fullTitle = `${t(restaurant.name)} — ${siteLabel}`;
+    const fullTitle = buildTabTitle(restaurant);
     document.title = fullTitle;
 
     const desc = t(restaurant.description).trim();
@@ -1081,7 +1089,7 @@
   function updatePageTitle() {
     if (!data) return;
     if (window.__SEO__) syncRestaurantSeo(data.restaurant);
-    else document.title = t(data.restaurant.name);
+    else document.title = buildTabTitle(data.restaurant);
     const nameEl = document.getElementById('restaurantName');
     if (nameEl) nameEl.textContent = t(data.restaurant.name);
     const taglineEl = document.getElementById('restaurantTagline');

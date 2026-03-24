@@ -90,7 +90,11 @@ def main() -> int:
         html_lang = "bg" if default_lang == "bg" else "en"
         title_primary = title_bg if default_lang == "bg" else title_en
         desc_primary = desc_bg if default_lang == "bg" else desc_en
-        page_title = f"{title_primary} — {site_name_bg if default_lang == 'bg' else site_name}"
+        menu_suffix = "Меню" if default_lang == "bg" else "Menu"
+        if desc_primary:
+            page_title = f"{title_primary} - {desc_primary} - {menu_suffix}"
+        else:
+            page_title = f"{title_primary} - {menu_suffix}"
 
         image_href = resolve_asset_href(rid, r.get("image"))
         logo_raw = r.get("logo")
@@ -219,7 +223,7 @@ def main() -> int:
 
         og_url = canonical or ""
         og_block = f"""  <meta property="og:type" content="website" />
-  <meta property="og:title" content="{html_lib.escape(title_primary)}" />
+  <meta property="og:title" content="{html_lib.escape(page_title)}" />
   <meta property="og:description" content="{html_lib.escape(desc_primary)}" />
   <meta property="og:site_name" content="{html_lib.escape(site_name)}" />
   <meta property="og:locale" content="{html_lib.escape(og_locale)}" />
@@ -235,7 +239,7 @@ def main() -> int:
 """
         if twitter_site:
             tw_block += f'  <meta name="twitter:site" content="{html_lib.escape(twitter_site)}" />\n'
-        tw_block += f'  <meta name="twitter:title" content="{html_lib.escape(title_primary)}" />\n'
+        tw_block += f'  <meta name="twitter:title" content="{html_lib.escape(page_title)}" />\n'
         tw_block += f'  <meta name="twitter:description" content="{html_lib.escape(desc_primary)}" />\n'
         if og_image and str(og_image).startswith("http"):
             tw_block += f'  <meta name="twitter:image" content="{html_lib.escape(str(og_image))}" />\n'
@@ -252,7 +256,7 @@ def main() -> int:
             + kw_block
             + gsv_block
             + f'  <meta name="theme-color" content="{html_lib.escape(theme_color)}" />\n'
-            + f'  <meta name="apple-mobile-web-app-title" content="{html_lib.escape(title_primary[:64])}" />\n'
+            + f'  <meta name="apple-mobile-web-app-title" content="{html_lib.escape(page_title[:64])}" />\n'
             + og_block
             + tw_block
             + jsonld_block
