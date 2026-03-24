@@ -886,6 +886,245 @@
     });
   }
 
+  /* ── ENUM DICTIONARY HELPERS ─────────────────────────────── */
+
+  /**
+   * Returns the menu.enums object, creating it if absent.
+   */
+  function getEnums() {
+    const menu = menuData.restaurant.menu;
+    if (!menu.enums) menu.enums = { tags: [], ingredients: [] };
+    if (!menu.enums.tags) menu.enums.tags = [];
+    if (!menu.enums.ingredients) menu.enums.ingredients = [];
+    return menu.enums;
+  }
+
+  /**
+   * Counts how many items across all categories use each enum entry.
+   * Returns Map<en_value, count>.
+   */
+  function countEnumUsage(field) {
+    const counts = new Map();
+    (menuData.restaurant.menu.categories || []).forEach(cat => {
+      (cat.items || []).forEach(item => {
+        ((item[field]) || []).forEach(e => {
+          const key = (e.en || '').toLowerCase();
+          if (key) counts.set(key, (counts.get(key) || 0) + 1);
+        });
+      });
+    });
+    return counts;
+  }
+
+  /**
+   * Returns the enum dictionary for `field` sorted by frequency desc, then alpha.
+   * Merges dictionary entries with any values found on items (so nothing is lost).
+   */
+  function getSortedEnums(field) {
+    const enums  = getEnums();
+    const dict   = enums[field] || [];
+    const counts = countEnumUsage(field);
+
+    // Collect all known entries (dict + any on items not yet in dict)
+    const seen = new Map(); // key = en.toLowerCase() → {en, bg}
+    dict.forEach(e => { if (e.en) seen.set(e.en.toLowerCase(), e); });
+    (menuData.restaurant.menu.categories || []).forEach(cat => {
+      (cat.items || []).forEach(item => {
+        ((item[field]) || []).forEach(e => {
+          const k = (e.en || '').toLowerCase();
+          if (k && !seen.has(k)) seen.set(k, e);
+        });
+      });
+    });
+
+    return [...seen.values()].sort((a, b) => {
+      const ca = counts.get((a.en || '').toLowerCase()) || 0;
+      const cb = counts.get((b.en || '').toLowerCase()) || 0;
+      if (cb !== ca) return cb - ca;          // frequency desc
+      return (a.en || '').localeCompare(b.en || '');  // alpha asc
+    });
+  }
+
+  /**
+   * Adds an entry to the enum dictionary if it doesn't already exist.
+   * Returns the canonical {en, bg} entry.
+   */
+  function ensureInDict(field, entry) {
+    const enums = getEnums();
+    const dict  = enums[field];
+    const key   = (entry.en || '').toLowerCase();
+    const existing = dict.find(e => (e.en || '').toLowerCase() === key);
+    if (!existing) {
+      dict.push({ en: entry.en, bg: entry.bg || entry.en });
+      return entry;
+    }
+    // Backfill missing translation
+    if (!existing.bg && entry.bg) existing.bg = entry.bg;
+    return existing;
+  }
+
+  /**
+   * Searches the dictionary for `query` (matches en or bg, case-insensitive contains).
+   * Returns sorted results.
+   */
+  function searchEnums(field, query) {
+    const q = query.toLowerCase().trim();
+    if (!q) return getSortedEnums(field);
+    return getSortedEnums(field).filter(e =>
+      (e.en || '').toLowerCase().includes(q) ||
+      (e.bg || '').toLowerCase().includes(q)
+    );
+  }
+
+  /* ── ENUM COMBOBOX WIDGET ─────────────────────────────────── */
+
+  /**
+   * Wires up the smart autocomplete combobox for tags or ingredients on an item block.
+   * field: 'tags' | 'ingredients'
+   */
+  function wireEnumCombobox(block, field, item, catIdx, itemIdx) {
+    const combobox = block.querySelector(`.enum-combobox[data-enum="${field}"]`);
+    if (!combobox) return;
+
+    const input    = combobox.querySelector('.enum-combobox__input');
+    const addBtn   = combobox.querySelector('.enum-combobox__add-btn');
+    const dropdown = combobox.querySelector('.enum-combobox__dropdown');
+
+    let highlightIdx = -1;
+
+    function renderDropdown(results) {
+      dropdown.innerHTML = '';
+      if (!results.length) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+      results.forEach((entry, i) => {
+        const li = document.createElement('li');
+        li.className = 'enum-dd__item';
+        li.dataset.idx = i;
+        const alreadyAdded = (item[field] || []).some(
+          e => (e.en || '').toLowerCase() === (entry.en || '').toLowerCase()
+        );
+        li.innerHTML = `
+          <span class="enum-dd__en">${esc(entry.en)}</span>
+          ${entry.bg && entry.bg !== entry.en ? `<span class="enum-dd__bg">${esc(entry.bg)}</span>` : ''}
+          ${alreadyAdded ? '<span class="enum-dd__badge">added</span>' : ''}
+        `;
+        if (alreadyAdded) li.classList.add('enum-dd__item--added');
+        li.addEventListener('mousedown', e => {
+          e.preventDefault(); // don't blur input
+          selectEntry(entry);
+        });
+        dropdown.appendChild(li);
+      });
+      dropdown.classList.remove('hidden');
+      highlightIdx = -1;
+    }
+
+    function updateHighlight(newIdx) {
+      const items = dropdown.querySelectorAll('.enum-dd__item');
+      items.forEach((li, i) => li.classList.toggle('enum-dd__item--focused', i === newIdx));
+      highlightIdx = newIdx;
+    }
+
+    function selectEntry(entry) {
+      if (!item[field]) item[field] = [];
+      const already = item[field].some(
+        e => (e.en || '').toLowerCase() === (entry.en || '').toLowerCase()
+      );
+      if (already) { input.value = ''; closeDropdown(); return; }
+
+      // Ensure in dict and get canonical entry (may backfill bg)
+      const canonical = ensureInDict(field, entry);
+      item[field].push({ en: canonical.en, bg: canonical.bg || canonical.en });
+      input.value = '';
+      closeDropdown();
+      if (field === 'tags') {
+        renderItemTags(block, item, catIdx, itemIdx);
+        adminTrack('admin_tag_add', { tag_en: canonical.en.slice(0, 60) });
+      } else {
+        renderItemIngredients(block, item, catIdx, itemIdx);
+        adminTrack('admin_ingredient_add', { ingredient_en: canonical.en.slice(0, 60) });
+      }
+      setDirty(true);
+    }
+
+    function addFromInput() {
+      const raw = input.value.trim();
+      if (!raw) return;
+      // Check if it matches an existing dict entry (either lang)
+      const match = getSortedEnums(field).find(e =>
+        (e.en || '').toLowerCase() === raw.toLowerCase() ||
+        (e.bg || '').toLowerCase() === raw.toLowerCase()
+      );
+      if (match) {
+        selectEntry(match);
+      } else {
+        // New entry — en = raw, bg = '' (user can fill later)
+        selectEntry({ en: raw, bg: '' });
+      }
+    }
+
+    function closeDropdown() {
+      dropdown.classList.add('hidden');
+      dropdown.innerHTML = '';
+      highlightIdx = -1;
+    }
+
+    input.addEventListener('input', () => {
+      const results = searchEnums(field, input.value);
+      renderDropdown(results);
+    });
+
+    input.addEventListener('focus', () => {
+      const results = searchEnums(field, input.value);
+      renderDropdown(results);
+    });
+
+    input.addEventListener('keydown', e => {
+      const items = dropdown.querySelectorAll('.enum-dd__item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        updateHighlight(Math.min(highlightIdx + 1, items.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        updateHighlight(Math.max(highlightIdx - 1, 0));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (highlightIdx >= 0 && items[highlightIdx]) {
+          items[highlightIdx].dispatchEvent(new MouseEvent('mousedown'));
+        } else {
+          addFromInput();
+        }
+      } else if (e.key === 'Escape') {
+        closeDropdown();
+      }
+    });
+
+    input.addEventListener('blur', () => {
+      // Small delay so mousedown on dropdown item fires first
+      setTimeout(closeDropdown, 150);
+    });
+
+    addBtn.addEventListener('click', addFromInput);
+  }
+
+  /* ── RENDER ITEM TAGS ─────────────────────────────────────── */
+  function buildEnumChip(entry, onRemove) {
+    const chip = document.createElement('span');
+    chip.className = 'item-tag-chip';
+    chip.innerHTML = `
+      <span class="item-tag-chip__en">${esc(entry.en)}</span>
+      ${entry.bg && entry.bg !== entry.en ? `<span class="item-tag-chip__bg">/ ${esc(entry.bg)}</span>` : ''}
+      <button class="item-tag-chip__del" type="button" title="Remove">×</button>
+    `;
+    chip.querySelector('.item-tag-chip__del').addEventListener('click', e => {
+      e.stopPropagation();
+      onRemove();
+    });
+    return chip;
+  }
+
   function buildItemBlock(item, itemIdx, cat, catIdx, catBlock) {
     const block = document.createElement('div');
     block.className = 'item-block';
@@ -939,10 +1178,25 @@
             <label>Tags</label>
             <div class="item-tags-wrap">
               <div class="item-tags-list" id="tags-${catIdx}-${itemIdx}"></div>
-              <div class="item-tag-add-row">
-                <input type="text" class="tag-en-input" placeholder="EN tag" />
-                <input type="text" class="tag-bg-input" placeholder="БГ таг" />
-                <button class="tag-add-btn">+ Add</button>
+              <div class="enum-combobox" data-enum="tags" data-cat="${catIdx}" data-item="${itemIdx}">
+                <div class="enum-combobox__input-row">
+                  <input type="text" class="enum-combobox__input" placeholder="Search or add tag…" autocomplete="off" />
+                  <button class="enum-combobox__add-btn" type="button">+ Add</button>
+                </div>
+                <ul class="enum-combobox__dropdown hidden"></ul>
+              </div>
+            </div>
+          </div>
+          <div class="item-field-row">
+            <label>Ingredients</label>
+            <div class="item-tags-wrap">
+              <div class="item-tags-list" id="ingredients-${catIdx}-${itemIdx}"></div>
+              <div class="enum-combobox" data-enum="ingredients" data-cat="${catIdx}" data-item="${itemIdx}">
+                <div class="enum-combobox__input-row">
+                  <input type="text" class="enum-combobox__input" placeholder="Search or add ingredient…" autocomplete="off" />
+                  <button class="enum-combobox__add-btn" type="button">+ Add</button>
+                </div>
+                <ul class="enum-combobox__dropdown hidden"></ul>
               </div>
             </div>
           </div>
@@ -1015,22 +1269,11 @@
 
     // Tags
     renderItemTags(block, item, catIdx, itemIdx);
-    block.querySelector('.tag-add-btn').addEventListener('click', () => {
-      const enInput = block.querySelector('.tag-en-input');
-      const bgInput = block.querySelector('.tag-bg-input');
-      const enVal = enInput.value.trim();
-      const bgVal = bgInput.value.trim();
-      if (!enVal) { enInput.focus(); return; }
-      if (!item.tags) item.tags = [];
-      item.tags.push({ en: enVal, bg: bgVal || enVal });
-      enInput.value = ''; bgInput.value = '';
-      renderItemTags(block, item, catIdx, itemIdx);
-      setDirty(true);
-      adminTrack('admin_tag_add', { tag_en: enVal.slice(0, 60) });
-    });
-    block.querySelector('.tag-en-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') block.querySelector('.tag-add-btn').click();
-    });
+    wireEnumCombobox(block, 'tags', item, catIdx, itemIdx);
+
+    // Ingredients
+    renderItemIngredients(block, item, catIdx, itemIdx);
+    wireEnumCombobox(block, 'ingredients', item, catIdx, itemIdx);
 
     // Item image URL + upload
     const imgInput   = block.querySelector('.item-img-input');
@@ -1065,23 +1308,29 @@
 
   function renderItemTags(itemBlock, item, catIdx, itemIdx) {
     const list = itemBlock.querySelector(`#tags-${catIdx}-${itemIdx}`);
+    if (!list) return;
     list.innerHTML = '';
     (item.tags || []).forEach((tag, tagIdx) => {
-      const chip = document.createElement('span');
-      chip.className = 'item-tag-chip';
-      chip.innerHTML = `
-        <span class="item-tag-chip__en">${esc(tag.en)}</span>
-        ${tag.bg && tag.bg !== tag.en ? `<span class="item-tag-chip__bg">/ ${esc(tag.bg)}</span>` : ''}
-        <button class="item-tag-chip__del" title="Remove tag">×</button>
-      `;
-      chip.querySelector('.item-tag-chip__del').addEventListener('click', e => {
-        e.stopPropagation();
+      list.appendChild(buildEnumChip(tag, () => {
         adminTrack('admin_tag_remove', { tag_en: String(tag.en || '').slice(0, 60) });
         item.tags.splice(tagIdx, 1);
         renderItemTags(itemBlock, item, catIdx, itemIdx);
         setDirty(true);
-      });
-      list.appendChild(chip);
+      }));
+    });
+  }
+
+  function renderItemIngredients(itemBlock, item, catIdx, itemIdx) {
+    const list = itemBlock.querySelector(`#ingredients-${catIdx}-${itemIdx}`);
+    if (!list) return;
+    list.innerHTML = '';
+    (item.ingredients || []).forEach((ing, ingIdx) => {
+      list.appendChild(buildEnumChip(ing, () => {
+        adminTrack('admin_ingredient_remove', { ingredient_en: String(ing.en || '').slice(0, 60) });
+        item.ingredients.splice(ingIdx, 1);
+        renderItemIngredients(itemBlock, item, catIdx, itemIdx);
+        setDirty(true);
+      }));
     });
   }
 

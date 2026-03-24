@@ -617,20 +617,30 @@
   }
 
   /* ============================================================
-     COLLECT ALL UNIQUE TAGS
+     COLLECT ALL UNIQUE TAGS — sorted by frequency desc, then alpha
      ============================================================ */
   function collectTags(categories, categoryId) {
-    const seen = new Map();
+    const counts = new Map(); // en_key → count
+    const entries = new Map(); // en_key → tag object
+
     categories.forEach(cat => {
       if (categoryId !== 'all' && cat.id !== categoryId) return;
       cat.items.forEach(item => {
         (item.tags || []).forEach(tag => {
           const key = tag.en || '';
-          if (key && !seen.has(key)) seen.set(key, tag);
+          if (!key) return;
+          counts.set(key, (counts.get(key) || 0) + 1);
+          if (!entries.has(key)) entries.set(key, tag);
         });
       });
     });
-    return Array.from(seen.values());
+
+    return [...entries.values()].sort((a, b) => {
+      const ca = counts.get(a.en || '') || 0;
+      const cb = counts.get(b.en || '') || 0;
+      if (cb !== ca) return cb - ca;
+      return (a.en || '').localeCompare(b.en || '');
+    });
   }
 
   /* ============================================================

@@ -618,7 +618,7 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 }
 .item-avail-toggle label { font-size: 13px; color: var(--muted); }
 
-/* Tags */
+/* Tags / Ingredients chips */
 .item-tags-wrap { display: flex; flex-direction: column; gap: 6px; }
 .item-tags-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
 .item-tag-chip {
@@ -637,16 +637,65 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   padding: 0 2px;
 }
 .item-tag-chip__del:hover { color: var(--danger); }
-.item-tag-add-row { display: flex; gap: 6px; }
-.item-tag-add-row input { flex: 1; padding: 6px 10px; font-size: 12px; }
-.item-tag-add-row button {
+
+/* Enum combobox */
+.enum-combobox { position: relative; }
+.enum-combobox__input-row {
+  display: flex; gap: 6px;
+}
+.enum-combobox__input {
+  flex: 1; padding: 6px 10px; font-size: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  transition: border-color var(--transition);
+}
+.enum-combobox__input:focus { border-color: rgba(196,149,90,0.5); outline: none; }
+.enum-combobox__add-btn {
+  flex-shrink: 0;
   padding: 6px 12px;
   background: var(--surface-3); border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 12px; color: var(--muted);
   transition: all var(--transition);
+  white-space: nowrap;
 }
-.item-tag-add-row button:hover { color: var(--text); border-color: var(--border-2); }
+.enum-combobox__add-btn:hover { color: var(--text); border-color: var(--border-2); }
+
+.enum-combobox__dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  max-height: 200px; overflow-y: auto;
+  z-index: 200;
+  list-style: none; padding: 4px 0; margin: 0;
+}
+.enum-combobox__dropdown.hidden { display: none; }
+.enum-combobox__dropdown::-webkit-scrollbar { width: 4px; }
+.enum-combobox__dropdown::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+.enum-dd__item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.enum-dd__item:hover,
+.enum-dd__item--focused { background: var(--surface-2); }
+.enum-dd__item--added { opacity: 0.45; cursor: default; }
+.enum-dd__en { font-size: 13px; font-weight: 500; flex: 1; }
+.enum-dd__bg { font-size: 11px; color: var(--muted); }
+.enum-dd__badge {
+  font-size: 10px; padding: 1px 6px;
+  background: rgba(196,149,90,0.12);
+  color: var(--accent);
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(196,149,90,0.25);
+  flex-shrink: 0;
+}
 
 /* Item actions */
 .item-actions {
