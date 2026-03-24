@@ -141,6 +141,64 @@
   }
 
   /**
+   * Inject Cloudinary delivery-time transformations for bandwidth-efficient display.
+   * Non-Cloudinary URLs are returned unchanged.
+   */
+  function optimizeCloudinaryUrl(url, width) {
+    if (!url || !url.includes('res.cloudinary.com')) return url;
+    return url.replace('/upload/', `/upload/w_${width},c_limit,q_auto,f_auto/`);
+  }
+
+  /**
+   * Non-blocking lazy image loader using IntersectionObserver.
+   * Creates a skeleton shimmer in `container`, then loads the image when the
+   * element nears the viewport, and fades it in smoothly on load.
+   *
+   * @param {HTMLElement} container  - element to inject the image into
+   * @param {string}      src        - resolved image URL
+   * @param {string}      [alt]      - alt text
+   * @param {string}      [cls]      - extra CSS class for the <img>
+   */
+  function lazyLoadImage(container, src, alt, cls) {
+    if (!src) return;
+
+    const skeleton = document.createElement('div');
+    skeleton.className = 'img-skeleton';
+    container.appendChild(skeleton);
+
+    const load = () => {
+      const img = new Image();
+      img.alt = alt || '';
+      if (cls) img.className = cls;
+      // When a CSS class manages sizing, only set opacity & display inline.
+      // For bare fill-containers (no class), also force fill dimensions.
+      img.style.cssText = cls
+        ? 'opacity:0;transition:opacity 0.4s ease;'
+        : 'opacity:0;transition:opacity 0.4s ease;display:block;width:100%;height:100%;object-fit:cover;';
+
+      img.onload = () => {
+        skeleton.replaceWith(img);
+        requestAnimationFrame(() => { img.style.opacity = '1'; });
+      };
+      img.onerror = () => {
+        skeleton.remove();
+      };
+      img.src = src;
+    };
+
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries, observer) => {
+        if (!entries[0].isIntersecting) return;
+        observer.disconnect();
+        load();
+      }, { threshold: 0, rootMargin: '300px 0px' });
+      io.observe(skeleton);
+    } else {
+      load();
+    }
+  }
+
+  /**
    * Liberal "contains" search across all searchable text fields.
    * Returns true if any field contains the query (case-insensitive).
    */
@@ -242,16 +300,17 @@
     if (!imgWrap || !body) return;
 
     const restaurantId = data?.restaurant?.id;
-    const imgSrc = (item.image && restaurantId)
-      ? `${RESOURCES_BASE}/${restaurantId}/menu-images/${item.image}`
-      : null;
+    const rawImgSrc    = item.image ? resolveImageSrc(item.image, restaurantId) : null;
+    // Use a moderate width; Cloudinary will serve a WebP at appropriate resolution
+    const imgSrc = rawImgSrc ? optimizeCloudinaryUrl(rawImgSrc, 800) : null;
 
+    imgWrap.innerHTML = '';
     if (imgSrc) {
       imgWrap.style.display = '';
-      imgWrap.innerHTML = `<img src="${esc(imgSrc)}" alt="${esc(t(item.name))}" class="item-modal__img" onerror="this.parentElement.style.display='none'">`;
+      // Non-blocking: show skeleton first, load image asynchronously
+      lazyLoadImage(imgWrap, imgSrc, t(item.name), 'item-modal__img');
     } else {
       imgWrap.style.display = 'none';
-      imgWrap.innerHTML = '';
     }
 
     const tagsHtml = (item.tags && item.tags.length)
@@ -699,16 +758,10 @@
     const descEn = item.description ? (item.description.en || '') : '';
     const descBg = item.description ? (item.description.bg || item.description.en || '') : '';
 
-    const imgSrc = item.image
-      ? `${RESOURCES_BASE}/${restaurantId}/menu-images/${item.image}`
-      : null;
-
-    const imgHtml = imgSrc
-      ? `<div class="menu-item__img-wrap">
-           <img src="${esc(imgSrc)}" alt="${esc(nameEn)}" loading="lazy"
-                onerror="this.parentElement.style.display='none'" />
-         </div>`
-      : '';
+    // Resolve image: supports Cloudinary full URLs, local paths, or empty
+    const rawImgSrc = item.image ? resolveImageSrc(item.image, restaurantId) : null;
+    // Serve a 600 px wide optimised version for card thumbnails
+    const imgSrc    = rawImgSrc ? optimizeCloudinaryUrl(rawImgSrc, 600) : null;
 
     const descHtml = (showDesc && descEn)
       ? `<p class="menu-item__desc" data-en="${esc(descEn)}" data-bg="${esc(descBg)}">${esc(t(item.description))}</p>`
@@ -729,8 +782,10 @@
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', t(item.name));
+
+    // Build base markup — image slot is a bare wrapper; image loaded non-blocking below
     el.innerHTML = `
-      ${imgHtml}
+      ${imgSrc ? '<div class="menu-item__img-wrap"></div>' : ''}
       <div class="menu-item__body">
         <h3 class="menu-item__name" data-en="${esc(nameEn)}" data-bg="${esc(nameBg)}">${esc(t(item.name))}</h3>
         ${descHtml}
@@ -740,6 +795,12 @@
         </div>
       </div>
     `;
+
+    // Non-blocking lazy image load — skeleton shown until image arrives
+    if (imgSrc) {
+      lazyLoadImage(el.querySelector('.menu-item__img-wrap'), imgSrc, nameEn);
+    }
+
     el.addEventListener('click', () => openItemModal(item));
     el.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openItemModal(item); }

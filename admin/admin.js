@@ -7,13 +7,158 @@
 
   /* ── CONFIG ─────────────────────────────────────────────── */
   const JSONBIN_BASE    = 'https://api.jsonbin.io/v3/b';
-  const SESSION_KEY_KEY = 'admin_master_key';   // sessionStorage key name
+  const SESSION_KEY_KEY = 'admin_master_key';
 
   function getMasterKey() {
     return sessionStorage.getItem(SESSION_KEY_KEY) || '';
   }
   function setMasterKey(val) {
     if (val) sessionStorage.setItem(SESSION_KEY_KEY, val);
+  }
+
+  /* ── CLOUDINARY CONFIG ──────────────────────────────────── */
+  const CLD_CLOUD_KEY  = 'cld_cloud_name';
+  const CLD_KEY_KEY    = 'cld_api_key';
+  const CLD_SECRET_KEY = 'cld_api_secret';
+
+  function getCldConfig() {
+    return {
+      cloudName: sessionStorage.getItem(CLD_CLOUD_KEY)  || '',
+      apiKey:    sessionStorage.getItem(CLD_KEY_KEY)    || '',
+      apiSecret: sessionStorage.getItem(CLD_SECRET_KEY) || ''
+    };
+  }
+  function saveCldConfig(cloudName, apiKey, apiSecret) {
+    if (cloudName !== undefined) sessionStorage.setItem(CLD_CLOUD_KEY,  cloudName);
+    if (apiKey    !== undefined) sessionStorage.setItem(CLD_KEY_KEY,    apiKey);
+    if (apiSecret !== undefined) sessionStorage.setItem(CLD_SECRET_KEY, apiSecret);
+  }
+
+  /* ── CLOUDINARY UPLOAD ──────────────────────────────────── */
+  const CLD_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+
+  async function computeSha256Hex(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  /**
+   * Upload a File to Cloudinary using SHA-256 signed uploads.
+   * @param {File}     file
+   * @param {string}   folder   e.g. "restaurant_menu/tavernaki"
+   * @param {Function} onProgress  called with 0-100 percent
+   * @returns {Promise<string>}  secure_url
+   */
+  async function uploadToCloudinary(file, folder, onProgress) {
+    const { cloudName, apiKey, apiSecret } = getCldConfig();
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      throw new Error(
+        'Cloudinary credentials missing.\n' +
+        'Open the "Cloudinary — Image uploads" section on the login screen and fill in Cloud Name, API Key, and API Secret.'
+      );
+    }
+    if (file.size > CLD_MAX_BYTES) {
+      throw new Error(`Image too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`);
+    }
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Only image files (JPEG, PNG, WebP, GIF…) are allowed.');
+    }
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    // Params to sign: alphabetically sorted, excluding file/cloud_name/resource_type/api_key
+    const signParams = { folder, timestamp };
+    const sigString  = Object.keys(signParams).sort()
+      .map(k => `${k}=${signParams[k]}`).join('&') + apiSecret;
+    const signature  = await computeSha256Hex(sigString);
+
+    const form = new FormData();
+    form.append('file',                file);
+    form.append('api_key',             apiKey);
+    form.append('timestamp',           timestamp);
+    form.append('folder',              folder);
+    form.append('signature',           signature);
+    form.append('signature_algorithm', 'sha256');
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`);
+
+      if (onProgress) {
+        xhr.upload.addEventListener('progress', e => {
+          if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100));
+        });
+      }
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText).secure_url);
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText);
+            reject(new Error(err.error?.message || `Cloudinary error (HTTP ${xhr.status})`));
+          } catch {
+            reject(new Error(`Upload failed (HTTP ${xhr.status})`));
+          }
+        }
+      };
+      xhr.onerror   = () => reject(new Error('Network error during upload.'));
+      xhr.onabort   = () => reject(new Error('Upload cancelled.'));
+      xhr.send(form);
+    });
+  }
+
+  /**
+   * Open a file picker, validate, upload to Cloudinary, then insert the resulting
+   * URL into `targetInput` and refresh `previewEl`.
+   */
+  function triggerImageUpload(targetInput, previewEl, folder) {
+    const fileInput = document.createElement('input');
+    fileInput.type   = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      document.body.removeChild(fileInput);
+      if (!file) return;
+
+      // Warn if over 2 MB but under 5 MB
+      if (file.size > 2 * 1024 * 1024 && file.size <= CLD_MAX_BYTES) {
+        showToast(`Large image (${(file.size / 1024 / 1024).toFixed(1)} MB) — uploading…`, 'info');
+      }
+
+      previewEl.innerHTML = `
+        <div class="upload-progress">
+          <div class="upload-progress__bar" style="width:0%"></div>
+          <span class="upload-progress__label">Uploading 0%</span>
+        </div>`;
+
+      try {
+        const url = await uploadToCloudinary(file, folder, pct => {
+          const bar   = previewEl.querySelector('.upload-progress__bar');
+          const label = previewEl.querySelector('.upload-progress__label');
+          if (bar)   bar.style.width     = pct + '%';
+          if (label) label.textContent   = `Uploading ${pct}%`;
+        });
+
+        targetInput.value = url;
+        targetInput.dispatchEvent(new Event('input'));   // triggers preview & dirty
+        showToast('Image uploaded!', 'success');
+      } catch (err) {
+        previewEl.innerHTML = `<span class="url-preview-err">${esc(err.message)}</span>`;
+        showToast('Upload failed: ' + err.message, 'error');
+      }
+    });
+
+    fileInput.click();
+  }
+
+  /** Insert Cloudinary delivery-side transformations into a URL for preview/display. */
+  function cldOptimize(url, width) {
+    if (!url || !url.includes('res.cloudinary.com')) return url;
+    return url.replace('/upload/', `/upload/w_${width},c_limit,q_auto,f_auto/`);
   }
 
   /* ── STATE ──────────────────────────────────────────────── */
@@ -139,13 +284,45 @@
   /* ── MASTER KEY TOGGLE ───────────────────────────────────── */
   masterKeyToggle.addEventListener('click', () => {
     const isHidden = masterKeyInput.type === 'password';
-    masterKeyInput.type = isHidden ? 'text' : 'password';
+    masterKeyInput.type  = isHidden ? 'text' : 'password';
     masterKeyToggle.title = isHidden ? 'Hide key' : 'Show key';
   });
 
   // Pre-fill from sessionStorage if available
   const savedKey = getMasterKey();
   if (savedKey) masterKeyInput.value = savedKey;
+
+  /* ── CLOUDINARY FIELD WIRING ─────────────────────────────── */
+  const cldCloudNameEl  = document.getElementById('cldCloudName');
+  const cldApiKeyEl     = document.getElementById('cldApiKey');
+  const cldApiSecretEl  = document.getElementById('cldApiSecret');
+  const cldSecretToggle = document.getElementById('cldApiSecretToggle');
+
+  // Pre-fill from sessionStorage
+  const { cloudName: savedCloud, apiKey: savedCldKey, apiSecret: savedCldSecret } = getCldConfig();
+  if (savedCloud)     cldCloudNameEl.value  = savedCloud;
+  if (savedCldKey)    cldApiKeyEl.value     = savedCldKey;
+  if (savedCldSecret) cldApiSecretEl.value  = savedCldSecret;
+
+  // Save to sessionStorage on change
+  cldCloudNameEl.addEventListener('input',  () => saveCldConfig(cldCloudNameEl.value.trim(),  undefined, undefined));
+  cldApiKeyEl.addEventListener('input',     () => saveCldConfig(undefined, cldApiKeyEl.value.trim(),    undefined));
+  cldApiSecretEl.addEventListener('input',  () => saveCldConfig(undefined, undefined, cldApiSecretEl.value.trim()));
+
+  // Toggle visibility of API secret
+  if (cldSecretToggle) {
+    cldSecretToggle.addEventListener('click', () => {
+      const isHidden = cldApiSecretEl.type === 'password';
+      cldApiSecretEl.type    = isHidden ? 'text' : 'password';
+      cldSecretToggle.title  = isHidden ? 'Hide secret' : 'Show secret';
+    });
+  }
+
+  // Auto-open the Cloudinary section if credentials are already saved
+  const cldSection = document.getElementById('cldSection');
+  if (savedCloud || savedCldKey) {
+    cldSection?.setAttribute('open', '');
+  }
 
   /* ── AUTHENTICATE ────────────────────────────────────────── */
   async function attemptAuth(restaurantEntry, inputEl) {
@@ -265,23 +442,39 @@
       : null;
   }
 
-  function bindUrlField(inputId, previewId) {
-    const input   = document.getElementById(inputId);
-    const preview = document.getElementById(previewId);
+  function showPreview(previewEl, rawVal) {
+    const src = resolveUrl(rawVal);
+    if (!src) { previewEl.innerHTML = ''; return; }
+    // Use Cloudinary delivery optimization for Cloudinary URLs
+    const displaySrc = cldOptimize(src, 300);
+    previewEl.innerHTML = `<img src="${esc(displaySrc)}" alt="" onerror="this.parentElement.innerHTML='<span class=\\'url-preview-err\\'>Image not found</span>'" />`;
+  }
+
+  /**
+   * Bind a URL text input to a preview element, and optionally attach an upload button.
+   * @param {string} inputId      id of the text <input>
+   * @param {string} previewId    id of the preview <div>
+   * @param {string} [uploadBtnId]  id of the upload <button> (optional)
+   * @param {string} [folder]     Cloudinary folder for uploads (optional)
+   */
+  function bindUrlField(inputId, previewId, uploadBtnId, folder) {
+    const input     = document.getElementById(inputId);
+    const preview   = document.getElementById(previewId);
+    const uploadBtn = uploadBtnId ? document.getElementById(uploadBtnId) : null;
 
     function refresh() {
-      const src = resolveUrl(input.value.trim());
-      if (src) {
-        preview.innerHTML = `<img src="${esc(src)}" alt="" onerror="this.parentElement.innerHTML='<span class=\\'url-preview-err\\'>Image not found</span>'" />`;
-      } else {
-        preview.innerHTML = '';
-      }
+      showPreview(preview, input.value.trim());
       setDirty(true);
     }
 
     input.addEventListener('input', refresh);
-    /* Show preview on load */
-    if (input.value) refresh();
+    if (input.value) showPreview(preview, input.value.trim());
+
+    if (uploadBtn) {
+      const uploadFolder = folder ||
+        (currentRestaurant ? `restaurant_menu/${currentRestaurant.id}` : 'restaurant_menu');
+      uploadBtn.addEventListener('click', () => triggerImageUpload(input, preview, uploadFolder));
+    }
   }
 
   /* ── POPULATE INFO ───────────────────────────────────────── */
@@ -300,9 +493,10 @@
       document.getElementById(id).addEventListener('input', () => setDirty(true));
     });
 
-    bindUrlField('infoLogo',    'infoLogoPreview');
-    bindUrlField('infoImage',   'infoImagePreview');
-    bindUrlField('infoBgImage', 'infoBgImagePreview');
+    const rid = currentRestaurant?.id || 'general';
+    bindUrlField('infoLogo',    'infoLogoPreview',    'infoLogoUpload',    `restaurant_menu/${rid}`);
+    bindUrlField('infoImage',   'infoImagePreview',   'infoImageUpload',   `restaurant_menu/${rid}`);
+    bindUrlField('infoBgImage', 'infoBgImagePreview', 'infoBgImageUpload', `restaurant_menu/${rid}`);
   }
 
   /* ── POPULATE CONFIG ─────────────────────────────────────── */
@@ -413,7 +607,7 @@
     // Add item
     block.querySelector('.btn-add-item').addEventListener('click', () => {
       if (!cat.items) cat.items = [];
-      cat.items.push({ name: { en: '', bg: '' }, description: { en: '', bg: '' }, price: 0, tags: [], availability: true });
+      cat.items.push({ name: { en: '', bg: '' }, description: { en: '', bg: '' }, price: 0, tags: [], availability: true, image: undefined });
       refreshItemsList(block, cat, catIdx);
       setDirty(true);
       // Open the new item
@@ -498,6 +692,24 @@
               </div>
             </div>
           </div>
+          <div class="item-field-row item-field-row--image">
+            <label>
+              Image
+              <span class="field-label__hint">Paste a URL or upload to Cloudinary (max 5 MB)</span>
+            </label>
+            <div class="field-url-wrap">
+              <div class="field-url-input-row">
+                <input class="item-img-input field-input" type="text"
+                       value="${esc(item.image || '')}"
+                       placeholder="https://res.cloudinary.com/… or paste any URL" />
+                <button class="btn-upload-img item-img-upload" type="button" title="Upload to Cloudinary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                  Upload
+                </button>
+              </div>
+              <div class="item-img-preview field-url-preview"></div>
+            </div>
+          </div>
         </div>
         <div class="item-actions">
           <button class="btn-delete-item">Delete item</button>
@@ -563,6 +775,24 @@
     });
     block.querySelector('.tag-en-input').addEventListener('keydown', e => {
       if (e.key === 'Enter') block.querySelector('.tag-add-btn').click();
+    });
+
+    // Item image URL + upload
+    const imgInput   = block.querySelector('.item-img-input');
+    const imgPreview = block.querySelector('.item-img-preview');
+    const imgUpload  = block.querySelector('.item-img-upload');
+
+    if (imgInput.value) showPreview(imgPreview, imgInput.value.trim());
+
+    imgInput.addEventListener('input', e => {
+      item.image = e.target.value.trim() || undefined;
+      showPreview(imgPreview, e.target.value.trim());
+      setDirty(true);
+    });
+
+    imgUpload.addEventListener('click', () => {
+      const folder = `restaurant_menu/${currentRestaurant?.id || 'items'}/items`;
+      triggerImageUpload(imgInput, imgPreview, folder);
     });
 
     // Delete item
