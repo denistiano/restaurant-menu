@@ -207,8 +207,8 @@
             badge.textContent += ` ${cat.schedule.start_time} - ${cat.schedule.end_time}`;
             badge.dataset.active = '1';
           } else {
-            const st = cat.schedule.start_time || '', et = cat.schedule.end_time || '';
-            badge.textContent = `${st}–${et}`;
+            badge.textContent = currentLang === 'bg' ? 'Сервира се между' : 'Serving between';
+            badge.textContent += ` ${cat.schedule.start_time} - ${cat.schedule.end_time}`;
             badge.dataset.active = '0';
           }
         } else if (badge) {
