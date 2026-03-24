@@ -585,14 +585,16 @@
           <label class="qr-mini-label">Padding (mm)</label>
           <input type="number" id="qrFldPad" class="field-input" min="0" max="30" step="0.5" value="${es.paddingMm != null ? es.paddingMm : ''}" placeholder="auto" />
         </div>`;
-      panel.querySelector('#qrFldBg').addEventListener('input', e => {
-        ensureStyleZone('sheet').background = e.target.value;
-        renderPreview();
-      });
-      panel.querySelector('#qrFldPad').addEventListener('input', e => {
-        const v = e.target.value.trim();
-        ensureStyleZone('sheet').paddingMm = v === '' ? null : parseFloat(v);
-        renderPreview();
+      ['input', 'change'].forEach(evt => {
+        panel.querySelector('#qrFldBg').addEventListener(evt, e => {
+          ensureStyleZone('sheet').background = e.target.value;
+          renderPreview();
+        });
+        panel.querySelector('#qrFldPad').addEventListener(evt, e => {
+          const v = e.target.value.trim();
+          ensureStyleZone('sheet').paddingMm = v === '' ? null : parseFloat(v);
+          renderPreview();
+        });
       });
       return;
     }
@@ -632,13 +634,16 @@
     const bind = (id, key, parse) => {
       const el = panel.querySelector(id);
       if (!el) return;
-      el.addEventListener('input', () => {
+      const handler = () => {
         let v = el.value;
         if (parse === 'num') v = v === '' ? null : parseFloat(v);
         if (v === '' || v == null) delete zcfg[key];
         else zcfg[key] = v;
         renderPreview();
-      });
+      };
+      // 'input' fires live for text/number/color; selects fire 'change' reliably across browsers
+      el.addEventListener('input', handler);
+      el.addEventListener('change', handler);
     };
     bind('#qrFldFont', 'fontFamily');
     bind('#qrFldSize', 'fontSize', 'num');

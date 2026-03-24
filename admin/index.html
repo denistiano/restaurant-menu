@@ -243,6 +243,41 @@
             </label>
           </div>
         </div>
+
+        <div class="form-section">
+          <h3 class="form-section__title">Time &amp; Scheduling</h3>
+          <p class="form-section__desc">Required for timed sections (e.g. lunch menu 12:00–14:00) to activate at the correct local time.</p>
+          <div class="field-row">
+            <label class="field-label">Timezone</label>
+            <select class="field-input field-select" id="cfgTimezone">
+              <option value="Europe/Sofia">Europe/Sofia (Bulgaria, EET/EEST)</option>
+              <option value="Europe/London">Europe/London (UK)</option>
+              <option value="Europe/Paris">Europe/Paris (France, CET/CEST)</option>
+              <option value="Europe/Berlin">Europe/Berlin (Germany)</option>
+              <option value="Europe/Rome">Europe/Rome (Italy)</option>
+              <option value="Europe/Madrid">Europe/Madrid (Spain)</option>
+              <option value="Europe/Athens">Europe/Athens (Greece)</option>
+              <option value="Europe/Istanbul">Europe/Istanbul (Turkey)</option>
+              <option value="Europe/Bucharest">Europe/Bucharest (Romania)</option>
+              <option value="Europe/Kiev">Europe/Kiev (Ukraine)</option>
+              <option value="Europe/Moscow">Europe/Moscow (Russia)</option>
+              <option value="Asia/Dubai">Asia/Dubai (UAE)</option>
+              <option value="Asia/Nicosia">Asia/Nicosia (Cyprus)</option>
+              <option value="America/New_York">America/New_York (EST/EDT)</option>
+              <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+              <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+              <option value="UTC">UTC</option>
+            </select>
+          </div>
+          <div class="toggle-list" style="margin-top:12px;">
+            <label class="toggle-row">
+              <span class="toggle-row__label">Auto-reorder timed sections</span>
+              <span class="toggle-row__hint">Active sections float to the top, inactive to the bottom</span>
+              <input type="checkbox" class="toggle-cb" id="cfgAutoReorder" />
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+        </div>
       </section>
 
       <!-- CATEGORIES / MENU panel -->

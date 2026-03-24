@@ -555,9 +555,20 @@
     document.getElementById('cfgIngredients').checked = cfg.show_ingredients === true;
     document.getElementById('cfgAllergens').checked   = cfg.show_allergens === true;
 
-    ['cfgPrice','cfgDesc','cfgTags','cfgIngredients','cfgAllergens'].forEach(id => {
-      document.getElementById(id).addEventListener('change', () => setDirty(true));
-    });
+    const tzEl = document.getElementById('cfgTimezone');
+    if (tzEl) {
+      tzEl.value = cfg.timezone || 'Europe/Sofia';
+      if (!tzEl.value) tzEl.value = 'Europe/Sofia'; // fallback if not in list
+    }
+    const arEl = document.getElementById('cfgAutoReorder');
+    if (arEl) arEl.checked = cfg.timed_sections_auto_reorder !== false;
+
+    ['cfgPrice','cfgDesc','cfgTags','cfgIngredients','cfgAllergens','cfgTimezone','cfgAutoReorder']
+      .forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('change', () => setDirty(true));
+      });
   }
 
   /* ── CATEGORIES ──────────────────────────────────────────── */
@@ -566,6 +577,98 @@
     categories.forEach((cat, catIdx) => {
       categoriesList.appendChild(buildCategoryBlock(cat, catIdx, categories));
     });
+    initCategoryDrag();
+  }
+
+  /* ── DRAG-TO-REORDER (pointer events — works on desktop & touch) ── */
+  function initCategoryDrag() {
+    // Guard: only bind once per render; we rebind fresh each renderCategories call
+    let drag = null; // { block, placeholder, catIdx, blockOffsetY }
+
+    function onMove(e) {
+      if (!drag) return;
+      e.preventDefault();
+      const { block, placeholder, blockOffsetY } = drag;
+
+      block.style.top = (e.clientY - blockOffsetY) + 'px';
+
+      // Find the sibling to insert placeholder before
+      const siblings = [...categoriesList.querySelectorAll('.category-block:not(.cat-dragging)')];
+      let insertBefore = null;
+      for (const sib of siblings) {
+        const r = sib.getBoundingClientRect();
+        if (e.clientY < r.top + r.height / 2) { insertBefore = sib; break; }
+      }
+      if (insertBefore) {
+        if (placeholder.nextSibling !== insertBefore) categoriesList.insertBefore(placeholder, insertBefore);
+      } else {
+        if (categoriesList.lastElementChild !== placeholder) categoriesList.appendChild(placeholder);
+      }
+    }
+
+    function onUp() {
+      if (!drag) return;
+      document.removeEventListener('pointermove', onMove);
+
+      const { block, placeholder, catIdx } = drag;
+      drag = null;
+
+      // Determine new index by counting category-blocks before placeholder
+      const children = [...categoriesList.children];
+      const phIdx = children.indexOf(placeholder);
+      let newCatIdx = 0;
+      for (let i = 0; i < phIdx; i++) {
+        if (children[i].classList && children[i].classList.contains('category-block')) newCatIdx++;
+      }
+
+      // Restore block into list before placeholder, then remove placeholder
+      block.classList.remove('cat-dragging');
+      block.style.cssText = '';
+      categoriesList.insertBefore(block, placeholder);
+      placeholder.remove();
+
+      if (newCatIdx !== catIdx) {
+        const arr = menuData.restaurant.menu.categories;
+        const [moved] = arr.splice(catIdx, 1);
+        arr.splice(newCatIdx, 0, moved);
+        renderCategories(arr);
+        setDirty(true);
+        adminTrack('admin_category_reorder', { from: catIdx, to: newCatIdx });
+      }
+    }
+
+    categoriesList.addEventListener('pointerdown', e => {
+      const handle = e.target.closest('.category-block__drag');
+      if (!handle) return;
+      const block = handle.closest('.category-block');
+      if (!block) return;
+
+      e.preventDefault();
+      const catIdx = +block.dataset.catIdx;
+      const rect = block.getBoundingClientRect();
+
+      // Placeholder keeps the space
+      const placeholder = document.createElement('div');
+      placeholder.className = 'cat-drag-placeholder';
+      placeholder.style.height = rect.height + 'px';
+      block.parentNode.insertBefore(placeholder, block.nextSibling);
+
+      // Lift block: fix-position it over its current location and move to body
+      block.classList.add('cat-dragging');
+      block.style.position = 'fixed';
+      block.style.left = rect.left + 'px';
+      block.style.top  = rect.top  + 'px';
+      block.style.width = rect.width + 'px';
+      block.style.zIndex = '9999';
+      block.style.pointerEvents = 'none';
+      document.body.appendChild(block);
+
+      drag = { block, placeholder, catIdx, blockOffsetY: e.clientY - rect.top };
+
+      document.addEventListener('pointermove', onMove, { passive: false });
+      document.addEventListener('pointerup',   onUp,  { once: true });
+      document.addEventListener('pointercancel', onUp, { once: true });
+    }, { passive: false });
   }
 
   function buildCategoryBlock(cat, catIdx, categories) {
@@ -599,6 +702,26 @@
             <input class="cat-name-bg" type="text" value="${esc(cat.name.bg || '')}" placeholder="Категория" />
           </div>
         </div>
+        <div class="cat-schedule-section">
+          <label class="cat-schedule-toggle">
+            <input type="checkbox" class="cat-schedule-cb" ${cat.schedule && cat.schedule.enabled ? 'checked' : ''} />
+            <span class="toggle-switch"></span>
+            <span class="cat-schedule-label">Timed section</span>
+          </label>
+          <div class="cat-schedule-fields${cat.schedule && cat.schedule.enabled ? '' : ' hidden'}">
+            <div class="cat-schedule-times">
+              <div class="cat-schedule-time-field">
+                <label>From</label>
+                <input type="time" class="cat-schedule-start field-input" value="${esc((cat.schedule && cat.schedule.start_time) || '12:00')}" />
+              </div>
+              <div class="cat-schedule-time-field">
+                <label>To</label>
+                <input type="time" class="cat-schedule-end field-input" value="${esc((cat.schedule && cat.schedule.end_time) || '14:00')}" />
+              </div>
+            </div>
+            <span class="cat-schedule-status"></span>
+          </div>
+        </div>
         <div class="items-list" id="items-${catIdx}"></div>
         <button class="btn-add-item">+ Add item</button>
       </div>
@@ -621,6 +744,59 @@
       cat.name.bg = e.target.value;
       setDirty(true);
     });
+
+    // Schedule toggle
+    (function wireSchedule() {
+      const scheduleCb  = block.querySelector('.cat-schedule-cb');
+      const schedFields = block.querySelector('.cat-schedule-fields');
+      const startInput  = block.querySelector('.cat-schedule-start');
+      const endInput    = block.querySelector('.cat-schedule-end');
+      const statusEl    = block.querySelector('.cat-schedule-status');
+
+      function timeSectionIsActive(sched) {
+        if (!sched || !sched.enabled) return null;
+        const tz  = (menuData.restaurant.menu.config || {}).timezone || 'Europe/Sofia';
+        try {
+          const now = new Date();
+          const ts  = now.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false });
+          const [ch, cm] = ts.split(':').map(Number);
+          const cur  = ch * 60 + cm;
+          const [sh, sm] = (sched.start_time || '12:00').split(':').map(Number);
+          const [eh, em] = (sched.end_time   || '14:00').split(':').map(Number);
+          const start = sh * 60 + sm, end = eh * 60 + em;
+          return end > start ? (cur >= start && cur < end) : (cur >= start || cur < end);
+        } catch { return null; }
+      }
+
+      function updateStatus() {
+        if (!cat.schedule || !cat.schedule.enabled) { statusEl.textContent = ''; return; }
+        const active = timeSectionIsActive(cat.schedule);
+        const s = cat.schedule.start_time || '', e = cat.schedule.end_time || '';
+        statusEl.textContent = active ? `✓ Currently active (${s}–${e})` : `○ Inactive now (${s}–${e})`;
+        statusEl.dataset.active = active ? '1' : '0';
+      }
+
+      scheduleCb.addEventListener('change', () => {
+        if (!cat.schedule) cat.schedule = { start_time: '12:00', end_time: '14:00' };
+        cat.schedule.enabled = scheduleCb.checked;
+        schedFields.classList.toggle('hidden', !scheduleCb.checked);
+        updateStatus();
+        setDirty(true);
+      });
+      startInput.addEventListener('change', () => {
+        if (!cat.schedule) cat.schedule = { enabled: true };
+        cat.schedule.start_time = startInput.value;
+        updateStatus();
+        setDirty(true);
+      });
+      endInput.addEventListener('change', () => {
+        if (!cat.schedule) cat.schedule = { enabled: true };
+        cat.schedule.end_time = endInput.value;
+        updateStatus();
+        setDirty(true);
+      });
+      updateStatus();
+    })();
 
     // Move up
     block.querySelector('.cat-btn--up').addEventListener('click', e => {
@@ -915,6 +1091,10 @@
     r.menu.config.show_tags        = document.getElementById('cfgTags').checked;
     r.menu.config.show_ingredients = document.getElementById('cfgIngredients').checked;
     r.menu.config.show_allergens   = document.getElementById('cfgAllergens').checked;
+    const tzEl = document.getElementById('cfgTimezone');
+    if (tzEl) r.menu.config.timezone = tzEl.value || 'Europe/Sofia';
+    const arEl = document.getElementById('cfgAutoReorder');
+    if (arEl) r.menu.config.timed_sections_auto_reorder = arEl.checked;
     // Categories and items are already mutated in-place
   }
 

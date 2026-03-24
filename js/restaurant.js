@@ -107,6 +107,126 @@
   let   interactionCount = 0;   // incremented on every meaningful interaction
   let   menuExitFired    = false;
 
+  /* ── Timed-section minute timer ─────────────────────────── */
+  let timedSectionTimer = null;
+
+  /* ============================================================
+     TIMED SECTIONS
+     ============================================================ */
+
+  /**
+   * Returns true if the category's schedule is currently active,
+   * false if inactive, or null if no schedule is defined.
+   */
+  function isTimedSectionActive(cat, timezone) {
+    if (!cat.schedule || !cat.schedule.enabled) return null;
+    try {
+      const tz  = timezone || 'Europe/Sofia';
+      const now = new Date();
+      const ts  = now.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false });
+      const [ch, cm] = ts.split(':').map(Number);
+      const cur = ch * 60 + cm;
+      const [sh, sm] = (cat.schedule.start_time || '00:00').split(':').map(Number);
+      const [eh, em] = (cat.schedule.end_time   || '23:59').split(':').map(Number);
+      const start = sh * 60 + sm, end = eh * 60 + em;
+      return end > start ? (cur >= start && cur < end) : (cur >= start || cur < end);
+    } catch { return null; }
+  }
+
+  /**
+   * Returns categories sorted so active timed sections float to front
+   * and inactive timed sections sink to back (when auto_reorder is on).
+   */
+  function getSortedCategories(categories) {
+    const cfg         = (data && data.restaurant.menu.config) || {};
+    const tz          = cfg.timezone || 'Europe/Sofia';
+    const autoReorder = cfg.timed_sections_auto_reorder !== false;
+    if (!autoReorder) return categories;
+
+    const active = [], normal = [], inactive = [];
+    categories.forEach(cat => {
+      const s = isTimedSectionActive(cat, tz);
+      if (s === true)  active.push(cat);
+      else if (s === false) inactive.push(cat);
+      else normal.push(cat);
+    });
+    return [...active, ...normal, ...inactive];
+  }
+
+  /**
+   * Called every minute (and on initial render) to update visual timed-section
+   * states: classes on tabs + sections, schedule badges, and DOM order.
+   */
+  function applyTimedStates() {
+    if (!data) return;
+    const cfg         = data.restaurant.menu.config || {};
+    const tz          = cfg.timezone || 'Europe/Sofia';
+    const autoReorder = cfg.timed_sections_auto_reorder !== false;
+    const categories  = data.restaurant.menu.categories;
+
+    /* ── Update tab visual state & reorder tabs ── */
+    const tabsContainer = document.getElementById('categoryTabs');
+    if (tabsContainer) {
+      categories.forEach(cat => {
+        const tab = tabsContainer.querySelector(`[data-cat="${cat.id}"]`);
+        if (!tab) return;
+        const s = isTimedSectionActive(cat, tz);
+        tab.classList.toggle('timed-active',   s === true);
+        tab.classList.toggle('timed-inactive', s === false);
+      });
+      if (autoReorder) {
+        const sorted = getSortedCategories(categories);
+        const allBtn = tabsContainer.querySelector('[data-cat="all"]');
+        sorted.forEach(cat => {
+          const tab = tabsContainer.querySelector(`[data-cat="${cat.id}"]`);
+          if (tab) tabsContainer.appendChild(tab);
+        });
+        if (allBtn) tabsContainer.insertBefore(allBtn, tabsContainer.firstChild);
+      }
+    }
+
+    /* ── Update section visual state, badges & reorder sections ── */
+    const sectionsContainer = document.getElementById('menuCategories');
+    if (sectionsContainer) {
+      categories.forEach(cat => {
+        const section = document.getElementById(`cat-${cat.id}`);
+        if (!section) return;
+        const s = isTimedSectionActive(cat, tz);
+        section.classList.toggle('timed-active',   s === true);
+        section.classList.toggle('timed-inactive', s === false);
+
+        /* Badge: "Now serving" or "HH:MM – HH:MM" */
+        let badge = section.querySelector('.timed-badge');
+        if (s !== null) {
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'timed-badge';
+            const titleEl = section.querySelector('.menu-category__title');
+            if (titleEl) titleEl.appendChild(badge);
+          }
+          if (s) {
+            badge.textContent = currentLang === 'bg' ? 'Сервира се сега' : 'Now serving';
+            badge.dataset.active = '1';
+          } else {
+            const st = cat.schedule.start_time || '', et = cat.schedule.end_time || '';
+            badge.textContent = `${st}–${et}`;
+            badge.dataset.active = '0';
+          }
+        } else if (badge) {
+          badge.remove();
+        }
+      });
+
+      if (autoReorder) {
+        const sorted = getSortedCategories(categories);
+        sorted.forEach(cat => {
+          const section = document.getElementById(`cat-${cat.id}`);
+          if (section) sectionsContainer.appendChild(section);
+        });
+      }
+    }
+  }
+
   /* ============================================================
      HELPERS
      ============================================================ */
@@ -1048,6 +1168,11 @@
 
     // From here on, transitions are enabled
     initialized = true;
+
+    /* Apply timed section states (and start minute-update timer) */
+    applyTimedStates();
+    if (timedSectionTimer) clearInterval(timedSectionTimer);
+    timedSectionTimer = setInterval(applyTimedStates, 60 * 1000);
 
     /* Bind footer contact links */
     document.querySelectorAll('.restaurant-footer .rf__link').forEach(link => {

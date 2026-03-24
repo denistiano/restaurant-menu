@@ -431,8 +431,25 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   color: var(--muted-2); font-size: 16px;
   cursor: grab; flex-shrink: 0;
   padding: 2px 4px;
+  touch-action: none; /* required for pointer events on mobile */
+  user-select: none; -webkit-user-select: none;
 }
 .category-block__drag:active { cursor: grabbing; }
+
+/* Drag-in-progress states */
+.category-block.cat-dragging {
+  opacity: 0.92;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45) !important;
+  border-color: rgba(196,149,90,0.55) !important;
+  background: var(--surface-2) !important;
+}
+.cat-drag-placeholder {
+  background: rgba(196,149,90,0.07);
+  border: 2px dashed rgba(196,149,90,0.35);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  transition: height 0.1s ease;
+}
 .category-block__name {
   flex: 1; font-weight: 600; font-size: 15px;
 }
@@ -472,6 +489,56 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .category-name-field { display: flex; flex-direction: column; gap: 4px; }
 .category-name-field label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .category-name-field input { padding: 8px 10px; width: 100%; }
+
+/* ── SCHEDULE SECTION ───────────────────────────────────── */
+.cat-schedule-section {
+  border-top: 1px solid var(--border);
+  padding: 12px 0 14px;
+  margin-bottom: 14px;
+}
+.cat-schedule-toggle {
+  display: inline-flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none;
+}
+.cat-schedule-toggle .toggle-switch {
+  flex-shrink: 0; width: 36px; height: 20px;
+}
+.cat-schedule-label {
+  font-size: 13px; font-weight: 600; color: var(--text);
+}
+.cat-schedule-fields {
+  margin-top: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.cat-schedule-fields.hidden { display: none; }
+.cat-schedule-times {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.cat-schedule-time-field {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.cat-schedule-time-field label {
+  font-size: 11px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.cat-schedule-time-field input[type="time"] {
+  padding: 7px 10px; width: 100%;
+}
+.cat-schedule-status {
+  font-size: 12px; padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  background: var(--surface-3);
+  color: var(--muted);
+}
+.cat-schedule-status[data-active="1"] {
+  background: rgba(76,175,80,0.12);
+  color: #6abf69;
+}
+.cat-schedule-status[data-active="0"] {
+  background: rgba(196,149,90,0.09);
+  color: var(--muted);
+}
 
 /* ── ITEM ROW ───────────────────────────────────────────── */
 .items-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
