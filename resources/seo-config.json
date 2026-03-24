@@ -1,7 +1,7 @@
 {
-  "base_url": "",
+  "base_url": "https://denistiano.github.io/restaurant_menu/",
   "site_name": "e-Menu",
-  "site_name_bg": "\u0435-\u041c\u0435\u043d\u044e",
+  "site_name_bg": "е-Меню",
   "organization_name": "e-Menu",
   "default_og_locale": "bg_BG",
   "alternate_og_locale": "en_US",
