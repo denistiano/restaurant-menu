@@ -16,7 +16,7 @@
 #   3. If no entry exists for the restaurant, adds a new one
 #
 # Prerequisites:
-#   - resources/api-key.txt contains your jsonbin.io master key
+#   - resources/api-key.txt: line 1 = jsonbin.io master key (other lines ignored)
 #   - python3 available (standard on most systems)
 # ============================================================
 
@@ -40,7 +40,8 @@ if [ ! -f "$API_KEY_FILE" ]; then
   exit 1
 fi
 
-API_KEY=$(tr -d '[:space:]' < "$API_KEY_FILE")
+# Only the first line is the JsonBin key; joining all lines breaks X-Master-Key.
+API_KEY=$(head -n 1 "$API_KEY_FILE" | tr -d '[:space:]')
 JSONBIN="https://api.jsonbin.io/v3/b"
 
 echo ""
