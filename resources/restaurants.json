@@ -52,9 +52,9 @@
     "password_hash": "7024ea91e0986c0574d82972376b073079ab0ae023fb378ee1f0fa90299b5743"
   },
   {
-    "id": "ujen-polah",
+    "id": "yuzhen-polah",
     "name": {
-      "en": "Southern Breeze",
+      "en": "Yuzhen Polah - Southern Breeze",
       "bg": "Южен полъх"
     },
     "description": {
@@ -62,8 +62,8 @@
       "bg": "Италианска кухня и скара — Пловдив."
     },
     "default_language": "bg",
-    "image": "cover.jpg",
-    "logo": "cover.jpg",
+    "image": "https://res.cloudinary.com/duopd4plb/image/upload/v1774460297/restaurant_menu/ujen-polah/jxvocmyot6urmfhljg7w.jpg",
+    "logo": "https://res.cloudinary.com/duopd4plb/image/upload/v1774460296/restaurant_menu/ujen-polah/isxr4ifwkirnslknmfzk.svg",
     "keywords": [
       "Southern Breeze",
       "Ujen Polah",
