@@ -77,12 +77,25 @@
   /** Expose bust function so admin page can call it after a save. */
   window.__bustMenuCache = () => cacheBust(MENU_KEY);
 
+  // Used to keep GA4 event parameters consistent across all restaurant-page events.
+  // GA4 Explorations often shows "Not set" when an event parameter is missing for some events.
+  let pageRestaurantNameEn = RESTAURANT_ID;
+  let pageRestaurantNameBg = RESTAURANT_ID;
+
+  function trackRestaurantEvent(eventName, params = {}) {
+    const merged = {
+      restaurant_id: RESTAURANT_ID,
+      restaurant_name: (pageRestaurantNameEn || RESTAURANT_ID).slice(0, 100),
+      ...params,
+    };
+    window.trackEvent?.(eventName, merged);
+  }
+
   /* ── Analytics: fire menu_exit exactly once ─────────────── */
   function fireMenuExit() {
     if (menuExitFired || !initialized) return;
     menuExitFired = true;
-    window.trackEvent?.('menu_exit', {
-      restaurant_id:     RESTAURANT_ID,
+    trackRestaurantEvent('menu_exit', {
       duration_sec:      Math.round((Date.now() - pageStartMs) / 1000),
       interaction_count: interactionCount
     });
@@ -496,8 +509,7 @@
       }
     }
 
-    window.trackEvent?.('item_view', {
-      restaurant_id:  RESTAURANT_ID,
+    trackRestaurantEvent('item_view', {
       item_name:      (item.name.en || '').slice(0, 100),
       item_name_bg:   (item.name.bg || '').slice(0, 100),
       item_price:     item.price ?? 0,
@@ -638,8 +650,7 @@
       return;
     }
 
-    window.trackEvent?.('language_change', {
-      restaurant_id: RESTAURANT_ID,
+    trackRestaurantEvent('language_change', {
       from_lang:     prevLang || 'unknown',
       to_lang:       lang
     });
@@ -689,8 +700,7 @@
       return;
     }
 
-    window.trackEvent?.('theme_change', {
-      restaurant_id: RESTAURANT_ID,
+    trackRestaurantEvent('theme_change', {
       from_theme:    prevTheme || 'unknown',
       to_theme:      theme
     });
@@ -772,8 +782,7 @@
   function selectCategory(catId, categories) {
     if (initialized) {
       const cat = categories.find(c => c.id === catId);
-      window.trackEvent?.('category_select', {
-        restaurant_id:  RESTAURANT_ID,
+      trackRestaurantEvent('category_select', {
         category_id:    catId,
         category_name:  cat ? (cat.name.en || catId) : catId,
         item_count:     cat ? (cat.items?.length || 0) : 0
@@ -835,8 +844,7 @@
       activeTags.delete(tagEn);
     }
     if (initialized) {
-      window.trackEvent?.('tag_filter', {
-        restaurant_id: RESTAURANT_ID,
+      trackRestaurantEvent('tag_filter', {
         tag:           tagEn,
         action:        adding ? 'add' : 'remove',
         active_count:  activeTags.size,
@@ -1221,9 +1229,8 @@
             });
           });
           /* Use GA4 standard 'search' event so it populates built-in reports */
-          window.trackEvent?.('search', {
+          trackRestaurantEvent('search', {
             search_term:    term.slice(0, 100),
-            restaurant_id:  RESTAURANT_ID,
             results_count:  resultsCount
           });
           interactionCount++;
@@ -1281,8 +1288,7 @@
     /* Bind footer contact links */
     document.querySelectorAll('.restaurant-footer .rf__link').forEach(link => {
       link.addEventListener('click', () => {
-        window.trackEvent?.('contact_click', {
-          restaurant_id: RESTAURANT_ID,
+        trackRestaurantEvent('contact_click', {
           contact_type:  link.href.startsWith('tel:') ? 'phone' : 'email'
         });
       });
@@ -1292,9 +1298,10 @@
     const allItems = restaurant.menu.categories.reduce(
       (sum, cat) => sum + (cat.items?.length || 0), 0
     );
-    window.trackEvent?.('menu_view', {
-      restaurant_id:    restaurant.id,
-      restaurant_name:  (restaurant.name.en || restaurant.id).slice(0, 100),
+    pageRestaurantNameEn = (restaurant.name?.en || restaurant.id || RESTAURANT_ID).slice(0, 100);
+    pageRestaurantNameBg = (restaurant.name?.bg || restaurant.name?.en || restaurant.id || RESTAURANT_ID).slice(0, 100);
+
+    trackRestaurantEvent('menu_view', {
       theme:            restaurant.menu.theme || 'classic',
       language:         currentLang,
       category_count:   restaurant.menu.categories.length,
