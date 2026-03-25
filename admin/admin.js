@@ -895,9 +895,10 @@
    */
   function getEnums() {
     const menu = menuData.restaurant.menu;
-    if (!menu.enums) menu.enums = { tags: [], ingredients: [] };
+    if (!menu.enums) menu.enums = { tags: [], ingredients: [], allergens: [] };
     if (!menu.enums.tags) menu.enums.tags = [];
     if (!menu.enums.ingredients) menu.enums.ingredients = [];
+    if (!menu.enums.allergens) menu.enums.allergens = [];
     return menu.enums;
   }
 
@@ -1147,6 +1148,112 @@
     addBtn.addEventListener('click', addFromInput);
   }
 
+  /* ── ENUM NATIVE SELECT WIDGET ─────────────────────────────── */
+  function wireEnumNativeSelect(block, field, item, catIdx, itemIdx) {
+    const widget = block.querySelector(`.enum-native[data-enum="${field}"]`);
+    if (!widget) return;
+
+    const select         = widget.querySelector('.enum-native__select');
+    const addSelectedBtn = widget.querySelector('.enum-native__add-selected');
+    const newEnInput     = widget.querySelector('.enum-native__new-en');
+    const newBgInput     = widget.querySelector('.enum-native__new-bg');
+    const addNewBtn      = widget.querySelector('.enum-native__add-new');
+
+    if (!select || !addSelectedBtn || !newEnInput || !addNewBtn) return;
+
+    function placeholderText() {
+      if (field === 'tags') return 'Select tag…';
+      if (field === 'ingredients') return 'Select ingredient…';
+      if (field === 'allergens') return 'Select allergen…';
+      return 'Select…';
+    }
+
+    function populateSelect() {
+      const prev = select.value;
+      const entries = getSortedEnums(field);
+      select.innerHTML = '';
+
+      const ph = document.createElement('option');
+      ph.value = '';
+      ph.textContent = placeholderText();
+      select.appendChild(ph);
+
+      entries.forEach(entry => {
+        const en = String(entry.en || '').trim();
+        if (!en) return;
+        const bg = String(entry.bg || entry.en || '').trim() || en;
+        const opt = document.createElement('option');
+        opt.value = en;
+        opt.dataset.bg = bg;
+        opt.textContent = (bg && bg !== en) ? `${en} / ${bg}` : en;
+        select.appendChild(opt);
+      });
+
+      if (prev) select.value = prev;
+    }
+
+    function addToItem(entry) {
+      if (!entry) return;
+      const en = String(entry.en || '').trim();
+      if (!en) return;
+      const bg = entry.bg ? String(entry.bg).trim() : '';
+
+      if (!item[field]) item[field] = [];
+      const exists = item[field].some(e =>
+        String(e.en || '').toLowerCase() === en.toLowerCase()
+      );
+      if (exists) return;
+
+      const canonical = ensureInDict(field, { en, bg: bg || undefined });
+      item[field].push({ en: canonical.en, bg: canonical.bg || canonical.en });
+
+      if (field === 'tags') {
+        renderItemTags(block, item, catIdx, itemIdx);
+        adminTrack('admin_tag_add', { tag_en: canonical.en.slice(0, 60) });
+      } else if (field === 'ingredients') {
+        renderItemIngredients(block, item, catIdx, itemIdx);
+        adminTrack('admin_ingredient_add', { ingredient_en: canonical.en.slice(0, 60) });
+      } else if (field === 'allergens') {
+        renderItemAllergens(block, item, catIdx, itemIdx);
+        adminTrack('admin_allergen_add', { allergen_en: canonical.en.slice(0, 60) });
+      }
+
+      setDirty(true);
+      populateSelect();
+
+      // Clear inputs
+      select.value = '';
+      newEnInput.value = '';
+      if (newBgInput) newBgInput.value = '';
+    }
+
+    function addSelected() {
+      const en = select.value;
+      if (!en) return;
+      const opt = select.selectedOptions && select.selectedOptions[0];
+      const bg = opt ? (opt.dataset.bg || en) : en;
+      addToItem({ en, bg });
+    }
+
+    function addNew() {
+      const en = newEnInput.value.trim();
+      if (!en) return;
+      const bg = newBgInput ? newBgInput.value.trim() : '';
+      addToItem({ en, bg });
+    }
+
+    addSelectedBtn.addEventListener('click', addSelected);
+    addNewBtn.addEventListener('click', addNew);
+    newEnInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addNew();
+      }
+    });
+
+    populateSelect();
+  }
+
   /* ── RENDER ITEM TAGS ─────────────────────────────────────── */
   function buildEnumChip(entry, onRemove) {
     const chip = document.createElement('span');
@@ -1216,15 +1323,20 @@
             <label>Tags</label>
             <div class="item-tags-wrap">
               <div class="item-tags-list" id="tags-${catIdx}-${itemIdx}"></div>
-              <div class="enum-combobox" data-enum="tags" data-cat="${catIdx}" data-item="${itemIdx}">
-                <div class="enum-combobox__input-row">
-                  <input type="text" class="enum-combobox__input" placeholder="Search or add tag…" autocomplete="off" />
-                  <button class="enum-combobox__add-btn" type="button">+ Add</button>
+              <div class="enum-native" data-enum="tags" data-cat="${catIdx}" data-item="${itemIdx}">
+                <div class="enum-native__row">
+                  <select class="enum-native__select" aria-label="Select tag"></select>
+                  <button class="enum-native__add-selected" type="button">+ Add</button>
                 </div>
-                <div class="enum-combobox__bg-row hidden">
-                  <input type="text" class="enum-combobox__bg-input" placeholder="БГ превод (незадължително)" autocomplete="off" />
+                <div class="enum-native__row">
+                  <input type="text" class="enum-native__new-en" placeholder="New tag (EN)" autocomplete="off" />
                 </div>
-                <ul class="enum-combobox__dropdown hidden"></ul>
+                <div class="enum-native__row">
+                  <input type="text" class="enum-native__new-bg" placeholder="BG translation (optional)" autocomplete="off" />
+                </div>
+                <div class="enum-native__row">
+                  <button class="enum-native__add-new" type="button">Add new</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1232,15 +1344,41 @@
             <label>Ingredients</label>
             <div class="item-tags-wrap">
               <div class="item-tags-list" id="ingredients-${catIdx}-${itemIdx}"></div>
-              <div class="enum-combobox" data-enum="ingredients" data-cat="${catIdx}" data-item="${itemIdx}">
-                <div class="enum-combobox__input-row">
-                  <input type="text" class="enum-combobox__input" placeholder="Search or add ingredient…" autocomplete="off" />
-                  <button class="enum-combobox__add-btn" type="button">+ Add</button>
+              <div class="enum-native" data-enum="ingredients" data-cat="${catIdx}" data-item="${itemIdx}">
+                <div class="enum-native__row">
+                  <select class="enum-native__select" aria-label="Select ingredient"></select>
+                  <button class="enum-native__add-selected" type="button">+ Add</button>
                 </div>
-                <div class="enum-combobox__bg-row hidden">
-                  <input type="text" class="enum-combobox__bg-input" placeholder="БГ превод (незадължително)" autocomplete="off" />
+                <div class="enum-native__row">
+                  <input type="text" class="enum-native__new-en" placeholder="New ingredient (EN)" autocomplete="off" />
                 </div>
-                <ul class="enum-combobox__dropdown hidden"></ul>
+                <div class="enum-native__row">
+                  <input type="text" class="enum-native__new-bg" placeholder="BG translation (optional)" autocomplete="off" />
+                </div>
+                <div class="enum-native__row">
+                  <button class="enum-native__add-new" type="button">Add new</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="item-field-row">
+            <label>Allergens</label>
+            <div class="item-tags-wrap">
+              <div class="item-tags-list" id="allergens-${catIdx}-${itemIdx}"></div>
+              <div class="enum-native" data-enum="allergens" data-cat="${catIdx}" data-item="${itemIdx}">
+                <div class="enum-native__row">
+                  <select class="enum-native__select" aria-label="Select allergen"></select>
+                  <button class="enum-native__add-selected" type="button">+ Add</button>
+                </div>
+                <div class="enum-native__row">
+                  <input type="text" class="enum-native__new-en" placeholder="New allergen (EN)" autocomplete="off" />
+                </div>
+                <div class="enum-native__row">
+                  <input type="text" class="enum-native__new-bg" placeholder="BG translation (optional)" autocomplete="off" />
+                </div>
+                <div class="enum-native__row">
+                  <button class="enum-native__add-new" type="button">Add new</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1313,11 +1451,15 @@
 
     // Tags
     renderItemTags(block, item, catIdx, itemIdx);
-    wireEnumCombobox(block, 'tags', item, catIdx, itemIdx);
+    wireEnumNativeSelect(block, 'tags', item, catIdx, itemIdx);
 
     // Ingredients
     renderItemIngredients(block, item, catIdx, itemIdx);
-    wireEnumCombobox(block, 'ingredients', item, catIdx, itemIdx);
+    wireEnumNativeSelect(block, 'ingredients', item, catIdx, itemIdx);
+
+    // Allergens
+    renderItemAllergens(block, item, catIdx, itemIdx);
+    wireEnumNativeSelect(block, 'allergens', item, catIdx, itemIdx);
 
     // Item image URL + upload
     const imgInput   = block.querySelector('.item-img-input');
@@ -1373,6 +1515,20 @@
         adminTrack('admin_ingredient_remove', { ingredient_en: String(ing.en || '').slice(0, 60) });
         item.ingredients.splice(ingIdx, 1);
         renderItemIngredients(itemBlock, item, catIdx, itemIdx);
+        setDirty(true);
+      }));
+    });
+  }
+
+  function renderItemAllergens(itemBlock, item, catIdx, itemIdx) {
+    const list = itemBlock.querySelector(`#allergens-${catIdx}-${itemIdx}`);
+    if (!list) return;
+    list.innerHTML = '';
+    (item.allergens || []).forEach((al, alIdx) => {
+      list.appendChild(buildEnumChip(al, () => {
+        adminTrack('admin_allergen_remove', { allergen_en: String(al.en || '').slice(0, 60) });
+        item.allergens.splice(alIdx, 1);
+        renderItemAllergens(itemBlock, item, catIdx, itemIdx);
         setDirty(true);
       }));
     });

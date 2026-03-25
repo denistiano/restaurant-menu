@@ -466,6 +466,16 @@
          </div>`
       : '';
 
+    const allergensHtml = (config.show_allergens && item.allergens && item.allergens.length)
+      ? `<div class="item-modal__ingredients">
+           <span class="item-modal__ingredients-label"
+                 data-en="Allergens" data-bg="Алергени">${currentLang === 'bg' ? 'Алергени' : 'Allergens'}</span>
+           <div class="item-modal__ingredients-list">${item.allergens.map(al =>
+             `<span class="item-modal__ingredient">${esc(t(al))}</span>`
+           ).join('')}</div>
+         </div>`
+      : '';
+
     const priceHtml = (item.price !== undefined && item.price !== null)
       ? `<span class="item-modal__price">${esc(formatPrice(item.price))}</span>`
       : '';
@@ -483,6 +493,7 @@
           data-bg="${esc(item.name.bg || item.name.en || '')}">${esc(t(item.name))}</h2>
       ${descHtml}
       ${ingredientsHtml}
+      ${allergensHtml}
       <div class="item-modal__footer">
         ${priceHtml}
         ${unavailHtml}

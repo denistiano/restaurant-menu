@@ -639,6 +639,69 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .item-tag-chip__del:hover { color: var(--danger); }
 
 /* Enum combobox */
+.enum-native {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.enum-native__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.enum-native__select {
+  flex: 1;
+  min-width: 0;
+  appearance: auto;
+  background-image: none;
+  padding-right: 12px;
+}
+
+.enum-native__add-selected,
+.enum-native__add-new {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--muted);
+  transition: all var(--transition);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.enum-native__add-selected:hover,
+.enum-native__add-new:hover {
+  color: var(--text);
+  border-color: var(--border-2);
+}
+
+.enum-native__row .enum-native__add-new {
+  width: 100%;
+}
+
+.enum-native__new-en,
+.enum-native__new-bg {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+}
+
+.enum-native__new-en:focus,
+.enum-native__new-bg:focus {
+  outline: none;
+  border-color: rgba(196,149,90,0.5);
+}
+
 .enum-combobox { position: relative; }
 .enum-combobox__input-row {
   display: flex; gap: 6px;
