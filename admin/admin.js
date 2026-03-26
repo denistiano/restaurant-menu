@@ -8,10 +8,6 @@
   /* ── CONFIG ─────────────────────────────────────────────── */
   const JSONBIN_BASE    = 'https://api.jsonbin.io/v3/b';
   const SESSION_KEY_KEY = 'admin_master_key';
-  const SUPPORTED_CURRENCIES = [
-    { code: 'EUR', label: 'Euro (€)', symbol: '€' },
-    { code: 'BGN', label: 'Bulgarian lev (лв)', symbol: 'лв' }
-  ];
 
   function getMasterKey() {
     return sessionStorage.getItem(SESSION_KEY_KEY) || '';
@@ -19,8 +15,37 @@
   function setMasterKey(val) {
     if (val) sessionStorage.setItem(SESSION_KEY_KEY, val);
   }
-  function currencyMeta(code) {
-    return SUPPORTED_CURRENCIES.find(c => c.code === code) || { code, label: code, symbol: code };
+
+  const DEFAULT_CURRENCY_SUPPORT = [
+    { code: 'EUR', label: 'Euro (€)', symbol: '€' },
+    { code: 'BGN', label: 'Bulgarian lev (лв)', symbol: 'лв' }
+  ];
+
+  function getCurrencySupport(restaurantEntry) {
+    const supported = restaurantEntry?.currencies_supported;
+    if (Array.isArray(supported) && supported.length) {
+      return supported
+        .map(x => ({
+          code: String(x.code || '').toUpperCase(),
+          label: String(x.label || x.code || '').trim(),
+          symbol: String(x.symbol || '').trim()
+        }))
+        .filter(x => x.code);
+    }
+    const ref = String(restaurantEntry?.currency_reference || 'EUR').toUpperCase();
+    const rates = restaurantEntry?.currency_rates || {};
+    const codes = new Set([ref, ...Object.keys(rates).map(c => String(c).toUpperCase())]);
+    const out = [];
+    for (const code of codes) {
+      const def = DEFAULT_CURRENCY_SUPPORT.find(c => c.code === code);
+      out.push(def || { code, label: code, symbol: code });
+    }
+    return out;
+  }
+
+  function currencyMeta(code, restaurantEntry) {
+    const support = getCurrencySupport(restaurantEntry);
+    return support.find(c => c.code === code) || { code, label: code, symbol: code };
   }
 
   /* ── CLOUDINARY CONFIG ──────────────────────────────────── */
@@ -198,6 +223,9 @@
   const authScreen   = document.getElementById('authScreen');
   const editorScreen = document.getElementById('editorScreen');
   const authGrid     = document.getElementById('authGrid');
+  const restaurantSelect = document.getElementById('restaurantSelect');
+  const authLoginBtn     = document.getElementById('authLoginBtn');
+  const authErrorEl      = document.getElementById('authError');
   const editorTitle  = document.getElementById('editorTitle');
   const previewLink  = document.getElementById('previewLink');
   const saveBtn      = document.getElementById('saveBtn');
@@ -265,123 +293,157 @@
       const res = await fetch('../resources/restaurants.json');
       if (!res.ok) throw new Error();
       restaurants = await res.json();
-      renderAuthCards();
+      renderRestaurantSelect();
     } catch {
       authGrid.innerHTML = '<p style="color:rgba(240,236,228,0.4);grid-column:1/-1">Could not load restaurants list.</p>';
     }
   }
 
-  /* ── AUTH CARDS ──────────────────────────────────────────── */
-  function renderAuthCards() {
-    authGrid.innerHTML = '';
-    restaurants.forEach(r => {
-      const hasBin = r.menu_bin_id && r.menu_bin_id !== 'PASTE_BIN_ID_HERE';
-      const card = document.createElement('div');
-      card.className = 'auth-card';
+  /* ── RESTAURANT SELECT ────────────────────────────────────── */
+  function renderRestaurantSelect() {
+    if (!restaurantSelect) return;
+    restaurantSelect.innerHTML = '';
 
-      const imgSrc = r.image ? `../resources/${r.id}/${r.image}` : null;
-      const imgHtml = imgSrc
-        ? `<img class="auth-card__img" src="${esc(imgSrc)}" alt="" onerror="this.style.display='none'" />`
-        : `<div class="auth-card__img-placeholder">🍽</div>`;
+    const opts = restaurants
+      .map(r => {
+        const hasBin = r.menu_bin_id && r.menu_bin_id !== 'PASTE_BIN_ID_HERE';
+        const status = hasBin ? 'Connected' : 'No bin ID';
+        const suffix = hasBin ? '' : ' (inactive)';
+        const label = `${r.name.en || r.id} — ${status}${suffix}`;
+        return { value: r.id, label };
+      })
+      .filter(x => x.value);
 
-      const statusText = hasBin ? 'Connected to jsonbin.io' : '⚠ No bin ID configured';
-      const statusColor = hasBin ? '' : 'style="color:#e05c5c"';
-
-      card.innerHTML = `
-        <div class="auth-card__header">
-          ${imgHtml}
-          <div class="auth-card__info">
-            <div class="auth-card__name">${esc(r.name.en || r.id)}</div>
-            <div class="auth-card__status" ${statusColor}>${statusText}</div>
-          </div>
-        </div>
-        <div class="auth-card__form">
-          <button class="auth-card__submit" data-id="${esc(r.id)}">Enter editor</button>
-        </div>
-        <p class="auth-card__error" id="err-${esc(r.id)}">Incorrect admin password</p>
-      `;
-
-      const btn   = card.querySelector('.auth-card__submit');
-      btn.addEventListener('click', () => attemptAuth(r, btn));
-
-      authGrid.appendChild(card);
+    opts.forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.value;
+      opt.textContent = o.label;
+      restaurantSelect.appendChild(opt);
     });
+
+    if (!restaurantSelect.value && opts[0]) restaurantSelect.value = opts[0].value;
+
+    // Auto-clear error and allow Enter key to submit.
+    if (authErrorEl) authErrorEl.style.display = 'none';
   }
 
-  function normalizeCurrencyConfig(cfg = {}, restaurantEntry = null) {
-    const source = cfg.currencies || {};
-    let base = (source.base || 'EUR').toUpperCase();
-    if (!SUPPORTED_CURRENCIES.some(c => c.code === base)) base = 'EUR';
-    let display = Array.isArray(source.display) ? source.display.map(x => String(x).toUpperCase()) : [base];
+  function normalizeCurrencyConfig(currencies = {}, restaurantEntry = null) {
+    const support = getCurrencySupport(restaurantEntry);
+    const supportedCodes = new Set(support.map(c => c.code));
+    const ref = String(restaurantEntry?.currency_reference || 'EUR').toUpperCase();
+
+    let base = String(currencies.base || ref || 'EUR').toUpperCase();
+    if (!supportedCodes.has(base)) {
+      const fallback = support.find(c => c.code === ref)?.code || support[0]?.code || 'EUR';
+      base = fallback;
+    }
+
+    let display = (Array.isArray(currencies.display) && currencies.display.length)
+      ? currencies.display.map(x => String(x).toUpperCase()).filter(Boolean)
+      : [base, ...getCurrencySupport(restaurantEntry).map(c => c.code).filter(code => code !== base)];
+
     if (!display.includes(base)) display.unshift(base);
-    display = [...new Set(display)].filter(code => SUPPORTED_CURRENCIES.some(c => c.code === code));
-    const fallbackRates = restaurantEntry && restaurantEntry.currency_rates ? restaurantEntry.currency_rates : {};
-    const rates = { ...fallbackRates, ...(source.rates || {}) };
-    rates[base] = 1;
-    return { base, display, rates };
+    display = [...new Set(display)].filter(code => supportedCodes.has(code));
+    if (!display.length) display = [base];
+
+    return { base, display };
   }
 
-  function renderCurrencyConfig(cfg) {
-    const baseEl = document.getElementById('cfgCurrencyBase');
-    const rowsEl = document.getElementById('cfgCurrencyRows');
-    const addBtn = document.getElementById('cfgCurrencyAdd');
-    if (!baseEl || !rowsEl || !addBtn) return;
+  function renderCurrencyConfig(currencyCfg) {
+    const mainChipsEl = document.getElementById('cfgCurrencyMainChips');
+    const displayEl   = document.getElementById('cfgCurrencyDisplayChips');
+    const availEl     = document.getElementById('cfgCurrencyAvailableChips');
+    if (!mainChipsEl || !displayEl || !availEl) return;
 
-    baseEl.innerHTML = SUPPORTED_CURRENCIES
-      .map(c => `<option value="${esc(c.code)}">${esc(c.label)}</option>`).join('');
-    baseEl.value = cfg.base;
+    const support = getCurrencySupport(currentRestaurant);
+    const supportByCode = new Map(support.map(c => [c.code, c]));
 
-    function rowHtml(code) {
-      const meta = currencyMeta(code);
-      const rateVal = (cfg.rates && cfg.rates[code] !== undefined) ? Number(cfg.rates[code]) : (code === cfg.base ? 1 : 1);
-      const disabledRate = code === cfg.base ? 'disabled' : '';
-      return `
-        <div class="currency-row" data-code="${esc(code)}">
-          <select class="field-input field-select currency-row__code">
-            ${SUPPORTED_CURRENCIES.map(c => `<option value="${esc(c.code)}"${c.code === code ? ' selected' : ''}>${esc(c.label)}</option>`).join('')}
-          </select>
-          <input class="field-input currency-row__rate" type="number" min="0.0001" step="0.0001" value="${Number(rateVal).toFixed(4)}" ${disabledRate} />
-          <button class="currency-row__remove" type="button">Remove</button>
-        </div>`;
-    }
+    // Ensure normalized (and mutate the object in-place)
+    const normalized = normalizeCurrencyConfig(currencyCfg || {}, currentRestaurant);
+    currencyCfg.base = normalized.base;
+    currencyCfg.display = normalized.display;
 
-    rowsEl.innerHTML = cfg.display.map(code => rowHtml(code)).join('');
-
-    function readRowsAndNormalize() {
-      const nextDisplay = [];
-      const nextRates = { ...(cfg.rates || {}) };
-      rowsEl.querySelectorAll('.currency-row').forEach(row => {
-        const code = row.querySelector('.currency-row__code')?.value;
-        const rateRaw = row.querySelector('.currency-row__rate')?.value;
-        if (!code) return;
-        if (!nextDisplay.includes(code)) nextDisplay.push(code);
-        const parsed = parseFloat(rateRaw);
-        if (Number.isFinite(parsed) && parsed > 0) nextRates[code] = parsed;
-      });
-      cfg = normalizeCurrencyConfig({ currencies: { base: baseEl.value, display: nextDisplay, rates: nextRates } }, currentRestaurant);
-      renderCurrencyConfig(cfg);
-      setDirty(true);
-    }
-
-    baseEl.onchange = () => readRowsAndNormalize();
-    addBtn.onclick = () => {
-      const available = SUPPORTED_CURRENCIES.map(c => c.code).find(code => !cfg.display.includes(code));
-      if (!available) return;
-      cfg.display.push(available);
-      if (!cfg.rates[available]) cfg.rates[available] = 1;
-      renderCurrencyConfig(cfg);
-      setDirty(true);
-    };
-    rowsEl.querySelectorAll('.currency-row').forEach(row => {
-      row.querySelector('.currency-row__code')?.addEventListener('change', readRowsAndNormalize);
-      row.querySelector('.currency-row__rate')?.addEventListener('input', readRowsAndNormalize);
-      row.querySelector('.currency-row__remove')?.addEventListener('click', () => {
-        const code = row.getAttribute('data-code');
-        cfg.display = cfg.display.filter(c => c !== code);
-        if (!cfg.display.length) cfg.display = [cfg.base];
-        renderCurrencyConfig(cfg);
+    mainChipsEl.innerHTML = '';
+    support.forEach(meta => {
+      const chip = document.createElement('div');
+      chip.className = `item-tag-chip currency-chip${meta.code === currencyCfg.base ? ' currency-chip--main' : ''}`;
+      chip.innerHTML = `
+        <span class="item-tag-chip__en">${esc(meta.code)}</span>
+        ${meta.symbol && meta.symbol !== meta.code ? `<span class="item-tag-chip__bg">(${esc(meta.symbol)})</span>` : ''}
+      `;
+      chip.title = meta.code === currencyCfg.base ? 'Main currency' : 'Set as main currency';
+      chip.addEventListener('click', () => {
+        currencyCfg.base = meta.code;
+        if (!currencyCfg.display.includes(currencyCfg.base)) currencyCfg.display.unshift(currencyCfg.base);
+        currencyCfg.display = [currencyCfg.base, ...currencyCfg.display.filter(c => c !== currencyCfg.base)];
+        renderCurrencyConfig(currencyCfg);
+        // Refresh item headers so the price symbol matches the new base.
+        renderCategories(menuData.restaurant.menu.categories);
         setDirty(true);
       });
+      mainChipsEl.appendChild(chip);
+    });
+
+    displayEl.innerHTML = '';
+    currencyCfg.display.forEach((code, idx) => {
+      const meta = supportByCode.get(code) || { code, symbol: code };
+      const chip = document.createElement('div');
+      chip.className = `item-tag-chip currency-chip${code === currencyCfg.base ? ' currency-chip--main' : ''}`;
+      chip.dataset.code = code;
+
+      chip.innerHTML = `
+        <span class="item-tag-chip__en">${esc(meta.code)}</span>
+        ${meta.symbol ? `<span class="item-tag-chip__bg">(${esc(meta.symbol)})</span>` : ''}
+        <span class="currency-chip__controls">
+          ${idx > 0 ? `<span class="currency-chip__ctl" data-action="up" title="Move up">↑</span>` : ''}
+          ${idx < currencyCfg.display.length - 1 ? `<span class="currency-chip__ctl" data-action="down" title="Move down">↓</span>` : ''}
+          ${code !== currencyCfg.base ? `<span class="currency-chip__ctl currency-chip__ctl--remove" data-action="remove" title="Remove">×</span>` : ''}
+        </span>
+      `;
+
+      chip.addEventListener('click', e => {
+        const ctl = e.target.closest('.currency-chip__ctl');
+        if (!ctl) return;
+        const action = ctl.getAttribute('data-action');
+        const currentIdx = currencyCfg.display.indexOf(code);
+        if (currentIdx < 0) return;
+
+        if (action === 'up' && currentIdx > 0) {
+          const tmp = currencyCfg.display[currentIdx - 1];
+          currencyCfg.display[currentIdx - 1] = currencyCfg.display[currentIdx];
+          currencyCfg.display[currentIdx] = tmp;
+        } else if (action === 'down' && currentIdx < currencyCfg.display.length - 1) {
+          const tmp = currencyCfg.display[currentIdx + 1];
+          currencyCfg.display[currentIdx + 1] = currencyCfg.display[currentIdx];
+          currencyCfg.display[currentIdx] = tmp;
+        } else if (action === 'remove' && code !== currencyCfg.base) {
+          currencyCfg.display = currencyCfg.display.filter(c => c !== code);
+          if (!currencyCfg.display.includes(currencyCfg.base)) currencyCfg.display.unshift(currencyCfg.base);
+        }
+
+        renderCurrencyConfig(currencyCfg);
+        setDirty(true);
+      });
+
+      displayEl.appendChild(chip);
+    });
+
+    // Available chips (not in display) - click adds at end.
+    availEl.innerHTML = '';
+    support.filter(meta => !currencyCfg.display.includes(meta.code)).forEach(meta => {
+      const chip = document.createElement('div');
+      chip.className = `item-tag-chip currency-chip`;
+      chip.innerHTML = `
+        <span class="item-tag-chip__en">+ ${esc(meta.code)}</span>
+        ${meta.symbol && meta.symbol !== meta.code ? `<span class="item-tag-chip__bg">(${esc(meta.symbol)})</span>` : ''}
+      `;
+      chip.title = 'Add to displayed currencies';
+      chip.addEventListener('click', () => {
+        currencyCfg.display.push(meta.code);
+        renderCurrencyConfig(currencyCfg);
+        setDirty(true);
+      });
+      availEl.appendChild(chip);
     });
   }
 
@@ -398,8 +460,7 @@
   });
   sharedPasswordInput?.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
-      const firstBtn = authGrid.querySelector('.auth-card__submit');
-      if (firstBtn) firstBtn.click();
+      if (authLoginBtn) authLoginBtn.click();
     }
   });
 
@@ -471,10 +532,11 @@
     }
 
     const timestamp = Math.floor(Date.now() / 1000);
-    const publicId = `admin-sanity-${timestamp}`;
     const folder = 'restaurant_menu/_sanity_checks';
-    const paramsToSign = `folder=${folder}&overwrite=true&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
-    const signature = await computeSha256Hex(paramsToSign);
+    const signParams = { folder, timestamp };
+    const sigString  = Object.keys(signParams).sort()
+      .map(k => `${k}=${signParams[k]}`).join('&') + apiSecret;
+    const signature = await computeSha256Hex(sigString);
     const onePxPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5vWn0AAAAASUVORK5CYII=';
 
     const form = new FormData();
@@ -482,8 +544,6 @@
     form.append('api_key', apiKey);
     form.append('timestamp', String(timestamp));
     form.append('folder', folder);
-    form.append('public_id', publicId);
-    form.append('overwrite', 'true');
     form.append('signature_algorithm', 'sha256');
     form.append('signature', signature);
 
@@ -516,15 +576,17 @@
     }
     if (!pw) { sharedPasswordInput.focus(); return; }
 
-    const errEl = document.getElementById(`err-${restaurantEntry.id}`);
-    errEl.style.display = 'none';
+    if (authErrorEl) authErrorEl.style.display = 'none';
     if (triggerBtn) triggerBtn.disabled = true;
 
     const hash = await hashPassword(pw);
     const legacy = await hashPasswordLegacy(restaurantEntry.id, pw);
     if (hash !== restaurantEntry.password_hash && legacy !== restaurantEntry.password_hash) {
       adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40) });
-      errEl.style.display = 'block';
+      if (authErrorEl) {
+        authErrorEl.style.display = 'block';
+        authErrorEl.textContent = 'Incorrect admin password (not authorized for this restaurant).';
+      }
       sharedPasswordInput.focus();
       if (triggerBtn) triggerBtn.disabled = false;
       return;
@@ -534,6 +596,10 @@
     if (!jsonbinCheck.ok) {
       adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40), reason: 'jsonbin_sanity' });
       showToast(jsonbinCheck.message, 'error');
+      if (authErrorEl) {
+        authErrorEl.style.display = 'block';
+        authErrorEl.textContent = jsonbinCheck.message;
+      }
       if (triggerBtn) triggerBtn.disabled = false;
       return;
     }
@@ -542,6 +608,10 @@
     if (!cloudinaryCheck.ok) {
       adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40), reason: 'cloudinary_sanity' });
       showToast(cloudinaryCheck.message, 'error');
+      if (authErrorEl) {
+        authErrorEl.style.display = 'block';
+        authErrorEl.textContent = cloudinaryCheck.message;
+      }
       if (triggerBtn) triggerBtn.disabled = false;
       return;
     }
@@ -749,8 +819,9 @@
         el.addEventListener('change', () => setDirty(true));
       });
 
-    const currencyCfg = normalizeCurrencyConfig(cfg, currentRestaurant);
-    renderCurrencyConfig(currencyCfg);
+    if (!cfg.currencies) cfg.currencies = {};
+    cfg.currencies = normalizeCurrencyConfig(cfg.currencies, currentRestaurant);
+    renderCurrencyConfig(cfg.currencies);
   }
 
   /* ── CATEGORIES ──────────────────────────────────────────── */
@@ -1458,8 +1529,8 @@
     block.className = 'item-block';
 
     const price   = typeof item.price === 'number' ? item.price.toFixed(2) : '0.00';
-    const baseCurrency = normalizeCurrencyConfig(menuData.restaurant.menu.config || {}, currentRestaurant).base;
-    const baseSymbol = currencyMeta(baseCurrency).symbol;
+    const currencyCfg = normalizeCurrencyConfig(menuData.restaurant.menu.config?.currencies || {}, currentRestaurant);
+    const baseSymbol = currencyMeta(currencyCfg.base, currentRestaurant).symbol || currencyCfg.base;
     const nameTxt = item.name.en || 'New item';
 
     block.innerHTML = `
@@ -1754,22 +1825,8 @@
     r.menu.config.show_tags        = document.getElementById('cfgTags').checked;
     r.menu.config.show_ingredients = document.getElementById('cfgIngredients').checked;
     r.menu.config.show_allergens   = document.getElementById('cfgAllergens').checked;
-    const baseEl = document.getElementById('cfgCurrencyBase');
-    const rowsEl = document.getElementById('cfgCurrencyRows');
-    if (baseEl && rowsEl) {
-      const display = [];
-      const rates = {};
-      rowsEl.querySelectorAll('.currency-row').forEach(row => {
-        const code = (row.querySelector('.currency-row__code')?.value || '').toUpperCase();
-        const rate = parseFloat(row.querySelector('.currency-row__rate')?.value || '');
-        if (!code) return;
-        if (!display.includes(code)) display.push(code);
-        if (Number.isFinite(rate) && rate > 0) rates[code] = rate;
-      });
-      r.menu.config.currencies = normalizeCurrencyConfig({
-        currencies: { base: baseEl.value, display, rates }
-      }, currentRestaurant);
-    }
+    if (!r.menu.config.currencies) r.menu.config.currencies = {};
+    r.menu.config.currencies = normalizeCurrencyConfig(r.menu.config.currencies, currentRestaurant);
     const tzEl = document.getElementById('cfgTimezone');
     if (tzEl) r.menu.config.timezone = tzEl.value || 'Europe/Sofia';
     // Categories and items are already mutated in-place
@@ -1879,5 +1936,20 @@
   });
 
   /* ── INIT ────────────────────────────────────────────────── */
+  if (authLoginBtn) {
+    authLoginBtn.addEventListener('click', async () => {
+      if (!restaurants || !restaurants.length) return;
+      const rid = restaurantSelect?.value;
+      const entry = restaurants.find(r => r.id === rid);
+      if (!entry) {
+        if (authErrorEl) {
+          authErrorEl.style.display = 'block';
+          authErrorEl.textContent = 'Pick a restaurant first.';
+        }
+        return;
+      }
+      await attemptAuth(entry, authLoginBtn);
+    });
+  }
   loadRestaurants();
 })();

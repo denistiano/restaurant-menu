@@ -22,6 +22,14 @@
       "ресторант"
     ],
     "theme": "classic",
+    "currency_reference": "EUR",
+    "currencies_supported": [
+      { "code": "EUR", "label": "Euro (€)", "symbol": "€" },
+      { "code": "BGN", "label": "Bulgarian lev (лв)", "symbol": "лв" }
+    ],
+    "currency_rates": {
+      "BGN": 1.95583
+    },
     "menu_bin_id": "69c10241c3097a1dd54f0ada",
     "password_hash": "faf43cb4335314f0836edbbb1270401ef2ef5af147ff0b496913ccc7b9f3f21a"
   },
@@ -48,6 +56,14 @@
       "гръцка кухня"
     ],
     "theme": "classic",
+    "currency_reference": "EUR",
+    "currencies_supported": [
+      { "code": "EUR", "label": "Euro (€)", "symbol": "€" },
+      { "code": "BGN", "label": "Bulgarian lev (лв)", "symbol": "лв" }
+    ],
+    "currency_rates": {
+      "BGN": 1.95583
+    },
     "menu_bin_id": "69c13206c3097a1dd54febc8",
     "password_hash": "7024ea91e0986c0574d82972376b073079ab0ae023fb378ee1f0fa90299b5743"
   },
@@ -75,6 +91,11 @@
       "италиански ресторант"
     ],
     "theme": "classic",
+    "currency_reference": "EUR",
+    "currencies_supported": [
+      { "code": "EUR", "label": "Euro (€)", "symbol": "€" },
+      { "code": "BGN", "label": "Bulgarian lev (лв)", "symbol": "лв" }
+    ],
     "currency_rates": {
       "BGN": 1.95583
     },

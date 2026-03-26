@@ -229,6 +229,7 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   font-size: 12px; color: var(--danger);
   display: none;
 }
+.auth-grid #authError { margin: 0 20px; }
 .currency-row {
   display: grid;
   grid-template-columns: 1fr 120px auto;
@@ -244,6 +245,44 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   border-radius: var(--radius-sm);
   color: var(--danger);
   background: var(--surface-2);
+}
+
+/* Currency chips (tag-like selector) */
+.currency-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.currency-chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.currency-chip {
+  user-select: none;
+}
+.currency-chip--main {
+  border-color: rgba(196,149,90,0.6);
+  background: rgba(196,149,90,0.12);
+}
+.currency-chip__code {
+  font-weight: 700;
+}
+.currency-chip__controls {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 8px;
+  align-items: center;
+}
+.currency-chip__ctl {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+  border: 1px solid var(--border-2);
+  background: rgba(255,255,255,0.02);
+  border-radius: 999px;
+  padding: 2px 8px;
+  line-height: 1;
+}
+.currency-chip__ctl:hover {
+  color: var(--text);
+  border-color: rgba(196,149,90,0.55);
+}
+.currency-chip__ctl--remove:hover {
+  color: var(--danger);
+  border-color: rgba(224,92,92,0.6);
 }
 
 /* ── EDITOR TOP BAR ──────────────────────────────────────── */

@@ -94,7 +94,16 @@
       </details>
 
       <div class="auth-grid" id="authGrid">
-        <div class="admin-spinner-wrap"><div class="admin-spinner"></div></div>
+        <div class="form-section" style="padding:0;border:none;">
+          <div class="field-row">
+            <label class="field-label">Restaurant</label>
+            <select class="field-input field-select" id="restaurantSelect"></select>
+          </div>
+          <div class="field-row" style="padding-top:0;">
+            <button class="auth-card__submit" id="authLoginBtn" type="button">Open editor</button>
+          </div>
+          <p class="auth-card__error" id="authError">Incorrect admin password</p>
+        </div>
       </div>
     </main>
   </div>
@@ -262,15 +271,20 @@
 
         <div class="form-section">
           <h3 class="form-section__title">Currency</h3>
-          <p class="form-section__desc">Set base currency for item values and optionally display converted currencies.</p>
+          <p class="form-section__desc">Choose the main currency (menu values) and the displayed currencies (order). Rates are fixed in your `resources/restaurants.json`.</p>
           <div class="field-row">
-            <label class="field-label">Main currency (menu values)</label>
-            <select class="field-input field-select" id="cfgCurrencyBase"></select>
+            <label class="field-label">Main</label>
+            <div id="cfgCurrencyMainChips" class="currency-chip-row"></div>
           </div>
           <div class="field-row">
-            <label class="field-label">Displayed currencies</label>
-            <div id="cfgCurrencyRows"></div>
-            <button class="btn-add-cat" id="cfgCurrencyAdd" type="button">+ Add currency</button>
+            <label class="field-label">Display</label>
+            <div style="flex:1;min-width:0;">
+              <div id="cfgCurrencyDisplayChips" class="currency-chip-list"></div>
+              <div style="margin-top:10px;">
+                <div class="field-label__hint">Add currencies</div>
+                <div id="cfgCurrencyAvailableChips" class="currency-chip-row" style="margin-top:8px;"></div>
+              </div>
+            </div>
           </div>
         </div>
 

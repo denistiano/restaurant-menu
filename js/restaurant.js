@@ -250,28 +250,48 @@
   function getCurrencyConfig() {
     const cfg = data?.restaurant?.menu?.config || {};
     const c = cfg.currencies || {};
-    const base = (c.base || 'EUR').toUpperCase();
-    const displayRaw = Array.isArray(c.display) ? c.display : [base];
+
+    const base = (c.base || (restaurantMeta?.currency_reference || 'EUR')).toUpperCase();
+    const support = Array.isArray(restaurantMeta?.currencies_supported) ? restaurantMeta.currencies_supported : [];
+    const supportedCodes = new Set(
+      support.map(x => String(x?.code || '').toUpperCase()).filter(Boolean)
+        .concat(Object.keys(restaurantMeta?.currency_rates || {}).map(k => String(k).toUpperCase()))
+    );
+    supportedCodes.delete('');
+
+    const displayRaw = Array.isArray(c.display) && c.display.length
+      ? c.display
+      : [base, ...Array.from(supportedCodes).filter(code => code !== base)];
     const display = [...new Set(displayRaw.map(x => String(x).toUpperCase()))];
-    const fallbackRates = (restaurantMeta && restaurantMeta.currency_rates) ? restaurantMeta.currency_rates : {};
-    const rates = { ...fallbackRates, ...(c.rates || {}) };
-    rates[base] = 1;
     if (!display.includes(base)) display.unshift(base);
-    return { base, display, rates };
+
+    const ref = String(restaurantMeta?.currency_reference || 'EUR').toUpperCase();
+    const rates = (restaurantMeta?.currency_rates && typeof restaurantMeta.currency_rates === 'object')
+      ? restaurantMeta.currency_rates
+      : {};
+
+    return { base, display, ref, rates };
   }
 
   function currencySymbol(code) {
+    const support = restaurantMeta?.currencies_supported;
+    if (Array.isArray(support)) {
+      const m = support.find(x => String(x?.code || '').toUpperCase() === String(code).toUpperCase());
+      if (m && m.symbol) return m.symbol;
+    }
     if (code === 'EUR') return '€';
     if (code === 'BGN') return 'лв';
-    return code;
+    return String(code);
   }
 
   function formatPrice(price) {
     if (price === undefined || price === null) return '';
-    const { base, display, rates } = getCurrencyConfig();
+    const { base, display, ref, rates } = getCurrencyConfig();
     const parts = display.map(code => {
-      const rate = (code === base) ? 1 : Number(rates[code] || 1);
-      const converted = Number(price) * (Number.isFinite(rate) && rate > 0 ? rate : 1);
+      const baseRate = (String(base).toUpperCase() === ref) ? 1 : Number(rates[base] || 1);
+      const codeRate = (String(code).toUpperCase() === ref) ? 1 : Number(rates[code] || 1);
+      const ratio = (Number.isFinite(baseRate) && baseRate > 0) ? (codeRate / baseRate) : 1;
+      const converted = Number(price) * ratio;
       return `${converted.toFixed(2)}${currencySymbol(code)}`;
     });
     return parts.join(' / ');
@@ -1356,6 +1376,15 @@
       console.debug(`[menu] cache HIT for "${RESTAURANT_ID}" (age ${Math.round(menuCached.age_ms / 60000)} min)`);
       data = menuCached.value;
       if (!currentLang) currentLang = data.restaurant.default_language || 'en';
+      if (!restaurantMeta) {
+        try {
+          const idxRes = await fetch(`${RESOURCES_BASE}/restaurants.json`);
+          if (idxRes.ok) {
+            const list = await idxRes.json();
+            restaurantMeta = list.find(r => r.id === RESTAURANT_ID) || null;
+          }
+        } catch (_) { /* ignore */ }
+      }
       buildPage(data.restaurant);
       return;
     }
