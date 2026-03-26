@@ -1588,15 +1588,15 @@
           </div>
           <div class="item-field-quantity-row">
             <div class="item-field-row">
-              <label>Quantity Metric</label>
+              <label>Quantity</label>
+              <input class="item-quantity-value" type="number" min="0" step="0.1" value="${item.quantity?.value || ''}" placeholder="e.g. 250" />
+            </div>
+            <div class="item-field-row">
+              <label>Unit</label>
               <select class="item-quantity-metric">
                 <option value="">None</option>
                 ${metricsOptions}
               </select>
-            </div>
-            <div class="item-field-row">
-              <label>Quantity Value</label>
-              <input class="item-quantity-value" type="number" min="0" step="0.1" value="${item.quantity?.value || ''}" placeholder="e.g. 250" />
             </div>
           </div>
           <div class="item-field-row">

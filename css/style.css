@@ -2023,19 +2023,11 @@ body[data-theme="modern"] .empty-state { color: rgba(240,236,228,0.35); }
   padding-bottom: 16px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
-.item-modal__quantity-label {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(240,236,228,0.3);
-  margin-bottom: 6px;
-}
-.item-modal__quantity-value {
-  font-size: 14px;
+.item-modal__ingredient--quantity {
+  background: rgba(196,149,90,0.12);
+  border-color: rgba(196,149,90,0.35);
+  color: rgba(240,236,228,0.9);
   font-weight: 600;
-  color: rgba(240,236,228,0.8);
 }
 
 .item-modal__footer {

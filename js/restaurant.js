@@ -527,10 +527,12 @@
       ? (() => {
           const metric = quantityMetrics.find(m => m.code === item.quantity.metric);
           const label = metric ? metric.label[currentLang] || metric.label.en : item.quantity.metric;
-          return `<div class="item-modal__quantity">
-             <span class="item-modal__quantity-label"
+          return `<div class="item-modal__ingredients item-modal__quantity">
+             <span class="item-modal__ingredients-label"
                    data-en="Quantity" data-bg="Количество">${currentLang === 'bg' ? 'Количество' : 'Quantity'}</span>
-             <span class="item-modal__quantity-value">${item.quantity.value}${esc(label)}</span>
+             <div class="item-modal__ingredients-list">
+               <span class="item-modal__ingredient item-modal__ingredient--quantity">${item.quantity.value}${esc(label)}</span>
+             </div>
            </div>`;
         })()
       : '';
