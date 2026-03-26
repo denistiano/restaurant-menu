@@ -254,8 +254,9 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   user-select: none;
 }
 .currency-chip--main {
-  border-color: rgba(196,149,90,0.6);
-  background: rgba(196,149,90,0.12);
+  border-color: rgba(196,149,90,0.95);
+  background: rgba(196,149,90,0.22);
+  box-shadow: 0 0 0 2px rgba(196,149,90,0.2) inset;
 }
 .currency-chip__code {
   font-weight: 700;
@@ -265,6 +266,17 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   gap: 6px;
   margin-left: 8px;
   align-items: center;
+}
+.currency-chip__main-badge {
+  margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #f5d7a8;
+  border: 1px solid rgba(196,149,90,0.7);
+  background: rgba(196,149,90,0.18);
 }
 .currency-chip__ctl {
   cursor: pointer;

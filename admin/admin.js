@@ -370,6 +370,7 @@
       chip.innerHTML = `
         <span class="item-tag-chip__en">${esc(meta.code)}</span>
         ${meta.symbol && meta.symbol !== meta.code ? `<span class="item-tag-chip__bg">(${esc(meta.symbol)})</span>` : ''}
+        ${meta.code === currencyCfg.base ? `<span class="currency-chip__main-badge">MAIN</span>` : ''}
       `;
       chip.title = meta.code === currencyCfg.base ? 'Main currency' : 'Set as main currency';
       chip.addEventListener('click', () => {
@@ -394,6 +395,7 @@
       chip.innerHTML = `
         <span class="item-tag-chip__en">${esc(meta.code)}</span>
         ${meta.symbol ? `<span class="item-tag-chip__bg">(${esc(meta.symbol)})</span>` : ''}
+        ${code === currencyCfg.base ? `<span class="currency-chip__main-badge">MAIN</span>` : ''}
         <span class="currency-chip__controls">
           ${idx > 0 ? `<span class="currency-chip__ctl" data-action="up" title="Move up">↑</span>` : ''}
           ${idx < currencyCfg.display.length - 1 ? `<span class="currency-chip__ctl" data-action="down" title="Move down">↓</span>` : ''}
