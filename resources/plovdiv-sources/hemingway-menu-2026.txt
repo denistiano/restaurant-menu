@@ -1,2 +1,0 @@
-Source: https://hemingway.bg/en/menu-eng/
-Extracted: Full HTML menu with BGN/EUR prices, quantities and ingredient lines.

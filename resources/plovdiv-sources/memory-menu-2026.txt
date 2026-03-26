@@ -1,2 +1,0 @@
-Source: https://memorybg.net/en/menu/
-Extracted: HTML text menu (categories, dishes, prices, quantities, ingredient hints).
