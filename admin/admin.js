@@ -8,6 +8,47 @@
   /* ── CONFIG ─────────────────────────────────────────────── */
   const JSONBIN_BASE    = 'https://api.jsonbin.io/v3/b';
   const SESSION_KEY_KEY = 'admin_master_key';
+  const ADMIN_LANG_KEY  = 'preferredLang';
+  let adminLang         = localStorage.getItem(ADMIN_LANG_KEY) || 'bg';
+
+  const I18N = {
+    en: {
+      nameEnglish: 'Name (English)',
+      nameBulgarian: 'Name (Bulgarian)',
+      descEnglish: 'Description (English)',
+      descBulgarian: 'Description (Bulgarian)',
+      itemNamePh: 'Item name',
+      itemBgNamePh: 'Наименование',
+      itemDescPh: 'Short description...',
+      itemBgDescPh: 'Кратко описание...',
+      categoryEnglish: 'English name',
+      categoryBulgarian: 'Bulgarian name',
+      categoryEnPh: 'Category name',
+      categoryBgPh: 'Категория',
+      quantity: 'Quantity',
+      unit: 'Unit',
+      quantityPh: 'e.g. 250'
+    },
+    bg: {
+      nameEnglish: 'Име (Английски)',
+      nameBulgarian: 'Име (Български)',
+      descEnglish: 'Описание (Английски)',
+      descBulgarian: 'Описание (Български)',
+      itemNamePh: 'Име на продукт',
+      itemBgNamePh: 'Наименование',
+      itemDescPh: 'Кратко описание...',
+      itemBgDescPh: 'Кратко описание...',
+      categoryEnglish: 'Име на английски',
+      categoryBulgarian: 'Име на български',
+      categoryEnPh: 'Категория',
+      categoryBgPh: 'Категория',
+      quantity: 'Количество',
+      unit: 'Мярка',
+      quantityPh: 'напр. 250'
+    }
+  };
+  const tr = (k) => (I18N[adminLang] && I18N[adminLang][k]) || I18N.en[k] || k;
+  const isBgFirst = () => adminLang === 'bg';
 
   function getMasterKey() {
     return sessionStorage.getItem(SESSION_KEY_KEY) || '';
@@ -237,6 +278,39 @@
   const modalMsg     = document.getElementById('modalMsg');
   const modalConfirm = document.getElementById('modalConfirm');
   const modalCancel  = document.getElementById('modalCancel');
+  const adminLangToggleAuth = document.getElementById('adminLangToggleAuth');
+  const adminLangToggleEditor = document.getElementById('adminLangToggleEditor');
+
+  function reorderPair(parent, firstId, secondId) {
+    const first = document.getElementById(firstId);
+    const second = document.getElementById(secondId);
+    if (!parent || !first || !second) return;
+    if (isBgFirst()) {
+      parent.appendChild(second);
+      parent.appendChild(first);
+    } else {
+      parent.appendChild(first);
+      parent.appendChild(second);
+    }
+  }
+
+  function applyAdminLang(lang, rerender = true) {
+    adminLang = (lang === 'bg') ? 'bg' : 'en';
+    localStorage.setItem(ADMIN_LANG_KEY, adminLang);
+    document.documentElement.lang = adminLang;
+    const next = adminLang === 'bg' ? 'EN' : 'BG';
+    if (adminLangToggleAuth) adminLangToggleAuth.textContent = next;
+    if (adminLangToggleEditor) adminLangToggleEditor.textContent = next;
+
+    const nameSection = document.getElementById('infoNameEnRow')?.parentElement;
+    const descSection = document.getElementById('infoDescEnRow')?.parentElement;
+    reorderPair(nameSection, 'infoNameEnRow', 'infoNameBgRow');
+    reorderPair(descSection, 'infoDescEnRow', 'infoDescBgRow');
+
+    if (rerender && menuData && !editorScreen.classList.contains('hidden')) {
+      renderCategories(menuData.restaurant.menu.categories);
+    }
+  }
 
   /* ── PASSWORD HASHING ───────────────────────────────────── */
   async function sha256Hex(text) {
@@ -936,6 +1010,27 @@
     block.dataset.catIdx = catIdx;
 
     const itemCount = cat.items ? cat.items.length : 0;
+    const categoryNameFields = isBgFirst()
+      ? `
+          <div class="category-name-field">
+            <label>${esc(tr('categoryBulgarian'))}</label>
+            <input class="cat-name-bg" type="text" value="${esc(cat.name.bg || '')}" placeholder="${esc(tr('categoryBgPh'))}" />
+          </div>
+          <div class="category-name-field">
+            <label>${esc(tr('categoryEnglish'))}</label>
+            <input class="cat-name-en" type="text" value="${esc(cat.name.en || '')}" placeholder="${esc(tr('categoryEnPh'))}" />
+          </div>
+        `
+      : `
+          <div class="category-name-field">
+            <label>${esc(tr('categoryEnglish'))}</label>
+            <input class="cat-name-en" type="text" value="${esc(cat.name.en || '')}" placeholder="${esc(tr('categoryEnPh'))}" />
+          </div>
+          <div class="category-name-field">
+            <label>${esc(tr('categoryBulgarian'))}</label>
+            <input class="cat-name-bg" type="text" value="${esc(cat.name.bg || '')}" placeholder="${esc(tr('categoryBgPh'))}" />
+          </div>
+        `;
     block.innerHTML = `
       <div class="category-block__header">
         <span class="category-block__drag" title="Drag to reorder">⠿</span>
@@ -952,14 +1047,7 @@
       </div>
       <div class="category-block__body">
         <div class="category-name-fields">
-          <div class="category-name-field">
-            <label>English name</label>
-            <input class="cat-name-en" type="text" value="${esc(cat.name.en || '')}" placeholder="Category name" />
-          </div>
-          <div class="category-name-field">
-            <label>Bulgarian name</label>
-            <input class="cat-name-bg" type="text" value="${esc(cat.name.bg || '')}" placeholder="Категория" />
-          </div>
+          ${categoryNameFields}
         </div>
         <div class="cat-schedule-section">
           <label class="cat-schedule-toggle">
@@ -1541,8 +1629,52 @@
 
     // Generate quantity metric options
     const metricsOptions = quantityMetrics.map(m =>
-      `<option value="${esc(m.code)}" ${item.quantity?.metric === m.code ? 'selected' : ''}>${esc(m.description.en)} (${esc(m.label.en)})</option>`
+      `<option value="${esc(m.code)}" ${item.quantity?.metric === m.code ? 'selected' : ''}>${esc((m.description && (m.description[adminLang] || m.description.en)) || m.code)} (${esc((m.label && (m.label[adminLang] || m.label.en)) || m.code)})</option>`
     ).join('');
+
+    const nameFirstIsBg = isBgFirst();
+    const nameFields = nameFirstIsBg
+      ? `
+            <div class="item-field-row">
+              <label>${esc(tr('nameBulgarian'))}</label>
+              <input class="item-name-bg" type="text" value="${esc(item.name.bg || '')}" placeholder="${esc(tr('itemBgNamePh'))}" />
+            </div>
+            <div class="item-field-row">
+              <label>${esc(tr('nameEnglish'))}</label>
+              <input class="item-name-en" type="text" value="${esc(item.name.en || '')}" placeholder="${esc(tr('itemNamePh'))}" />
+            </div>
+      `
+      : `
+            <div class="item-field-row">
+              <label>${esc(tr('nameEnglish'))}</label>
+              <input class="item-name-en" type="text" value="${esc(item.name.en || '')}" placeholder="${esc(tr('itemNamePh'))}" />
+            </div>
+            <div class="item-field-row">
+              <label>${esc(tr('nameBulgarian'))}</label>
+              <input class="item-name-bg" type="text" value="${esc(item.name.bg || '')}" placeholder="${esc(tr('itemBgNamePh'))}" />
+            </div>
+      `;
+    const descFields = nameFirstIsBg
+      ? `
+            <div class="item-field-row">
+              <label>${esc(tr('descBulgarian'))}</label>
+              <textarea class="item-desc-bg" placeholder="${esc(tr('itemBgDescPh'))}">${esc(item.description ? item.description.bg || '' : '')}</textarea>
+            </div>
+            <div class="item-field-row">
+              <label>${esc(tr('descEnglish'))}</label>
+              <textarea class="item-desc-en" placeholder="${esc(tr('itemDescPh'))}">${esc(item.description ? item.description.en || '' : '')}</textarea>
+            </div>
+      `
+      : `
+            <div class="item-field-row">
+              <label>${esc(tr('descEnglish'))}</label>
+              <textarea class="item-desc-en" placeholder="${esc(tr('itemDescPh'))}">${esc(item.description ? item.description.en || '' : '')}</textarea>
+            </div>
+            <div class="item-field-row">
+              <label>${esc(tr('descBulgarian'))}</label>
+              <textarea class="item-desc-bg" placeholder="${esc(tr('itemBgDescPh'))}">${esc(item.description ? item.description.bg || '' : '')}</textarea>
+            </div>
+      `;
 
     block.innerHTML = `
       <div class="item-block__header">
@@ -1557,24 +1689,10 @@
       <div class="item-block__body">
         <div class="item-fields">
           <div class="item-field-2col">
-            <div class="item-field-row">
-              <label>Name (English)</label>
-              <input class="item-name-en" type="text" value="${esc(item.name.en || '')}" placeholder="Item name" />
-            </div>
-            <div class="item-field-row">
-              <label>Name (Bulgarian)</label>
-              <input class="item-name-bg" type="text" value="${esc(item.name.bg || '')}" placeholder="Наименование" />
-            </div>
+            ${nameFields}
           </div>
           <div class="item-field-2col">
-            <div class="item-field-row">
-              <label>Description (English)</label>
-              <textarea class="item-desc-en" placeholder="Short description...">${esc(item.description ? item.description.en || '' : '')}</textarea>
-            </div>
-            <div class="item-field-row">
-              <label>Description (Bulgarian)</label>
-              <textarea class="item-desc-bg" placeholder="Кратко описание...">${esc(item.description ? item.description.bg || '' : '')}</textarea>
-            </div>
+            ${descFields}
           </div>
           <div class="item-field-price-row">
             <div class="item-field-row">
@@ -1588,11 +1706,11 @@
           </div>
           <div class="item-field-quantity-row">
             <div class="item-field-row">
-              <label>Quantity</label>
-              <input class="item-quantity-value" type="number" min="0" step="0.1" value="${item.quantity?.value || ''}" placeholder="e.g. 250" />
+              <label>${esc(tr('quantity'))}</label>
+              <input class="item-quantity-value" type="number" min="0" step="0.1" value="${item.quantity?.value || ''}" placeholder="${esc(tr('quantityPh'))}" />
             </div>
             <div class="item-field-row">
-              <label>Unit</label>
+              <label>${esc(tr('unit'))}</label>
               <select class="item-quantity-metric">
                 <option value="">None</option>
                 ${metricsOptions}
@@ -1989,5 +2107,8 @@
       await attemptAuth(entry, authLoginBtn);
     });
   }
+  adminLangToggleAuth?.addEventListener('click', () => applyAdminLang(adminLang === 'bg' ? 'en' : 'bg'));
+  adminLangToggleEditor?.addEventListener('click', () => applyAdminLang(adminLang === 'bg' ? 'en' : 'bg'));
+  applyAdminLang(adminLang, false);
   loadRestaurants();
 })();

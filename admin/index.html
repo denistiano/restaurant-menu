@@ -18,6 +18,7 @@
         <span class="auth-logo__dot">●</span>
         <span class="auth-logo__text">Menu Admin</span>
       </div>
+      <button class="admin-lang-toggle" id="adminLangToggleAuth" type="button">EN</button>
     </header>
 
     <main class="auth-main">
@@ -118,6 +119,7 @@
       </button>
       <div class="editor-topbar__title" id="editorTitle">Edit restaurant</div>
       <div class="editor-topbar__actions">
+        <button class="admin-lang-toggle" id="adminLangToggleEditor" type="button">EN</button>
         <span class="dirty-badge hidden" id="dirtyBadge">Unsaved</span>
         <a class="editor-topbar__preview" id="previewLink" href="#" target="_blank">Preview ↗</a>
         <button class="editor-topbar__save" id="saveBtn">Save</button>
@@ -139,22 +141,22 @@
       <section class="editor-panel active" id="panel-info">
         <div class="form-section">
           <h3 class="form-section__title">Name</h3>
-          <div class="field-row">
+          <div class="field-row" id="infoNameEnRow">
             <label class="field-label">English</label>
             <input class="field-input" id="infoNameEn" type="text" placeholder="Restaurant name in English" />
           </div>
-          <div class="field-row">
+          <div class="field-row" id="infoNameBgRow">
             <label class="field-label">Bulgarian</label>
             <input class="field-input" id="infoNameBg" type="text" placeholder="Име на ресторанта" />
           </div>
         </div>
         <div class="form-section">
           <h3 class="form-section__title">Tagline / Description</h3>
-          <div class="field-row">
+          <div class="field-row" id="infoDescEnRow">
             <label class="field-label">English</label>
             <textarea class="field-input field-textarea" id="infoDescEn" placeholder="Short description in English"></textarea>
           </div>
-          <div class="field-row">
+          <div class="field-row" id="infoDescBgRow">
             <label class="field-label">Bulgarian</label>
             <textarea class="field-input field-textarea" id="infoDescBg" placeholder="Кратко описание на български"></textarea>
           </div>

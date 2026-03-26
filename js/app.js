@@ -72,6 +72,17 @@
       el.addEventListener('click', () =>
         window.trackEvent?.('cta_click', { cta_type: 'nav', page: 'landing' }));
     });
+    document.querySelectorAll('[data-scroll-target="restaurants"]').forEach(el => {
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.getElementById('restaurants');
+        if (!target) return;
+        const nav = document.getElementById('lNav');
+        const navH = nav ? nav.offsetHeight : 0;
+        const top = target.getBoundingClientRect().top + window.scrollY - navH - 10;
+        window.scrollTo({ top, behavior: 'smooth' });
+      });
+    });
 
     /* Footer / CTA section contact links */
     document.querySelectorAll('[href^="tel:"]').forEach(el => {

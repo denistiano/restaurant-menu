@@ -454,6 +454,14 @@ html:has(.landing-page) {
   background: rgba(196,149,90,0.1);
   border-color: var(--color-accent);
 }
+.l-nav__cta-link--secondary {
+  color: rgba(240,236,228,0.9);
+  border-color: rgba(255,255,255,0.2);
+}
+.l-nav__cta-link--secondary:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.35);
+}
 
 /* ── Shared section header ────────────────────────────────── */
 .l-section-header {

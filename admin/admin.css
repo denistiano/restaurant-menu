@@ -89,6 +89,21 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .auth-logo { display: flex; align-items: center; gap: 8px; }
 .auth-logo__dot { color: var(--accent); font-size: 9px; }
 .auth-logo__text { font-family: var(--font-serif); font-size: 17px; font-weight: 700; }
+.admin-lang-toggle {
+  padding: 6px 12px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  transition: all var(--transition);
+}
+.admin-lang-toggle:hover {
+  color: var(--text);
+  border-color: rgba(196,149,90,0.55);
+  background: rgba(196,149,90,0.12);
+}
 
 .auth-main {
   max-width: 760px; margin: 0 auto;
