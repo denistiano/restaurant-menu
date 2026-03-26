@@ -8,12 +8,19 @@
   /* ── CONFIG ─────────────────────────────────────────────── */
   const JSONBIN_BASE    = 'https://api.jsonbin.io/v3/b';
   const SESSION_KEY_KEY = 'admin_master_key';
+  const SUPPORTED_CURRENCIES = [
+    { code: 'EUR', label: 'Euro (€)', symbol: '€' },
+    { code: 'BGN', label: 'Bulgarian lev (лв)', symbol: 'лв' }
+  ];
 
   function getMasterKey() {
     return sessionStorage.getItem(SESSION_KEY_KEY) || '';
   }
   function setMasterKey(val) {
     if (val) sessionStorage.setItem(SESSION_KEY_KEY, val);
+  }
+  function currencyMeta(code) {
+    return SUPPORTED_CURRENCIES.find(c => c.code === code) || { code, label: code, symbol: code };
   }
 
   /* ── CLOUDINARY CONFIG ──────────────────────────────────── */
@@ -186,6 +193,8 @@
   /* ── DOM REFS ───────────────────────────────────────────── */
   const masterKeyInput  = document.getElementById('masterKeyInput');
   const masterKeyToggle = document.getElementById('masterKeyToggle');
+  const sharedPasswordInput  = document.getElementById('sharedPasswordInput');
+  const sharedPasswordToggle = document.getElementById('sharedPasswordToggle');
   const authScreen   = document.getElementById('authScreen');
   const editorScreen = document.getElementById('editorScreen');
   const authGrid     = document.getElementById('authGrid');
@@ -201,12 +210,19 @@
   const modalCancel  = document.getElementById('modalCancel');
 
   /* ── PASSWORD HASHING ───────────────────────────────────── */
-  async function hashPassword(restaurantId, password) {
-    const text = restaurantId + ':' + password;
+  async function sha256Hex(text) {
     const encoded = new TextEncoder().encode(text);
     const buf = await crypto.subtle.digest('SHA-256', encoded);
     return Array.from(new Uint8Array(buf))
       .map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // Current scheme: sha256(password). Legacy fallback: sha256(restaurantId:password).
+  async function hashPassword(password) {
+    return sha256Hex(password);
+  }
+  async function hashPasswordLegacy(restaurantId, password) {
+    return sha256Hex(`${restaurantId}:${password}`);
   }
 
   /* ── TOAST ──────────────────────────────────────────────── */
@@ -280,20 +296,92 @@
           </div>
         </div>
         <div class="auth-card__form">
-          <input type="password" class="auth-card__input" placeholder="Restaurant password"
-                 id="pw-${esc(r.id)}" autocomplete="current-password" />
-          <button class="auth-card__submit" data-id="${esc(r.id)}">Enter</button>
+          <button class="auth-card__submit" data-id="${esc(r.id)}">Enter editor</button>
         </div>
-        <p class="auth-card__error" id="err-${esc(r.id)}">Incorrect password</p>
+        <p class="auth-card__error" id="err-${esc(r.id)}">Incorrect admin password</p>
       `;
 
-      // Submit on Enter key
-      const input = card.querySelector(`#pw-${r.id}`);
       const btn   = card.querySelector('.auth-card__submit');
-      input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); });
-      btn.addEventListener('click', () => attemptAuth(r, input));
+      btn.addEventListener('click', () => attemptAuth(r, btn));
 
       authGrid.appendChild(card);
+    });
+  }
+
+  function normalizeCurrencyConfig(cfg = {}, restaurantEntry = null) {
+    const source = cfg.currencies || {};
+    let base = (source.base || 'EUR').toUpperCase();
+    if (!SUPPORTED_CURRENCIES.some(c => c.code === base)) base = 'EUR';
+    let display = Array.isArray(source.display) ? source.display.map(x => String(x).toUpperCase()) : [base];
+    if (!display.includes(base)) display.unshift(base);
+    display = [...new Set(display)].filter(code => SUPPORTED_CURRENCIES.some(c => c.code === code));
+    const fallbackRates = restaurantEntry && restaurantEntry.currency_rates ? restaurantEntry.currency_rates : {};
+    const rates = { ...fallbackRates, ...(source.rates || {}) };
+    rates[base] = 1;
+    return { base, display, rates };
+  }
+
+  function renderCurrencyConfig(cfg) {
+    const baseEl = document.getElementById('cfgCurrencyBase');
+    const rowsEl = document.getElementById('cfgCurrencyRows');
+    const addBtn = document.getElementById('cfgCurrencyAdd');
+    if (!baseEl || !rowsEl || !addBtn) return;
+
+    baseEl.innerHTML = SUPPORTED_CURRENCIES
+      .map(c => `<option value="${esc(c.code)}">${esc(c.label)}</option>`).join('');
+    baseEl.value = cfg.base;
+
+    function rowHtml(code) {
+      const meta = currencyMeta(code);
+      const rateVal = (cfg.rates && cfg.rates[code] !== undefined) ? Number(cfg.rates[code]) : (code === cfg.base ? 1 : 1);
+      const disabledRate = code === cfg.base ? 'disabled' : '';
+      return `
+        <div class="currency-row" data-code="${esc(code)}">
+          <select class="field-input field-select currency-row__code">
+            ${SUPPORTED_CURRENCIES.map(c => `<option value="${esc(c.code)}"${c.code === code ? ' selected' : ''}>${esc(c.label)}</option>`).join('')}
+          </select>
+          <input class="field-input currency-row__rate" type="number" min="0.0001" step="0.0001" value="${Number(rateVal).toFixed(4)}" ${disabledRate} />
+          <button class="currency-row__remove" type="button">Remove</button>
+        </div>`;
+    }
+
+    rowsEl.innerHTML = cfg.display.map(code => rowHtml(code)).join('');
+
+    function readRowsAndNormalize() {
+      const nextDisplay = [];
+      const nextRates = { ...(cfg.rates || {}) };
+      rowsEl.querySelectorAll('.currency-row').forEach(row => {
+        const code = row.querySelector('.currency-row__code')?.value;
+        const rateRaw = row.querySelector('.currency-row__rate')?.value;
+        if (!code) return;
+        if (!nextDisplay.includes(code)) nextDisplay.push(code);
+        const parsed = parseFloat(rateRaw);
+        if (Number.isFinite(parsed) && parsed > 0) nextRates[code] = parsed;
+      });
+      cfg = normalizeCurrencyConfig({ currencies: { base: baseEl.value, display: nextDisplay, rates: nextRates } }, currentRestaurant);
+      renderCurrencyConfig(cfg);
+      setDirty(true);
+    }
+
+    baseEl.onchange = () => readRowsAndNormalize();
+    addBtn.onclick = () => {
+      const available = SUPPORTED_CURRENCIES.map(c => c.code).find(code => !cfg.display.includes(code));
+      if (!available) return;
+      cfg.display.push(available);
+      if (!cfg.rates[available]) cfg.rates[available] = 1;
+      renderCurrencyConfig(cfg);
+      setDirty(true);
+    };
+    rowsEl.querySelectorAll('.currency-row').forEach(row => {
+      row.querySelector('.currency-row__code')?.addEventListener('change', readRowsAndNormalize);
+      row.querySelector('.currency-row__rate')?.addEventListener('input', readRowsAndNormalize);
+      row.querySelector('.currency-row__remove')?.addEventListener('click', () => {
+        const code = row.getAttribute('data-code');
+        cfg.display = cfg.display.filter(c => c !== code);
+        if (!cfg.display.length) cfg.display = [cfg.base];
+        renderCurrencyConfig(cfg);
+        setDirty(true);
+      });
     });
   }
 
@@ -302,6 +390,17 @@
     const isHidden = masterKeyInput.type === 'password';
     masterKeyInput.type  = isHidden ? 'text' : 'password';
     masterKeyToggle.title = isHidden ? 'Hide key' : 'Show key';
+  });
+  sharedPasswordToggle?.addEventListener('click', () => {
+    const isHidden = sharedPasswordInput.type === 'password';
+    sharedPasswordInput.type  = isHidden ? 'text' : 'password';
+    sharedPasswordToggle.title = isHidden ? 'Hide password' : 'Show password';
+  });
+  sharedPasswordInput?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const firstBtn = authGrid.querySelector('.auth-card__submit');
+      if (firstBtn) firstBtn.click();
+    }
   });
 
   // Pre-fill from sessionStorage if available
@@ -340,9 +439,72 @@
     cldSection?.setAttribute('open', '');
   }
 
+  async function sanityCheckJsonbin(restaurantEntry, masterKey) {
+    const hasBin = restaurantEntry.menu_bin_id && restaurantEntry.menu_bin_id !== 'PASTE_BIN_ID_HERE';
+    if (!hasBin) return { ok: false, message: 'No menu_bin_id configured for this restaurant.' };
+
+    const res = await fetch(`${JSONBIN_BASE}/${restaurantEntry.menu_bin_id}/latest`, {
+      headers: { 'X-Master-Key': masterKey }
+    });
+    if (!res.ok) {
+      let msg = `JsonBin HTTP ${res.status}`;
+      try {
+        const body = await res.json();
+        if (body && body.message) msg = body.message;
+      } catch (_) {}
+      return { ok: false, message: `JsonBin validation failed: ${msg}` };
+    }
+    const wrapper = await res.json();
+    const rid = wrapper?.record?.restaurant?.id;
+    if (rid && rid !== restaurantEntry.id) {
+      return { ok: false, message: `Bin mismatch: expected "${restaurantEntry.id}", got "${rid}".` };
+    }
+    return { ok: true };
+  }
+
+  async function sanityCheckCloudinaryIfConfigured() {
+    const { cloudName, apiKey, apiSecret } = getCldConfig();
+    const any = !!(cloudName || apiKey || apiSecret);
+    if (!any) return { ok: true };
+    if (!cloudName || !apiKey || !apiSecret) {
+      return { ok: false, message: 'Cloudinary check failed: fill Cloud Name, API Key and API Secret.' };
+    }
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    const publicId = `admin-sanity-${timestamp}`;
+    const folder = 'restaurant_menu/_sanity_checks';
+    const paramsToSign = `folder=${folder}&overwrite=true&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
+    const signature = await computeSha256Hex(paramsToSign);
+    const onePxPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5vWn0AAAAASUVORK5CYII=';
+
+    const form = new FormData();
+    form.append('file', onePxPng);
+    form.append('api_key', apiKey);
+    form.append('timestamp', String(timestamp));
+    form.append('folder', folder);
+    form.append('public_id', publicId);
+    form.append('overwrite', 'true');
+    form.append('signature_algorithm', 'sha256');
+    form.append('signature', signature);
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`, {
+      method: 'POST',
+      body: form
+    });
+    if (!res.ok) {
+      let msg = `Cloudinary HTTP ${res.status}`;
+      try {
+        const body = await res.json();
+        msg = body?.error?.message || msg;
+      } catch (_) {}
+      return { ok: false, message: `Cloudinary validation failed: ${msg}` };
+    }
+    return { ok: true };
+  }
+
   /* ── AUTHENTICATE ────────────────────────────────────────── */
-  async function attemptAuth(restaurantEntry, inputEl) {
-    const pw  = inputEl.value.trim();
+  async function attemptAuth(restaurantEntry, triggerBtn) {
+    const pw  = sharedPasswordInput.value.trim();
     const key = masterKeyInput.value.trim();
 
     if (!key) {
@@ -352,26 +514,44 @@
       showToast('Please enter your jsonbin.io master key first.', 'error');
       return;
     }
-    if (!pw) { inputEl.focus(); return; }
+    if (!pw) { sharedPasswordInput.focus(); return; }
 
     const errEl = document.getElementById(`err-${restaurantEntry.id}`);
     errEl.style.display = 'none';
+    if (triggerBtn) triggerBtn.disabled = true;
 
-    const hash = await hashPassword(restaurantEntry.id, pw);
-    if (hash !== restaurantEntry.password_hash) {
+    const hash = await hashPassword(pw);
+    const legacy = await hashPasswordLegacy(restaurantEntry.id, pw);
+    if (hash !== restaurantEntry.password_hash && legacy !== restaurantEntry.password_hash) {
       adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40) });
       errEl.style.display = 'block';
-      inputEl.value = '';
-      inputEl.focus();
+      sharedPasswordInput.focus();
+      if (triggerBtn) triggerBtn.disabled = false;
       return;
     }
 
-    // Correct — store key for this session and open editor
+    const jsonbinCheck = await sanityCheckJsonbin(restaurantEntry, key);
+    if (!jsonbinCheck.ok) {
+      adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40), reason: 'jsonbin_sanity' });
+      showToast(jsonbinCheck.message, 'error');
+      if (triggerBtn) triggerBtn.disabled = false;
+      return;
+    }
+
+    const cloudinaryCheck = await sanityCheckCloudinaryIfConfigured();
+    if (!cloudinaryCheck.ok) {
+      adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40), reason: 'cloudinary_sanity' });
+      showToast(cloudinaryCheck.message, 'error');
+      if (triggerBtn) triggerBtn.disabled = false;
+      return;
+    }
+
+    // Correct + sanity checks passed
     adminTrack('admin_auth_ok', { restaurant_id: String(restaurantEntry.id).slice(0, 40) });
     setMasterKey(key);
-    inputEl.value = '';
     currentRestaurant = restaurantEntry;
     await loadAndOpenEditor();
+    if (triggerBtn) triggerBtn.disabled = false;
   }
 
   /* ── LOAD MENU FROM JSONBIN ──────────────────────────────── */
@@ -568,6 +748,9 @@
         if (!el) return;
         el.addEventListener('change', () => setDirty(true));
       });
+
+    const currencyCfg = normalizeCurrencyConfig(cfg, currentRestaurant);
+    renderCurrencyConfig(currencyCfg);
   }
 
   /* ── CATEGORIES ──────────────────────────────────────────── */
@@ -1275,13 +1458,15 @@
     block.className = 'item-block';
 
     const price   = typeof item.price === 'number' ? item.price.toFixed(2) : '0.00';
+    const baseCurrency = normalizeCurrencyConfig(menuData.restaurant.menu.config || {}, currentRestaurant).base;
+    const baseSymbol = currencyMeta(baseCurrency).symbol;
     const nameTxt = item.name.en || 'New item';
 
     block.innerHTML = `
       <div class="item-block__header">
         <span class="item-block__drag">⠿</span>
         <span class="item-block__name">${esc(nameTxt)}</span>
-        <span class="item-block__price">${price}€</span>
+        <span class="item-block__price">${price}${esc(baseSymbol)}</span>
         <span class="item-availability${item.availability ? '' : ' unavailable'}" title="${item.availability ? 'Available' : 'Unavailable'}"></span>
         <span class="item-block__chevron">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1311,7 +1496,7 @@
           </div>
           <div class="item-field-price-row">
             <div class="item-field-row">
-              <label>Price (€)</label>
+              <label>Price (${esc(baseSymbol)})</label>
               <input class="item-price" type="number" min="0" step="0.01" value="${price}" />
             </div>
             <div class="item-avail-toggle">
@@ -1438,7 +1623,7 @@
     // Price
     block.querySelector('.item-price').addEventListener('input', e => {
       item.price = parseFloat(e.target.value) || 0;
-      block.querySelector('.item-block__price').textContent = item.price.toFixed(2) + '€';
+      block.querySelector('.item-block__price').textContent = item.price.toFixed(2) + baseSymbol;
       setDirty(true);
     });
 
@@ -1569,6 +1754,22 @@
     r.menu.config.show_tags        = document.getElementById('cfgTags').checked;
     r.menu.config.show_ingredients = document.getElementById('cfgIngredients').checked;
     r.menu.config.show_allergens   = document.getElementById('cfgAllergens').checked;
+    const baseEl = document.getElementById('cfgCurrencyBase');
+    const rowsEl = document.getElementById('cfgCurrencyRows');
+    if (baseEl && rowsEl) {
+      const display = [];
+      const rates = {};
+      rowsEl.querySelectorAll('.currency-row').forEach(row => {
+        const code = (row.querySelector('.currency-row__code')?.value || '').toUpperCase();
+        const rate = parseFloat(row.querySelector('.currency-row__rate')?.value || '');
+        if (!code) return;
+        if (!display.includes(code)) display.push(code);
+        if (Number.isFinite(rate) && rate > 0) rates[code] = rate;
+      });
+      r.menu.config.currencies = normalizeCurrencyConfig({
+        currencies: { base: baseEl.value, display, rates }
+      }, currentRestaurant);
+    }
     const tzEl = document.getElementById('cfgTimezone');
     if (tzEl) r.menu.config.timezone = tzEl.value || 'Europe/Sofia';
     // Categories and items are already mutated in-place

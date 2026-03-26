@@ -60,6 +60,24 @@ def main() -> int:
         print("error: restaurants.json must be a list", file=sys.stderr)
         return 1
 
+    # Enforce unique admin passwords by hash (single shared-input auth model).
+    hash_to_ids: dict[str, list[str]] = {}
+    for r in restaurants:
+        if not isinstance(r, dict):
+            continue
+        rid = str(r.get("id") or "").strip()
+        h = str(r.get("password_hash") or "").strip().lower()
+        if not rid or not h:
+            continue
+        hash_to_ids.setdefault(h, []).append(rid)
+    dup_groups = [ids for ids in hash_to_ids.values() if len(ids) > 1]
+    if dup_groups:
+        print("error: duplicate password_hash values found in resources/restaurants.json", file=sys.stderr)
+        for ids in dup_groups:
+            print(f"  shared hash -> {', '.join(ids)}", file=sys.stderr)
+        print("  assign unique passwords per restaurant and regenerate hashes", file=sys.stderr)
+        return 1
+
     seo = load_json(seo_path)
     base_url = (seo.get("base_url") or "").strip().rstrip("/")
     site_name = (seo.get("site_name") or "e-Menu").strip()

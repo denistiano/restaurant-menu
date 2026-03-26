@@ -220,10 +220,30 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   background: rgba(196,149,90,0.28);
   border-color: rgba(196,149,90,0.55);
 }
+.auth-card__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .auth-card__error {
   padding: 0 20px 14px;
   font-size: 12px; color: var(--danger);
   display: none;
+}
+.currency-row {
+  display: grid;
+  grid-template-columns: 1fr 120px auto;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.currency-row__rate {
+  text-align: right;
+}
+.currency-row__remove {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  background: var(--surface-2);
 }
 
 /* ── EDITOR TOP BAR ──────────────────────────────────────── */

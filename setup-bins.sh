@@ -81,7 +81,12 @@ menu = {
         "show_description": True,
         "show_ingredients": False,
         "show_tags": True,
-        "show_allergens": False
+        "show_allergens": False,
+        "currencies": {
+          "base": "EUR",
+          "display": ["EUR", "BGN"],
+          "rates": {"BGN": 1.95583}
+        }
       },
       "categories": [
         {

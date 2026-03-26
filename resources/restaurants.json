@@ -75,6 +75,9 @@
       "италиански ресторант"
     ],
     "theme": "classic",
+    "currency_rates": {
+      "BGN": 1.95583
+    },
     "menu_bin_id": "69c40421c3097a1dd55c2c63",
     "password_hash": "75978bbbd10ca96713fa872c25da0e2573a6fe5ade75759c8fe1aea73c30a81c"
   }

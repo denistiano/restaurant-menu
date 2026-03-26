@@ -106,6 +106,7 @@
   window.addEventListener('pagehide', fireMenuExit);
 
   let data              = null;
+  let restaurantMeta    = null; // entry from resources/restaurants.json
   let currentLang       = localStorage.getItem('preferredLang')   || null;
   let currentTheme      = localStorage.getItem('preferredTheme')  || null;
   let activeCategory    = 'all';
@@ -246,9 +247,34 @@
     return field[currentLang] || field.en || '';
   }
 
+  function getCurrencyConfig() {
+    const cfg = data?.restaurant?.menu?.config || {};
+    const c = cfg.currencies || {};
+    const base = (c.base || 'EUR').toUpperCase();
+    const displayRaw = Array.isArray(c.display) ? c.display : [base];
+    const display = [...new Set(displayRaw.map(x => String(x).toUpperCase()))];
+    const fallbackRates = (restaurantMeta && restaurantMeta.currency_rates) ? restaurantMeta.currency_rates : {};
+    const rates = { ...fallbackRates, ...(c.rates || {}) };
+    rates[base] = 1;
+    if (!display.includes(base)) display.unshift(base);
+    return { base, display, rates };
+  }
+
+  function currencySymbol(code) {
+    if (code === 'EUR') return '€';
+    if (code === 'BGN') return 'лв';
+    return code;
+  }
+
   function formatPrice(price) {
     if (price === undefined || price === null) return '';
-    return price.toFixed(2) + '€';
+    const { base, display, rates } = getCurrencyConfig();
+    const parts = display.map(code => {
+      const rate = (code === base) ? 1 : Number(rates[code] || 1);
+      const converted = Number(price) * (Number.isFinite(rate) && rate > 0 ? rate : 1);
+      return `${converted.toFixed(2)}${currencySymbol(code)}`;
+    });
+    return parts.join(' / ');
   }
 
   function esc(str) {
@@ -1351,6 +1377,7 @@
               const list = await idxRes.json();
               const entry = list.find(r => r.id === RESTAURANT_ID);
               if (entry && entry.menu_bin_id && entry.menu_bin_id !== 'PASTE_BIN_ID_HERE') {
+                restaurantMeta = entry;
                 binId = entry.menu_bin_id;
                 cacheSet(BIN_KEY, binId);               // cache bin ID for 24 h
                 console.debug(`[menu] bin ID fetched & cached: ${binId}`);
@@ -1372,6 +1399,16 @@
       const wrapper = await res.json();
       rawData = wrapper.record;
       if (!rawData) throw new Error('Jsonbin returned empty record');
+
+      if (!restaurantMeta) {
+        try {
+          const idxRes = await fetch(`${RESOURCES_BASE}/restaurants.json`);
+          if (idxRes.ok) {
+            const list = await idxRes.json();
+            restaurantMeta = list.find(r => r.id === RESTAURANT_ID) || null;
+          }
+        } catch (_) { /* optional metadata */ }
+      }
 
       cacheSet(MENU_KEY, rawData);                       // store with 1 h TTL
       console.debug(`[menu] fetched & cached for 1 h`);
