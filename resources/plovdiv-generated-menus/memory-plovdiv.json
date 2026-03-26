@@ -1,0 +1,648 @@
+{
+  "restaurant": {
+    "id": "memory-plovdiv",
+    "name": {
+      "en": "Memory Plovdiv",
+      "bg": "Мемори Пловдив"
+    },
+    "description": {
+      "en": "Fine dining in central Plovdiv with modern European cuisine.",
+      "bg": "Файн дайнинг в центъра на Пловдив с модерна европейска кухня."
+    },
+    "logo": "",
+    "image": "cover.jpg",
+    "background_image": "cover.jpg",
+    "default_language": "bg",
+    "menu": {
+      "theme": "classic",
+      "config": {
+        "show_price": true,
+        "show_description": true,
+        "show_ingredients": true,
+        "show_tags": true,
+        "show_allergens": true,
+        "currencies": {
+          "base": "EUR",
+          "display": [
+            "EUR",
+            "BGN"
+          ]
+        }
+      },
+      "categories": [
+        {
+          "id": "salads",
+          "name": {
+            "en": "Salads",
+            "bg": "Салати"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Sea Salad",
+                "bg": "Морска салата"
+              },
+              "description": {
+                "en": "Salad mix with shrimp, squid, artichoke and avocado.",
+                "bg": "Салатен микс със скариди, калмари, артишок и авокадо."
+              },
+              "price": 10.17,
+              "quantity": {
+                "value": 300,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "salad mix",
+                  "bg": "салатен микс"
+                },
+                {
+                  "en": "shrimp",
+                  "bg": "скариди"
+                },
+                {
+                  "en": "squid",
+                  "bg": "калмари"
+                },
+                {
+                  "en": "avocado",
+                  "bg": "авокадо"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "shellfish",
+                  "bg": "ракообразни"
+                },
+                {
+                  "en": "mustard",
+                  "bg": "горчица"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "seafood",
+                  "bg": "морска храна"
+                },
+                {
+                  "en": "popular",
+                  "bg": "популярно"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Keto Salad",
+                "bg": "Кето салата"
+              },
+              "description": {
+                "en": "Iceberg, grilled chicken, egg and mozzarella pearls.",
+                "bg": "Айсберг, гриловано пиле, яйце и перли моцарела."
+              },
+              "price": 8.49,
+              "quantity": {
+                "value": 300,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "iceberg",
+                  "bg": "айсберг"
+                },
+                {
+                  "en": "chicken fillet",
+                  "bg": "пилешко филе"
+                },
+                {
+                  "en": "egg",
+                  "bg": "яйце"
+                },
+                {
+                  "en": "mozzarella",
+                  "bg": "моцарела"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "eggs",
+                  "bg": "яйца"
+                },
+                {
+                  "en": "milk",
+                  "bg": "мляко"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "popular",
+                  "bg": "популярно"
+                },
+                {
+                  "en": "meat",
+                  "bg": "месо"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Burrata Salad",
+                "bg": "Салата Бурата"
+              },
+              "description": {
+                "en": "Green leaves with burrata, nuts, avocado and honey-mustard dressing.",
+                "bg": "Зелени листа с бурата, ядки, авокадо и медено-горчичен дресинг."
+              },
+              "price": 9.51,
+              "quantity": {
+                "value": 300,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "burrata",
+                  "bg": "бурата"
+                },
+                {
+                  "en": "green leaves",
+                  "bg": "зелени листа"
+                },
+                {
+                  "en": "nuts",
+                  "bg": "ядки"
+                },
+                {
+                  "en": "avocado",
+                  "bg": "авокадо"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "milk",
+                  "bg": "мляко"
+                },
+                {
+                  "en": "nuts",
+                  "bg": "ядки"
+                },
+                {
+                  "en": "mustard",
+                  "bg": "горчица"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                },
+                {
+                  "en": "signature",
+                  "bg": "авторско"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        },
+        {
+          "id": "starters",
+          "name": {
+            "en": "Starters",
+            "bg": "Предястия"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Home-made Tarama",
+                "bg": "Домашна тарама"
+              },
+              "description": {
+                "en": "Creamy fish roe dip served with toasted bread and olives.",
+                "bg": "Кремообразна разядка от рибен хайвер, поднесена с препечен хляб и маслини."
+              },
+              "price": 4.5,
+              "quantity": {
+                "value": 180,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "fish roe",
+                  "bg": "рибен хайвер"
+                },
+                {
+                  "en": "bread",
+                  "bg": "хляб"
+                },
+                {
+                  "en": "olives",
+                  "bg": "маслини"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "fish",
+                  "bg": "риба"
+                },
+                {
+                  "en": "gluten",
+                  "bg": "глутен"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "signature",
+                  "bg": "авторско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Crispy Parmesan Zucchini",
+                "bg": "Хрупкави тиквички с пармезан"
+              },
+              "description": {
+                "en": "Crispy zucchini strips with garlic mascarpone dip.",
+                "bg": "Хрупкави тиквички с чеснов дип от маскарпоне."
+              },
+              "price": 6.54,
+              "quantity": {
+                "value": 200,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "zucchini",
+                  "bg": "тиквички"
+                },
+                {
+                  "en": "parmesan",
+                  "bg": "пармезан"
+                },
+                {
+                  "en": "mascarpone",
+                  "bg": "маскарпоне"
+                },
+                {
+                  "en": "garlic",
+                  "bg": "чесън"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "milk",
+                  "bg": "мляко"
+                },
+                {
+                  "en": "gluten",
+                  "bg": "глутен"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                },
+                {
+                  "en": "popular",
+                  "bg": "популярно"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Veal Carpaccio Black Angus",
+                "bg": "Телешко карпачо Black Angus"
+              },
+              "description": {
+                "en": "Thin veal fillet with truffle cream, parmesan and arugula.",
+                "bg": "Тънко нарязано телешко с трюфел крем, пармезан и рукола."
+              },
+              "price": 11.66,
+              "quantity": {
+                "value": 180,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "veal fillet",
+                  "bg": "телешко филе"
+                },
+                {
+                  "en": "parmesan",
+                  "bg": "пармезан"
+                },
+                {
+                  "en": "truffle cream",
+                  "bg": "трюфел крем"
+                },
+                {
+                  "en": "arugula",
+                  "bg": "рукола"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "milk",
+                  "bg": "мляко"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "signature",
+                  "bg": "авторско"
+                },
+                {
+                  "en": "meat",
+                  "bg": "месо"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        },
+        {
+          "id": "mains",
+          "name": {
+            "en": "Main Dishes",
+            "bg": "Основни ястия"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Salmon Fillet with Noodles",
+                "bg": "Филе сьомга с нудли"
+              },
+              "description": {
+                "en": "Salmon fillet with vegetables and spicy sesame finish.",
+                "bg": "Филе от сьомга със зеленчуци и пикантен сусам."
+              },
+              "price": 14.78,
+              "quantity": {
+                "value": 300,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "salmon",
+                  "bg": "сьомга"
+                },
+                {
+                  "en": "noodles",
+                  "bg": "нудли"
+                },
+                {
+                  "en": "vegetables",
+                  "bg": "зеленчуци"
+                },
+                {
+                  "en": "sesame",
+                  "bg": "сусам"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "fish",
+                  "bg": "риба"
+                },
+                {
+                  "en": "gluten",
+                  "bg": "глутен"
+                },
+                {
+                  "en": "sesame",
+                  "bg": "сусам"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "seafood",
+                  "bg": "морска храна"
+                },
+                {
+                  "en": "popular",
+                  "bg": "популярно"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Marinated Chicken Fillet",
+                "bg": "Мариновано пилешко филе"
+              },
+              "description": {
+                "en": "Chicken with coconut milk, black rice and glazed carrots.",
+                "bg": "Пилешко с кокосово мляко, черен ориз и глазирани моркови."
+              },
+              "price": 9.66,
+              "quantity": {
+                "value": 300,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "chicken fillet",
+                  "bg": "пилешко филе"
+                },
+                {
+                  "en": "coconut milk",
+                  "bg": "кокосово мляко"
+                },
+                {
+                  "en": "black rice",
+                  "bg": "черен ориз"
+                },
+                {
+                  "en": "carrots",
+                  "bg": "моркови"
+                }
+              ],
+              "allergens": [],
+              "tags": [
+                {
+                  "en": "meat",
+                  "bg": "месо"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Pork Ribs with Potatoes",
+                "bg": "Свински ребра с картофи"
+              },
+              "description": {
+                "en": "Slow-cooked pork ribs with garlic-herb potatoes.",
+                "bg": "Бавно готвени свински ребра с картофи, чесън и билки."
+              },
+              "price": 11.56,
+              "quantity": {
+                "value": 400,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "pork ribs",
+                  "bg": "свински ребра"
+                },
+                {
+                  "en": "potatoes",
+                  "bg": "картофи"
+                },
+                {
+                  "en": "garlic",
+                  "bg": "чесън"
+                },
+                {
+                  "en": "herbs",
+                  "bg": "билки"
+                }
+              ],
+              "allergens": [],
+              "tags": [
+                {
+                  "en": "meat",
+                  "bg": "месо"
+                },
+                {
+                  "en": "popular",
+                  "bg": "популярно"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        },
+        {
+          "id": "desserts",
+          "name": {
+            "en": "Desserts",
+            "bg": "Десерти"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Classic Tiramisu",
+                "bg": "Класическо тирамису"
+              },
+              "description": {
+                "en": "Traditional Italian tiramisu with mascarpone cream.",
+                "bg": "Класическо италианско тирамису с крем маскарпоне."
+              },
+              "price": 5.42,
+              "quantity": {
+                "value": 120,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "mascarpone",
+                  "bg": "маскарпоне"
+                },
+                {
+                  "en": "coffee",
+                  "bg": "кафе"
+                },
+                {
+                  "en": "ladyfingers",
+                  "bg": "бишкоти"
+                },
+                {
+                  "en": "cocoa",
+                  "bg": "какао"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "milk",
+                  "bg": "мляко"
+                },
+                {
+                  "en": "eggs",
+                  "bg": "яйца"
+                },
+                {
+                  "en": "gluten",
+                  "bg": "глутен"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "dessert",
+                  "bg": "десерт"
+                },
+                {
+                  "en": "italian",
+                  "bg": "италианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Chocolate Textures",
+                "bg": "Шоколадови текстури"
+              },
+              "description": {
+                "en": "Brownie, chocolate mousse, hazelnuts and crispy chocolate.",
+                "bg": "Брауни, шоколадов мус, лешници и хрупкав шоколад."
+              },
+              "price": 5.52,
+              "quantity": {
+                "value": 170,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "chocolate brownie",
+                  "bg": "шоколадово брауни"
+                },
+                {
+                  "en": "chocolate mousse",
+                  "bg": "шоколадов мус"
+                },
+                {
+                  "en": "hazelnuts",
+                  "bg": "лешници"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "milk",
+                  "bg": "мляко"
+                },
+                {
+                  "en": "eggs",
+                  "bg": "яйца"
+                },
+                {
+                  "en": "gluten",
+                  "bg": "глутен"
+                },
+                {
+                  "en": "nuts",
+                  "bg": "ядки"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "dessert",
+                  "bg": "десерт"
+                },
+                {
+                  "en": "signature",
+                  "bg": "авторско"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,503 @@
+{
+  "restaurant": {
+    "id": "annas-plovdiv",
+    "name": {
+      "en": "Anna’s Restaurant",
+      "bg": "Ресторант Anna’s"
+    },
+    "description": {
+      "en": "Contemporary cuisine in Plovdiv with curated starters, mains and desserts.",
+      "bg": "Съвременна кухня в Пловдив с подбрани предястия, основни и десерти."
+    },
+    "logo": "",
+    "image": "cover.jpg",
+    "background_image": "cover.jpg",
+    "default_language": "bg",
+    "menu": {
+      "theme": "classic",
+      "config": {
+        "show_price": true,
+        "show_description": true,
+        "show_ingredients": true,
+        "show_tags": true,
+        "show_allergens": true,
+        "currencies": {
+          "base": "EUR",
+          "display": [
+            "EUR",
+            "BGN"
+          ]
+        }
+      },
+      "categories": [
+        {
+          "id": "starters",
+          "name": {
+            "en": "Starters",
+            "bg": "Предястия"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Potato Millefeuille",
+                "bg": "Картофен милфьой"
+              },
+              "description": {
+                "en": "Layered potato starter with creamy texture and herbs.",
+                "bg": "Слоесто картофено предястие с кремообразна текстура и билки."
+              },
+              "price": 5.1,
+              "quantity": {
+                "value": 220,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "potato",
+                  "bg": "картоф"
+                },
+                {
+                  "en": "cream",
+                  "bg": "сметана"
+                },
+                {
+                  "en": "herbs",
+                  "bg": "билки"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "milk",
+                  "bg": "мляко"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Baked Brie",
+                "bg": "Печено бри"
+              },
+              "description": {
+                "en": "Warm baked brie with fruit accent and toasted bread.",
+                "bg": "Топло печено бри с плодов акцент и препечен хляб."
+              },
+              "price": 7.15,
+              "quantity": {
+                "value": 180,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "brie",
+                  "bg": "бри"
+                },
+                {
+                  "en": "fruit garnish",
+                  "bg": "плодова гарнитура"
+                },
+                {
+                  "en": "bread",
+                  "bg": "хляб"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "milk",
+                  "bg": "мляко"
+                },
+                {
+                  "en": "gluten",
+                  "bg": "глутен"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                },
+                {
+                  "en": "signature",
+                  "bg": "авторско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Tuna Tartare",
+                "bg": "Тартар от риба тон"
+              },
+              "description": {
+                "en": "Fresh tuna tartare with citrus and olive oil.",
+                "bg": "Пресен тартар от риба тон с цитрус и зехтин."
+              },
+              "price": 8.8,
+              "quantity": {
+                "value": 160,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "tuna",
+                  "bg": "риба тон"
+                },
+                {
+                  "en": "citrus",
+                  "bg": "цитрус"
+                },
+                {
+                  "en": "olive oil",
+                  "bg": "зехтин"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "fish",
+                  "bg": "риба"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "seafood",
+                  "bg": "морска храна"
+                },
+                {
+                  "en": "signature",
+                  "bg": "авторско"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        },
+        {
+          "id": "salads",
+          "name": {
+            "en": "Salads",
+            "bg": "Салати"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Green Salad with Goat Cheese",
+                "bg": "Зелена салата с козе сирене"
+              },
+              "description": {
+                "en": "Mixed greens with goat cheese and nuts.",
+                "bg": "Микс зелени салати с козе сирене и ядки."
+              },
+              "price": 6.3,
+              "quantity": {
+                "value": 300,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "green leaves",
+                  "bg": "зелени листа"
+                },
+                {
+                  "en": "goat cheese",
+                  "bg": "козе сирене"
+                },
+                {
+                  "en": "nuts",
+                  "bg": "ядки"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "milk",
+                  "bg": "мляко"
+                },
+                {
+                  "en": "nuts",
+                  "bg": "ядки"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Provencal Salad",
+                "bg": "Провансалска салата"
+              },
+              "description": {
+                "en": "Tomatoes, herbs and olive dressing in Provencal style.",
+                "bg": "Домати, билки и маслинов дресинг в провансалски стил."
+              },
+              "price": 6.75,
+              "quantity": {
+                "value": 300,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "tomatoes",
+                  "bg": "домати"
+                },
+                {
+                  "en": "olives",
+                  "bg": "маслини"
+                },
+                {
+                  "en": "herbs",
+                  "bg": "билки"
+                }
+              ],
+              "allergens": [],
+              "tags": [
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        },
+        {
+          "id": "mains",
+          "name": {
+            "en": "Main Dishes",
+            "bg": "Основни ястия"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Ratatouille",
+                "bg": "Рататуй"
+              },
+              "description": {
+                "en": "Classic vegetable ratatouille, slow-cooked and aromatic.",
+                "bg": "Класически зеленчуков рататуй, бавно готвен и ароматен."
+              },
+              "price": 7.9,
+              "quantity": {
+                "value": 350,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "zucchini",
+                  "bg": "тиквички"
+                },
+                {
+                  "en": "eggplant",
+                  "bg": "патладжан"
+                },
+                {
+                  "en": "tomato",
+                  "bg": "домат"
+                },
+                {
+                  "en": "pepper",
+                  "bg": "чушка"
+                }
+              ],
+              "allergens": [],
+              "tags": [
+                {
+                  "en": "vegan",
+                  "bg": "веган"
+                },
+                {
+                  "en": "vegetarian",
+                  "bg": "вегетарианско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Chicken Fillet",
+                "bg": "Пилешко филе"
+              },
+              "description": {
+                "en": "Grilled chicken fillet with seasonal garnish.",
+                "bg": "Гриловано пилешко филе със сезонна гарнитура."
+              },
+              "price": 9.3,
+              "quantity": {
+                "value": 320,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "chicken fillet",
+                  "bg": "пилешко филе"
+                },
+                {
+                  "en": "seasonal vegetables",
+                  "bg": "сезонни зеленчуци"
+                }
+              ],
+              "allergens": [],
+              "tags": [
+                {
+                  "en": "meat",
+                  "bg": "месо"
+                },
+                {
+                  "en": "popular",
+                  "bg": "популярно"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Duck Confit",
+                "bg": "Патешко конфи"
+              },
+              "description": {
+                "en": "Slow-cooked duck leg with rich jus and side garnish.",
+                "bg": "Бавно готвено патешко бутче с наситен сос и гарнитура."
+              },
+              "price": 13.8,
+              "quantity": {
+                "value": 350,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "duck leg",
+                  "bg": "патешко бутче"
+                },
+                {
+                  "en": "jus",
+                  "bg": "сос"
+                },
+                {
+                  "en": "seasonal garnish",
+                  "bg": "гарнитура"
+                }
+              ],
+              "allergens": [],
+              "tags": [
+                {
+                  "en": "meat",
+                  "bg": "месо"
+                },
+                {
+                  "en": "signature",
+                  "bg": "авторско"
+                }
+              ],
+              "availability": true
+            },
+            {
+              "name": {
+                "en": "Beef Steak",
+                "bg": "Телешки стек"
+              },
+              "description": {
+                "en": "Pan-seared beef steak with classic side and sauce.",
+                "bg": "Запечатан телешки стек с класическа гарнитура и сос."
+              },
+              "price": 19.9,
+              "quantity": {
+                "value": 320,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "beef steak",
+                  "bg": "телешки стек"
+                },
+                {
+                  "en": "sauce",
+                  "bg": "сос"
+                }
+              ],
+              "allergens": [],
+              "tags": [
+                {
+                  "en": "meat",
+                  "bg": "месо"
+                },
+                {
+                  "en": "signature",
+                  "bg": "авторско"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        },
+        {
+          "id": "desserts",
+          "name": {
+            "en": "Desserts",
+            "bg": "Десерти"
+          },
+          "items": [
+            {
+              "name": {
+                "en": "Pavlova Cake",
+                "bg": "Торта Павлова"
+              },
+              "description": {
+                "en": "Meringue dessert with cream and fresh fruit.",
+                "bg": "Десерт от целувчени блатове с крем и пресни плодове."
+              },
+              "price": 5.4,
+              "quantity": {
+                "value": 140,
+                "metric": "grams"
+              },
+              "ingredients": [
+                {
+                  "en": "meringue",
+                  "bg": "целувка"
+                },
+                {
+                  "en": "cream",
+                  "bg": "крем"
+                },
+                {
+                  "en": "fruit",
+                  "bg": "плодове"
+                }
+              ],
+              "allergens": [
+                {
+                  "en": "eggs",
+                  "bg": "яйца"
+                },
+                {
+                  "en": "milk",
+                  "bg": "мляко"
+                }
+              ],
+              "tags": [
+                {
+                  "en": "dessert",
+                  "bg": "десерт"
+                },
+                {
+                  "en": "popular",
+                  "bg": "популярно"
+                }
+              ],
+              "availability": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

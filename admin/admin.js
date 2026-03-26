@@ -733,29 +733,53 @@
     const sigString  = Object.keys(signParams).sort()
       .map(k => `${k}=${signParams[k]}`).join('&') + apiSecret;
     const signature = await computeSha256Hex(sigString);
-    const onePxPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5vWn0AAAAASUVORK5CYII=';
+
+    // Use a real tiny PNG blob (more mobile-browser compatible than data URI).
+    const pngBytes = Uint8Array.from([
+      137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,4,0,0,0,181,28,12,2,
+      0,0,0,11,73,68,65,84,120,218,99,252,255,31,0,3,3,2,0,238,111,90,125,0,0,0,0,73,69,78,68,174,66,96,130
+    ]);
+    const tinyPng = new Blob([pngBytes], { type: 'image/png' });
 
     const form = new FormData();
-    form.append('file', onePxPng);
+    form.append('file', tinyPng, 'sanity.png');
     form.append('api_key', apiKey);
     form.append('timestamp', String(timestamp));
     form.append('folder', folder);
     form.append('signature_algorithm', 'sha256');
     form.append('signature', signature);
 
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`, {
-      method: 'POST',
-      body: form
-    });
-    if (!res.ok) {
-      let msg = `Cloudinary HTTP ${res.status}`;
-      try {
-        const body = await res.json();
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`, {
+        method: 'POST',
+        body: form
+      });
+      if (!res.ok) {
+        let msg = `Cloudinary HTTP ${res.status}`;
+        let body = null;
+        try { body = await res.json(); } catch (_) {}
         msg = body?.error?.message || msg;
-      } catch (_) {}
-      return { ok: false, message: `Cloudinary validation failed: ${msg}` };
+
+        // Hard-fail only on explicit credential/signature issues.
+        const lower = String(msg).toLowerCase();
+        const authError =
+          lower.includes('api key') ||
+          lower.includes('signature') ||
+          lower.includes('invalid') ||
+          lower.includes('unauthorized') ||
+          lower.includes('authentication');
+        if (authError) {
+          return { ok: false, message: `Cloudinary validation failed: ${msg}` };
+        }
+        // Non-auth HTTP errors can be transient on mobile networks; don't block login.
+        return { ok: true, warning: `Cloudinary check skipped: ${msg}` };
+      }
+      return { ok: true };
+    } catch (err) {
+      // Mobile browsers/networks can throw opaque fetch errors.
+      // Allow login and let actual upload flow validate when used.
+      return { ok: true, warning: `Cloudinary check skipped (${err?.message || 'network issue'})` };
     }
-    return { ok: true };
   }
 
   /* ── AUTHENTICATE ────────────────────────────────────────── */
@@ -812,6 +836,9 @@
       }
       if (triggerBtn) triggerBtn.disabled = false;
       return;
+    }
+    if (cloudinaryCheck.warning) {
+      showToast(cloudinaryCheck.warning, 'info');
     }
 
     // Correct + sanity checks passed

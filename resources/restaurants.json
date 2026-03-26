@@ -3,131 +3,389 @@
     {
       "code": "grams",
       "type": "weight",
-      "label": { "en": "g", "bg": "г" },
-      "description": { "en": "Grams", "bg": "Грам" },
-      "full_name": { "en": "grams", "bg": "грам" },
-      "plural": { "en": "grams", "bg": "грама" }
+      "label": {
+        "en": "g",
+        "bg": "г"
+      },
+      "description": {
+        "en": "Grams",
+        "bg": "Грам"
+      },
+      "full_name": {
+        "en": "grams",
+        "bg": "грам"
+      },
+      "plural": {
+        "en": "grams",
+        "bg": "грама"
+      }
     },
     {
       "code": "milliliters",
       "type": "liquid",
-      "label": { "en": "ml", "bg": "мл" },
-      "description": { "en": "Milliliters", "bg": "Милилитрa" },
-      "full_name": { "en": "milliliters", "bg": "милилитри" },
-      "plural": { "en": "milliliters", "bg": "мл" }
+      "label": {
+        "en": "ml",
+        "bg": "мл"
+      },
+      "description": {
+        "en": "Milliliters",
+        "bg": "Милилитрa"
+      },
+      "full_name": {
+        "en": "milliliters",
+        "bg": "милилитри"
+      },
+      "plural": {
+        "en": "milliliters",
+        "bg": "мл"
+      }
     },
     {
       "code": "units",
       "type": "unit",
-      "label": { "en": "pc", "bg": "бр" },
-      "description": { "en": "Pieces", "bg": "Брой" },
-      "full_name": { "en": "piece", "bg": "брой" },
-      "plural": { "en": "pieces", "bg": "броя" }
+      "label": {
+        "en": "pc",
+        "bg": "бр"
+      },
+      "description": {
+        "en": "Pieces",
+        "bg": "Брой"
+      },
+      "full_name": {
+        "en": "piece",
+        "bg": "брой"
+      },
+      "plural": {
+        "en": "pieces",
+        "bg": "броя"
+      }
     }
   ],
   "restaurants": [
-  {
-    "id": "retur",
-    "name": {
-      "en": "Retur Food & Drinks",
-      "bg": "Ретур Храна & Напитки"
+    {
+      "id": "retur",
+      "name": {
+        "en": "Retur Food & Drinks",
+        "bg": "Ретур Храна & Напитки"
+      },
+      "description": {
+        "en": "Home-cooked with love, served with care — just like home.",
+        "bg": "Готвено с любов, поднесено с грижа — като у дома."
+      },
+      "default_language": "bg",
+      "image": "https://res.cloudinary.com/duopd4plb/image/upload/v1774391937/restaurant_menu/retur/fgj9zy6xmx8vmfxeumuc.png",
+      "logo": "https://res.cloudinary.com/duopd4plb/image/upload/w_256,h_256,c_fill,q_auto/v1774391937/restaurant_menu/retur/fgj9zy6xmx8vmfxeumuc.png",
+      "keywords": [
+        "Retur",
+        "Plovdiv",
+        "restaurant",
+        "home food",
+        "Ретур",
+        "Пловдив",
+        "ресторант"
+      ],
+      "theme": "classic",
+      "currency_reference": "EUR",
+      "currencies_supported": [
+        {
+          "code": "EUR",
+          "label": "Euro (€)",
+          "symbol": "€"
+        },
+        {
+          "code": "BGN",
+          "label": "Bulgarian lev (лв)",
+          "symbol": "лв"
+        }
+      ],
+      "currency_rates": {
+        "BGN": 1.95583
+      },
+      "menu_bin_id": "69c10241c3097a1dd54f0ada",
+      "password_hash": "faf43cb4335314f0836edbbb1270401ef2ef5af147ff0b496913ccc7b9f3f21a"
     },
-    "description": {
-      "en": "Home-cooked with love, served with care — just like home.",
-      "bg": "Готвено с любов, поднесено с грижа — като у дома."
+    {
+      "id": "tavernaki",
+      "name": {
+        "en": "Tavernaki",
+        "bg": "Тавернаки"
+      },
+      "description": {
+        "en": "A world of flavours — international cuisine with a warm, welcoming spirit.",
+        "bg": "Свят от вкусове — интернационална кухня с топъл и гостоприемен дух."
+      },
+      "default_language": "bg",
+      "image": "https://res.cloudinary.com/duopd4plb/image/upload/v1774391890/restaurant_menu/tavernaki/oacogrufzhiwwbbt56gd.png",
+      "logo": "https://res.cloudinary.com/duopd4plb/image/upload/w_256,h_256,c_fill,q_auto/v1774391890/restaurant_menu/tavernaki/oacogrufzhiwwbbt56gd.png",
+      "keywords": [
+        "Tavernaki",
+        "Plovdiv",
+        "Greek",
+        "Mediterranean",
+        "Тавернаки",
+        "Пловдив",
+        "гръцка кухня"
+      ],
+      "theme": "classic",
+      "currency_reference": "EUR",
+      "currencies_supported": [
+        {
+          "code": "EUR",
+          "label": "Euro (€)",
+          "symbol": "€"
+        },
+        {
+          "code": "BGN",
+          "label": "Bulgarian lev (лв)",
+          "symbol": "лв"
+        }
+      ],
+      "currency_rates": {
+        "BGN": 1.95583
+      },
+      "menu_bin_id": "69c13206c3097a1dd54febc8",
+      "password_hash": "7024ea91e0986c0574d82972376b073079ab0ae023fb378ee1f0fa90299b5743"
     },
-    "default_language": "bg",
-    "image": "https://res.cloudinary.com/duopd4plb/image/upload/v1774391937/restaurant_menu/retur/fgj9zy6xmx8vmfxeumuc.png",
-    "logo": "https://res.cloudinary.com/duopd4plb/image/upload/w_256,h_256,c_fill,q_auto/v1774391937/restaurant_menu/retur/fgj9zy6xmx8vmfxeumuc.png",
-    "keywords": [
-      "Retur",
-      "Plovdiv",
-      "restaurant",
-      "home food",
-      "Ретур",
-      "Пловдив",
-      "ресторант"
-    ],
-    "theme": "classic",
-    "currency_reference": "EUR",
-    "currencies_supported": [
-      { "code": "EUR", "label": "Euro (€)", "symbol": "€" },
-      { "code": "BGN", "label": "Bulgarian lev (лв)", "symbol": "лв" }
-    ],
-    "currency_rates": {
-      "BGN": 1.95583
+    {
+      "id": "yuzhen-polah",
+      "name": {
+        "en": "Yuzhen Polah - Southern Breeze",
+        "bg": "Южен полъх"
+      },
+      "description": {
+        "en": "Italian kitchen and grill — Plovdiv.",
+        "bg": "Италианска кухня и скара — Пловдив."
+      },
+      "default_language": "bg",
+      "image": "https://res.cloudinary.com/duopd4plb/image/upload/v1774460297/restaurant_menu/ujen-polah/jxvocmyot6urmfhljg7w.jpg",
+      "logo": "https://res.cloudinary.com/duopd4plb/image/upload/v1774460296/restaurant_menu/ujen-polah/isxr4ifwkirnslknmfzk.svg",
+      "keywords": [
+        "Southern Breeze",
+        "Ujen Polah",
+        "Южен полъх",
+        "Plovdiv",
+        "Italian",
+        "restaurant",
+        "Пловдив",
+        "италиански ресторант"
+      ],
+      "theme": "classic",
+      "currency_reference": "EUR",
+      "currencies_supported": [
+        {
+          "code": "EUR",
+          "label": "Euro (€)",
+          "symbol": "€"
+        },
+        {
+          "code": "BGN",
+          "label": "Bulgarian lev (лв)",
+          "symbol": "лв"
+        }
+      ],
+      "currency_rates": {
+        "BGN": 1.95583
+      },
+      "menu_bin_id": "69c40421c3097a1dd55c2c63",
+      "password_hash": "75978bbbd10ca96713fa872c25da0e2573a6fe5ade75759c8fe1aea73c30a81c"
     },
-    "menu_bin_id": "69c10241c3097a1dd54f0ada",
-    "password_hash": "faf43cb4335314f0836edbbb1270401ef2ef5af147ff0b496913ccc7b9f3f21a"
-  },
-  {
-    "id": "tavernaki",
-    "name": {
-      "en": "Tavernaki",
-      "bg": "Тавернаки"
+    {
+      "id": "memory-plovdiv",
+      "name": {
+        "en": "Memory Plovdiv",
+        "bg": "Мемори Пловдив"
+      },
+      "description": {
+        "en": "Online menu imported and enriched for Memory Plovdiv.",
+        "bg": "Импортирано и обогатено онлайн меню за Мемори Пловдив."
+      },
+      "default_language": "bg",
+      "image": "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1400&q=80",
+      "logo": "",
+      "keywords": [
+        "Memory",
+        "Plovdiv",
+        "fine dining",
+        "Мемори",
+        "Пловдив"
+      ],
+      "theme": "classic",
+      "currency_reference": "EUR",
+      "currencies_supported": [
+        {
+          "code": "EUR",
+          "label": "Euro (€)",
+          "symbol": "€"
+        },
+        {
+          "code": "BGN",
+          "label": "Bulgarian lev (лв)",
+          "symbol": "лв"
+        }
+      ],
+      "currency_rates": {
+        "BGN": 1.95583
+      },
+      "menu_bin_id": "69c55681c3097a1dd562511e",
+      "password_hash": "9e5a247f359bbd0b56391cbbb67145147d623d32021131551daf7a830a32c273"
     },
-    "description": {
-      "en": "A world of flavours — international cuisine with a warm, welcoming spirit.",
-      "bg": "Свят от вкусове — интернационална кухня с топъл и гостоприемен дух."
+    {
+      "id": "hemingway-plovdiv",
+      "name": {
+        "en": "Restaurant Hemingway",
+        "bg": "Ресторант Хемингуей"
+      },
+      "description": {
+        "en": "Online menu imported and enriched for Restaurant Hemingway.",
+        "bg": "Импортирано и обогатено онлайн меню за Ресторант Хемингуей."
+      },
+      "default_language": "bg",
+      "image": "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1400&q=80",
+      "logo": "",
+      "keywords": [
+        "Hemingway",
+        "Plovdiv",
+        "restaurant",
+        "Хемингуей",
+        "Пловдив"
+      ],
+      "theme": "classic",
+      "currency_reference": "EUR",
+      "currencies_supported": [
+        {
+          "code": "EUR",
+          "label": "Euro (€)",
+          "symbol": "€"
+        },
+        {
+          "code": "BGN",
+          "label": "Bulgarian lev (лв)",
+          "symbol": "лв"
+        }
+      ],
+      "currency_rates": {
+        "BGN": 1.95583
+      },
+      "menu_bin_id": "69c55684b7ec241ddca76b20",
+      "password_hash": "5d17fd7a508f5295f9040062506a49c14b226363631e7455da0c0cf8be1a3c11"
     },
-    "default_language": "bg",
-    "image": "https://res.cloudinary.com/duopd4plb/image/upload/v1774391890/restaurant_menu/tavernaki/oacogrufzhiwwbbt56gd.png",
-    "logo": "https://res.cloudinary.com/duopd4plb/image/upload/w_256,h_256,c_fill,q_auto/v1774391890/restaurant_menu/tavernaki/oacogrufzhiwwbbt56gd.png",
-    "keywords": [
-      "Tavernaki",
-      "Plovdiv",
-      "Greek",
-      "Mediterranean",
-      "Тавернаки",
-      "Пловдив",
-      "гръцка кухня"
-    ],
-    "theme": "classic",
-    "currency_reference": "EUR",
-    "currencies_supported": [
-      { "code": "EUR", "label": "Euro (€)", "symbol": "€" },
-      { "code": "BGN", "label": "Bulgarian lev (лв)", "symbol": "лв" }
-    ],
-    "currency_rates": {
-      "BGN": 1.95583
+    {
+      "id": "annas-plovdiv",
+      "name": {
+        "en": "Anna's Restaurant",
+        "bg": "Ресторант Anna's"
+      },
+      "description": {
+        "en": "Online menu imported and enriched for Anna's Restaurant.",
+        "bg": "Импортирано и обогатено онлайн меню за Ресторант Anna's."
+      },
+      "default_language": "bg",
+      "image": "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1400&q=80",
+      "logo": "",
+      "keywords": [
+        "Anna's",
+        "Plovdiv",
+        "restaurant",
+        "Пловдив"
+      ],
+      "theme": "classic",
+      "currency_reference": "EUR",
+      "currencies_supported": [
+        {
+          "code": "EUR",
+          "label": "Euro (€)",
+          "symbol": "€"
+        },
+        {
+          "code": "BGN",
+          "label": "Bulgarian lev (лв)",
+          "symbol": "лв"
+        }
+      ],
+      "currency_rates": {
+        "BGN": 1.95583
+      },
+      "menu_bin_id": "69c55687aa77b81da9215722",
+      "password_hash": "1f2157ba2974f54072ff4cf0d7d89ba0a3de872e6d0506e79d64cbec7d424fe3"
     },
-    "menu_bin_id": "69c13206c3097a1dd54febc8",
-    "password_hash": "7024ea91e0986c0574d82972376b073079ab0ae023fb378ee1f0fa90299b5743"
-  },
-  {
-    "id": "yuzhen-polah",
-    "name": {
-      "en": "Yuzhen Polah - Southern Breeze",
-      "bg": "Южен полъх"
+    {
+      "id": "pizza-originale-plovdiv",
+      "name": {
+        "en": "Pizza Originale",
+        "bg": "Пица Оригинале"
+      },
+      "description": {
+        "en": "Online menu imported and enriched for Pizza Originale.",
+        "bg": "Импортирано и обогатено онлайн меню за Пица Оригинале."
+      },
+      "default_language": "bg",
+      "image": "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1400&q=80",
+      "logo": "",
+      "keywords": [
+        "Pizza Originale",
+        "Plovdiv",
+        "pizza",
+        "Пловдив",
+        "пица"
+      ],
+      "theme": "classic",
+      "currency_reference": "EUR",
+      "currencies_supported": [
+        {
+          "code": "EUR",
+          "label": "Euro (€)",
+          "symbol": "€"
+        },
+        {
+          "code": "BGN",
+          "label": "Bulgarian lev (лв)",
+          "symbol": "лв"
+        }
+      ],
+      "currency_rates": {
+        "BGN": 1.95583
+      },
+      "menu_bin_id": "69c55689aa77b81da9215731",
+      "password_hash": "3166373fb8434baa81df4ff4dfd41a9fe74c2f8924c08919c4c3d671283797bb"
     },
-    "description": {
-      "en": "Italian kitchen and grill — Plovdiv.",
-      "bg": "Италианска кухня и скара — Пловдив."
-    },
-    "default_language": "bg",
-    "image": "https://res.cloudinary.com/duopd4plb/image/upload/v1774460297/restaurant_menu/ujen-polah/jxvocmyot6urmfhljg7w.jpg",
-    "logo": "https://res.cloudinary.com/duopd4plb/image/upload/v1774460296/restaurant_menu/ujen-polah/isxr4ifwkirnslknmfzk.svg",
-    "keywords": [
-      "Southern Breeze",
-      "Ujen Polah",
-      "Южен полъх",
-      "Plovdiv",
-      "Italian",
-      "restaurant",
-      "Пловдив",
-      "италиански ресторант"
-    ],
-    "theme": "classic",
-    "currency_reference": "EUR",
-    "currencies_supported": [
-      { "code": "EUR", "label": "Euro (€)", "symbol": "€" },
-      { "code": "BGN", "label": "Bulgarian lev (лв)", "symbol": "лв" }
-    ],
-    "currency_rates": {
-      "BGN": 1.95583
-    },
-    "menu_bin_id": "69c40421c3097a1dd55c2c63",
-    "password_hash": "75978bbbd10ca96713fa872c25da0e2573a6fe5ade75759c8fe1aea73c30a81c"
-  }
-]
+    {
+      "id": "monkey-house-plovdiv",
+      "name": {
+        "en": "Monkey House",
+        "bg": "Monkey House"
+      },
+      "description": {
+        "en": "Online menu imported and enriched for Monkey House.",
+        "bg": "Импортирано и обогатено онлайн меню за Monkey House."
+      },
+      "default_language": "bg",
+      "image": "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1400&q=80",
+      "logo": "",
+      "keywords": [
+        "Monkey House",
+        "Plovdiv",
+        "restaurant",
+        "Пловдив"
+      ],
+      "theme": "classic",
+      "currency_reference": "EUR",
+      "currencies_supported": [
+        {
+          "code": "EUR",
+          "label": "Euro (€)",
+          "symbol": "€"
+        },
+        {
+          "code": "BGN",
+          "label": "Bulgarian lev (лв)",
+          "symbol": "лв"
+        }
+      ],
+      "currency_rates": {
+        "BGN": 1.95583
+      },
+      "menu_bin_id": "69c5568cc3097a1dd5625173",
+      "password_hash": "3e799337e1864fedf31dcce223787a92eb494a673aa6050ede879ff1763ecb18"
+    }
+  ]
 }
