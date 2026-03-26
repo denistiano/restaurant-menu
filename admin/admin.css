@@ -672,7 +672,7 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .item-fields { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 .item-field-row { display: flex; flex-direction: column; gap: 4px; }
 .item-field-row label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-.item-field-row input, .item-field-row textarea {
+.item-field-row input, .item-field-row textarea, .item-field-row select {
   padding: 8px 10px; width: 100%;
 }
 .item-field-row textarea { min-height: 56px; }
@@ -683,6 +683,10 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   display: flex; gap: 10px; align-items: flex-end;
 }
 .item-field-price-row > div { flex: 1; }
+.item-field-quantity-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-top: 4px;
+}
 .item-avail-toggle {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 0;

@@ -107,6 +107,7 @@
 
   let data              = null;
   let restaurantMeta    = null; // entry from resources/restaurants.json
+  let quantityMetrics   = [];   // from restaurants.json
   let currentLang       = localStorage.getItem('preferredLang')   || null;
   let currentTheme      = localStorage.getItem('preferredTheme')  || null;
   let activeCategory    = 'all';
@@ -522,6 +523,18 @@
          </div>`
       : '';
 
+    const quantityHtml = (item.quantity && item.quantity.metric && item.quantity.value)
+      ? (() => {
+          const metric = quantityMetrics.find(m => m.code === item.quantity.metric);
+          const label = metric ? metric.label[currentLang] || metric.label.en : item.quantity.metric;
+          return `<div class="item-modal__quantity">
+             <span class="item-modal__quantity-label"
+                   data-en="Quantity" data-bg="Количество">${currentLang === 'bg' ? 'Количество' : 'Quantity'}</span>
+             <span class="item-modal__quantity-value">${item.quantity.value}${esc(label)}</span>
+           </div>`;
+        })()
+      : '';
+
     const priceHtml = (item.price !== undefined && item.price !== null)
       ? `<span class="item-modal__price">${esc(formatPrice(item.price))}</span>`
       : '';
@@ -540,6 +553,7 @@
       ${descHtml}
       ${ingredientsHtml}
       ${allergensHtml}
+      ${quantityHtml}
       <div class="item-modal__footer">
         ${priceHtml}
         ${unavailHtml}
@@ -1380,7 +1394,9 @@
         try {
           const idxRes = await fetch(`${RESOURCES_BASE}/restaurants.json`);
           if (idxRes.ok) {
-            const list = await idxRes.json();
+            const data = await idxRes.json();
+            const list = data.restaurants || (Array.isArray(data) ? data : []);
+            quantityMetrics = data.quantity_metrics || [];
             restaurantMeta = list.find(r => r.id === RESTAURANT_ID) || null;
           }
         } catch (_) { /* ignore */ }
@@ -1403,7 +1419,9 @@
           try {
             const idxRes = await fetch(`${RESOURCES_BASE}/restaurants.json`);
             if (idxRes.ok) {
-              const list = await idxRes.json();
+              const data = await idxRes.json();
+              const list = data.restaurants || (Array.isArray(data) ? data : []);
+              quantityMetrics = data.quantity_metrics || [];
               const entry = list.find(r => r.id === RESTAURANT_ID);
               if (entry && entry.menu_bin_id && entry.menu_bin_id !== 'PASTE_BIN_ID_HERE') {
                 restaurantMeta = entry;
@@ -1433,7 +1451,9 @@
         try {
           const idxRes = await fetch(`${RESOURCES_BASE}/restaurants.json`);
           if (idxRes.ok) {
-            const list = await idxRes.json();
+            const data = await idxRes.json();
+            const list = data.restaurants || (Array.isArray(data) ? data : []);
+            quantityMetrics = data.quantity_metrics || [];
             restaurantMeta = list.find(r => r.id === RESTAURANT_ID) || null;
           }
         } catch (_) { /* optional metadata */ }

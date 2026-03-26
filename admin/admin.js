@@ -197,6 +197,7 @@
 
   /* ── STATE ──────────────────────────────────────────────── */
   let restaurants     = [];
+  let quantityMetrics = [];       // from restaurants.json
   let currentRestaurant = null;   // entry from restaurants.json
   let menuData        = null;     // the full { restaurant: {...} } object
   let isDirty         = false;
@@ -292,7 +293,10 @@
     try {
       const res = await fetch('../resources/restaurants.json');
       if (!res.ok) throw new Error();
-      restaurants = await res.json();
+      const data = await res.json();
+      // Extract restaurants and metrics from new structure
+      quantityMetrics = data.quantity_metrics || [];
+      restaurants = data.restaurants || (Array.isArray(data) ? data : []);
       renderRestaurantSelect();
     } catch {
       authGrid.innerHTML = '<p style="color:rgba(240,236,228,0.4);grid-column:1/-1">Could not load restaurants list.</p>';
@@ -1535,6 +1539,11 @@
     const baseSymbol = currencyMeta(currencyCfg.base, currentRestaurant).symbol || currencyCfg.base;
     const nameTxt = item.name.en || 'New item';
 
+    // Generate quantity metric options
+    const metricsOptions = quantityMetrics.map(m =>
+      `<option value="${esc(m.code)}" ${item.quantity?.metric === m.code ? 'selected' : ''}>${esc(m.description.en)} (${esc(m.label.en)})</option>`
+    ).join('');
+
     block.innerHTML = `
       <div class="item-block__header">
         <span class="item-block__drag">⠿</span>
@@ -1575,6 +1584,19 @@
             <div class="item-avail-toggle">
               <input type="checkbox" class="item-avail-cb" id="avail-${catIdx}-${itemIdx}" ${item.availability ? 'checked' : ''} />
               <label for="avail-${catIdx}-${itemIdx}">Available</label>
+            </div>
+          </div>
+          <div class="item-field-quantity-row">
+            <div class="item-field-row">
+              <label>Quantity Metric</label>
+              <select class="item-quantity-metric">
+                <option value="">None</option>
+                ${metricsOptions}
+              </select>
+            </div>
+            <div class="item-field-row">
+              <label>Quantity Value</label>
+              <input class="item-quantity-value" type="number" min="0" step="0.1" value="${item.quantity?.value || ''}" placeholder="e.g. 250" />
             </div>
           </div>
           <div class="item-field-row">
@@ -1704,6 +1726,20 @@
     block.querySelector('.item-avail-cb').addEventListener('change', e => {
       item.availability = e.target.checked;
       block.querySelector('.item-availability').classList.toggle('unavailable', !e.target.checked);
+      setDirty(true);
+    });
+
+    // Quantity
+    block.querySelector('.item-quantity-metric').addEventListener('change', e => {
+      if (!item.quantity) item.quantity = {};
+      item.quantity.metric = e.target.value || undefined;
+      setDirty(true);
+    });
+
+    block.querySelector('.item-quantity-value').addEventListener('input', e => {
+      if (!item.quantity) item.quantity = {};
+      const val = parseFloat(e.target.value);
+      item.quantity.value = isNaN(val) || val === 0 ? undefined : val;
       setDirty(true);
     });
 

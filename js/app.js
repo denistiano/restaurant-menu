@@ -268,7 +268,8 @@
     try {
       const res = await fetch('resources/restaurants.json');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const restaurants = await res.json();
+      const data = await res.json();
+      const restaurants = data.restaurants || (Array.isArray(data) ? data : []);
       if (spinner) spinner.remove();
       renderRestaurants(restaurants);
     } catch (err) {

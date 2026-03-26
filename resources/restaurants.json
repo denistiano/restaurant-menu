@@ -1,4 +1,31 @@
-[
+{
+  "quantity_metrics": [
+    {
+      "code": "grams",
+      "type": "weight",
+      "label": { "en": "g", "bg": "г" },
+      "description": { "en": "Grams", "bg": "Грамове" },
+      "full_name": { "en": "grams", "bg": "грамове" },
+      "plural": { "en": "grams", "bg": "грама" }
+    },
+    {
+      "code": "milliliters",
+      "type": "liquid",
+      "label": { "en": "ml", "bg": "мл" },
+      "description": { "en": "Milliliters", "bg": "Милилитри" },
+      "full_name": { "en": "milliliters", "bg": "милилитри" },
+      "plural": { "en": "milliliters", "bg": "мл" }
+    },
+    {
+      "code": "units",
+      "type": "unit",
+      "label": { "en": "pc", "bg": "бр" },
+      "description": { "en": "Pieces", "bg": "Брой" },
+      "full_name": { "en": "piece", "bg": "брой" },
+      "plural": { "en": "pieces", "bg": "броя" }
+    }
+  ],
+  "restaurants": [
   {
     "id": "retur",
     "name": {
@@ -103,3 +130,4 @@
     "password_hash": "75978bbbd10ca96713fa872c25da0e2573a6fe5ade75759c8fe1aea73c30a81c"
   }
 ]
+}
