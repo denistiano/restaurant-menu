@@ -2023,8 +2023,12 @@ body[data-theme="modern"] .empty-state { color: rgba(240,236,228,0.35); }
   padding-bottom: 16px;
 }
 .item-modal__ingredient--quantity {
+  font-size: 12px;
+  padding: 3px 10px;
   background: rgba(255,255,255,0.05);
-  color: rgba(240,236,228,0.9);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: var(--radius-pill);
+  color: rgba(240,236,228,0.6);
   font-weight: 600;
 }
 
