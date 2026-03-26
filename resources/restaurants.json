@@ -227,7 +227,7 @@
         "BGN": 1.95583
       },
       "menu_bin_id": "69c55681c3097a1dd562511e",
-      "password_hash": "9e5a247f359bbd0b56391cbbb67145147d623d32021131551daf7a830a32c273"
+      "password_hash": "c89a4c74e1d174cf9133f21682a404ac18d67915f9fd5dbdd281e671ee49c93f"
     },
     {
       "id": "hemingway-plovdiv",
@@ -267,7 +267,7 @@
         "BGN": 1.95583
       },
       "menu_bin_id": "69c55684b7ec241ddca76b20",
-      "password_hash": "5d17fd7a508f5295f9040062506a49c14b226363631e7455da0c0cf8be1a3c11"
+      "password_hash": "0619907dfd975e291ee861d32eeed6f6719625664ae8c48ad58132de49bcec30"
     },
     {
       "id": "annas-plovdiv",
@@ -306,7 +306,7 @@
         "BGN": 1.95583
       },
       "menu_bin_id": "69c55687aa77b81da9215722",
-      "password_hash": "1f2157ba2974f54072ff4cf0d7d89ba0a3de872e6d0506e79d64cbec7d424fe3"
+      "password_hash": "8b22dba79e17193b34ee099fc94d6ef493dbec51894074ba11663931bbbe5ec3"
     },
     {
       "id": "pizza-originale-plovdiv",
@@ -346,7 +346,7 @@
         "BGN": 1.95583
       },
       "menu_bin_id": "69c55689aa77b81da9215731",
-      "password_hash": "3166373fb8434baa81df4ff4dfd41a9fe74c2f8924c08919c4c3d671283797bb"
+      "password_hash": "6e5bb57d2f9ca080bf25842f8922d4f9daeeb36132546c142722efcefa394276"
     },
     {
       "id": "monkey-house-plovdiv",
@@ -385,7 +385,7 @@
         "BGN": 1.95583
       },
       "menu_bin_id": "69c5568cc3097a1dd5625173",
-      "password_hash": "3e799337e1864fedf31dcce223787a92eb494a673aa6050ede879ff1763ecb18"
+      "password_hash": "4c13a3926848ca2d3a0b51d1019c32b06fda4c6cd5ad7d8a6f4e2883ca89b6bb"
     }
   ]
 }
