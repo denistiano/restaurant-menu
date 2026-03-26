@@ -4,15 +4,15 @@
       "code": "grams",
       "type": "weight",
       "label": { "en": "g", "bg": "г" },
-      "description": { "en": "Grams", "bg": "Грамове" },
-      "full_name": { "en": "grams", "bg": "грамове" },
+      "description": { "en": "Grams", "bg": "Грам" },
+      "full_name": { "en": "grams", "bg": "грам" },
       "plural": { "en": "grams", "bg": "грама" }
     },
     {
       "code": "milliliters",
       "type": "liquid",
       "label": { "en": "ml", "bg": "мл" },
-      "description": { "en": "Milliliters", "bg": "Милилитри" },
+      "description": { "en": "Milliliters", "bg": "Милилитрa" },
       "full_name": { "en": "milliliters", "bg": "милилитри" },
       "plural": { "en": "milliliters", "bg": "мл" }
     },

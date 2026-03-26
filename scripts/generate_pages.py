@@ -20,6 +20,21 @@ def load_json(path: pathlib.Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def parse_restaurants_payload(payload: Any) -> list[dict[str, Any]]:
+    """
+    Accept both formats:
+    1) Legacy: resources/restaurants.json is a list of restaurant objects
+    2) New:    resources/restaurants.json is an object with "restaurants": [...]
+    """
+    if isinstance(payload, list):
+        return [x for x in payload if isinstance(x, dict)]
+    if isinstance(payload, dict):
+        restaurants = payload.get("restaurants")
+        if isinstance(restaurants, list):
+            return [x for x in restaurants if isinstance(x, dict)]
+    return []
+
+
 def strip_html_for_meta(s: str, max_len: int = 160) -> str:
     s = re.sub(r"<[^>]+>", "", s)
     s = " ".join(s.split())
@@ -55,9 +70,13 @@ def main() -> int:
         print(f"error: missing {restaurants_path}", file=sys.stderr)
         return 1
 
-    restaurants = json.loads(restaurants_path.read_text(encoding="utf-8"))
-    if not isinstance(restaurants, list):
-        print("error: restaurants.json must be a list", file=sys.stderr)
+    restaurants_payload = json.loads(restaurants_path.read_text(encoding="utf-8"))
+    restaurants = parse_restaurants_payload(restaurants_payload)
+    if not restaurants:
+        print(
+            "error: restaurants.json must be either a list or an object with a non-empty 'restaurants' list",
+            file=sys.stderr,
+        )
         return 1
 
     # Enforce unique admin passwords by hash (single shared-input auth model).
