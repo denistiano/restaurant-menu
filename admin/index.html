@@ -13,7 +13,7 @@
   <!-- ── AUTH SCREEN ─────────────────────────────────────── -->
   <div id="authScreen" class="screen">
     <header class="auth-header">
-      <a href="../" class="auth-back">← Back to site</a>
+      <a href="../" class="auth-back" id="authBackLink">← Back to site</a>
       <div class="auth-logo">
         <span class="auth-logo__dot">●</span>
         <span class="auth-logo__text">Menu Admin</span>
@@ -22,8 +22,8 @@
     </header>
 
     <main class="auth-main">
-      <h1 class="auth-title">Select a restaurant</h1>
-      <p class="auth-sub">Enter one admin password, validate credentials, then choose a restaurant.</p>
+      <h1 class="auth-title" id="authTitle">Select a restaurant</h1>
+      <p class="auth-sub" id="authSub">Enter one admin password, validate credentials, then choose a restaurant.</p>
 
       <!-- jsonbin.io Master Key -->
       <div class="api-key-row">
@@ -59,7 +59,7 @@
 
       <!-- Cloudinary credentials -->
       <details class="cld-section" id="cldSection">
-        <summary class="cld-section__toggle">
+        <summary class="cld-section__toggle" id="cloudinarySummary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
           Cloudinary — Image uploads
           <svg class="cld-section__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -97,7 +97,7 @@
       <div class="auth-grid" id="authGrid">
         <div class="form-section" style="padding:0;border:none;">
           <div class="field-row">
-            <label class="field-label">Restaurant</label>
+            <label class="field-label" id="restaurantSelectLabel">Restaurant</label>
             <select class="field-input field-select" id="restaurantSelect"></select>
           </div>
           <div class="field-row" style="padding-top:0;">
@@ -140,7 +140,7 @@
       <!-- INFO panel -->
       <section class="editor-panel active" id="panel-info">
         <div class="form-section">
-          <h3 class="form-section__title">Name</h3>
+          <h3 class="form-section__title" id="infoSectionNameTitle">Name</h3>
           <div class="field-row" id="infoNameEnRow">
             <label class="field-label">English</label>
             <input class="field-input" id="infoNameEn" type="text" placeholder="Restaurant name in English" />
@@ -151,7 +151,7 @@
           </div>
         </div>
         <div class="form-section">
-          <h3 class="form-section__title">Tagline / Description</h3>
+          <h3 class="form-section__title" id="infoSectionDescTitle">Tagline / Description</h3>
           <div class="field-row" id="infoDescEnRow">
             <label class="field-label">English</label>
             <textarea class="field-input field-textarea" id="infoDescEn" placeholder="Short description in English"></textarea>
@@ -162,7 +162,7 @@
           </div>
         </div>
         <div class="form-section">
-          <h3 class="form-section__title">Appearance</h3>
+          <h3 class="form-section__title" id="infoSectionAppearanceTitle">Appearance</h3>
           <div class="field-row">
             <label class="field-label">Theme</label>
             <select class="field-input field-select" id="infoTheme">
@@ -179,7 +179,7 @@
           </div>
         </div>
         <div class="form-section">
-          <h3 class="form-section__title">Media</h3>
+          <h3 class="form-section__title" id="infoSectionMediaTitle">Media</h3>
           <p class="form-section__desc">Paste a URL or click <strong>Upload</strong> to upload directly to Cloudinary. Use a filename (e.g. <code>cover.jpg</code>) for local assets.</p>
           <div class="field-row">
             <label class="field-label">
@@ -235,8 +235,8 @@
       <!-- CONFIG panel -->
       <section class="editor-panel hidden" id="panel-config">
         <div class="form-section">
-          <h3 class="form-section__title">Display options</h3>
-          <p class="form-section__desc">Control which fields are shown on the public menu.</p>
+          <h3 class="form-section__title" id="cfgSectionDisplayTitle">Display options</h3>
+          <p class="form-section__desc" id="cfgSectionDisplayDesc">Control which fields are shown on the public menu.</p>
           <div class="toggle-list">
             <label class="toggle-row">
               <span class="toggle-row__label">Show price</span>
@@ -272,18 +272,18 @@
         </div>
 
         <div class="form-section">
-          <h3 class="form-section__title">Currency</h3>
-          <p class="form-section__desc">Choose which currency your menu prices are entered in, then choose the currencies guests should see and their display order.</p>
+          <h3 class="form-section__title" id="cfgSectionCurrencyTitle">Currency</h3>
+          <p class="form-section__desc" id="cfgSectionCurrencyDesc">Choose which currency your menu prices are entered in, then choose the currencies guests should see and their display order.</p>
           <div class="field-row">
-            <label class="field-label">Main</label>
+            <label class="field-label" id="cfgCurrencyMainLabel">Main</label>
             <div id="cfgCurrencyMainChips" class="currency-chip-row"></div>
           </div>
           <div class="field-row">
-            <label class="field-label">Display</label>
+            <label class="field-label" id="cfgCurrencyDisplayLabel">Display</label>
             <div style="flex:1;min-width:0;">
               <div id="cfgCurrencyDisplayChips" class="currency-chip-list"></div>
               <div style="margin-top:10px;">
-                <div class="field-label__hint">Add currencies</div>
+                <div class="field-label__hint" id="cfgCurrencyAddHint">Add currencies</div>
                 <div id="cfgCurrencyAvailableChips" class="currency-chip-row" style="margin-top:8px;"></div>
               </div>
             </div>
@@ -291,8 +291,8 @@
         </div>
 
         <div class="form-section">
-          <h3 class="form-section__title">Time &amp; Scheduling</h3>
-          <p class="form-section__desc">Required for timed sections (e.g. lunch menu 12:00–14:00) to activate at the correct local time.</p>
+          <h3 class="form-section__title" id="cfgSectionTimeTitle">Time &amp; Scheduling</h3>
+          <p class="form-section__desc" id="cfgSectionTimeDesc">Required for timed sections (e.g. lunch menu 12:00–14:00) to activate at the correct local time.</p>
           <div class="field-row">
             <label class="field-label">Timezone</label>
             <select class="field-input field-select" id="cfgTimezone">
@@ -321,7 +321,7 @@
       <!-- CATEGORIES / MENU panel -->
       <section class="editor-panel hidden" id="panel-categories">
         <div class="categories-toolbar">
-          <span class="categories-toolbar__hint">Drag ↕ to reorder. Click a category to expand.</span>
+          <span class="categories-toolbar__hint" id="categoriesToolbarHint">Drag ↕ to reorder. Click a category to expand.</span>
           <button class="btn-add-cat" id="addCategoryBtn">+ Add category</button>
         </div>
         <div class="categories-list" id="categoriesList"></div>

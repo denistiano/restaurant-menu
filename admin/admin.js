@@ -13,6 +13,32 @@
 
   const I18N = {
     en: {
+      backToSite: '← Back to site',
+      selectRestaurant: 'Select a restaurant',
+      authSub: 'Enter one admin password, validate credentials, then choose a restaurant.',
+      restaurant: 'Restaurant',
+      openEditor: 'Open editor',
+      incorrectPassword: 'Incorrect admin password',
+      editorRestaurantTab: 'Restaurant',
+      editorSettingsTab: 'Settings',
+      editorMenuTab: 'Menu',
+      editorQrTab: 'QR media',
+      preview: 'Preview ↗',
+      save: 'Save',
+      unsaved: 'Unsaved',
+      cfgDisplayTitle: 'Display options',
+      cfgDisplayDesc: 'Control which fields are shown on the public menu.',
+      cfgCurrencyTitle: 'Currency',
+      cfgCurrencyDesc: 'Choose which currency your menu prices are entered in, then choose the currencies guests should see and their display order.',
+      cfgTimeTitle: 'Time & Scheduling',
+      cfgTimeDesc: 'Required for timed sections (e.g. lunch menu 12:00–14:00) to activate at the correct local time.',
+      main: 'Main',
+      display: 'Display',
+      addCurrencies: 'Add currencies',
+      categoriesToolbarHint: 'Drag ↕ to reorder. Click a category to expand.',
+      addCategory: '+ Add category',
+      cloudinaryUploads: 'Cloudinary — Image uploads',
+      mainBadge: 'MAIN',
       nameEnglish: 'Name (English)',
       nameBulgarian: 'Name (Bulgarian)',
       descEnglish: 'Description (English)',
@@ -27,9 +53,38 @@
       categoryBgPh: 'Категория',
       quantity: 'Quantity',
       unit: 'Unit',
-      quantityPh: 'e.g. 250'
+      quantityPh: 'e.g. 250',
+      selectTag: 'Select tag…',
+      selectIngredient: 'Select ingredient…',
+      selectAllergen: 'Select allergen…'
     },
     bg: {
+      backToSite: '← Назад към сайта',
+      selectRestaurant: 'Избери ресторант',
+      authSub: 'Въведи една админ парола, валидирай достъпа и избери ресторант.',
+      restaurant: 'Ресторант',
+      openEditor: 'Отвори редактора',
+      incorrectPassword: 'Невалидна админ парола',
+      editorRestaurantTab: 'Ресторант',
+      editorSettingsTab: 'Настройки',
+      editorMenuTab: 'Меню',
+      editorQrTab: 'QR медия',
+      preview: 'Преглед ↗',
+      save: 'Запази',
+      unsaved: 'Незаписано',
+      cfgDisplayTitle: 'Опции за показване',
+      cfgDisplayDesc: 'Управлявай кои полета се показват в публичното меню.',
+      cfgCurrencyTitle: 'Валута',
+      cfgCurrencyDesc: 'Избери основната валута за въвеждане на цени и кои валути да виждат гостите.',
+      cfgTimeTitle: 'Време и графици',
+      cfgTimeDesc: 'Нужно за времеви секции (напр. обедно меню 12:00–14:00) да се активират коректно.',
+      main: 'Основна',
+      display: 'Показване',
+      addCurrencies: 'Добави валути',
+      categoriesToolbarHint: 'Плъзни ↕ за подредба. Кликни категория за разгъване.',
+      addCategory: '+ Добави категория',
+      cloudinaryUploads: 'Cloudinary — Качване на изображения',
+      mainBadge: 'ОСНОВНА',
       nameEnglish: 'Име (Английски)',
       nameBulgarian: 'Име (Български)',
       descEnglish: 'Описание (Английски)',
@@ -44,7 +99,10 @@
       categoryBgPh: 'Категория',
       quantity: 'Количество',
       unit: 'Мярка',
-      quantityPh: 'напр. 250'
+      quantityPh: 'напр. 250',
+      selectTag: 'Избери таг…',
+      selectIngredient: 'Избери съставка…',
+      selectAllergen: 'Избери алерген…'
     }
   };
   const tr = (k) => (I18N[adminLang] && I18N[adminLang][k]) || I18N.en[k] || k;
@@ -301,6 +359,7 @@
     const next = adminLang === 'bg' ? 'EN' : 'BG';
     if (adminLangToggleAuth) adminLangToggleAuth.textContent = next;
     if (adminLangToggleEditor) adminLangToggleEditor.textContent = next;
+    applyStaticTranslations();
 
     const nameSection = document.getElementById('infoNameEnRow')?.parentElement;
     const descSection = document.getElementById('infoDescEnRow')?.parentElement;
@@ -310,6 +369,61 @@
     if (rerender && menuData && !editorScreen.classList.contains('hidden')) {
       renderCategories(menuData.restaurant.menu.categories);
     }
+  }
+
+  function applyStaticTranslations() {
+    const setText = (id, key) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = tr(key);
+    };
+    setText('authBackLink', 'backToSite');
+    setText('authTitle', 'selectRestaurant');
+    setText('authSub', 'authSub');
+    setText('restaurantSelectLabel', 'restaurant');
+    setText('authLoginBtn', 'openEditor');
+    setText('authError', 'incorrectPassword');
+    setText('cloudinarySummary', 'cloudinaryUploads');
+
+    // section headings
+    const nameTitle = document.getElementById('infoSectionNameTitle'); if (nameTitle) nameTitle.textContent = adminLang === 'bg' ? 'Имена' : 'Name';
+    const descTitle = document.getElementById('infoSectionDescTitle'); if (descTitle) descTitle.textContent = adminLang === 'bg' ? 'Слоган / Описание' : 'Tagline / Description';
+    const appTitle  = document.getElementById('infoSectionAppearanceTitle'); if (appTitle) appTitle.textContent = adminLang === 'bg' ? 'Визия' : 'Appearance';
+    const mediaTitle= document.getElementById('infoSectionMediaTitle'); if (mediaTitle) mediaTitle.textContent = adminLang === 'bg' ? 'Медия' : 'Media';
+
+    setText('cfgSectionDisplayTitle', 'cfgDisplayTitle');
+    setText('cfgSectionDisplayDesc', 'cfgDisplayDesc');
+    setText('cfgSectionCurrencyTitle', 'cfgCurrencyTitle');
+    setText('cfgSectionCurrencyDesc', 'cfgCurrencyDesc');
+    setText('cfgCurrencyMainLabel', 'main');
+    setText('cfgCurrencyDisplayLabel', 'display');
+    setText('cfgCurrencyAddHint', 'addCurrencies');
+    setText('cfgSectionTimeTitle', 'cfgTimeTitle');
+    setText('cfgSectionTimeDesc', 'cfgTimeDesc');
+    setText('categoriesToolbarHint', 'categoriesToolbarHint');
+    setText('addCategoryBtn', 'addCategory');
+
+    const preview = document.getElementById('previewLink'); if (preview) preview.textContent = tr('preview');
+    const saveBtnEl = document.getElementById('saveBtn'); if (saveBtnEl && saveBtnEl.textContent !== 'Saving…' && saveBtnEl.textContent !== 'Запазване…') saveBtnEl.textContent = tr('save');
+    const dirty = document.getElementById('dirtyBadge'); if (dirty) dirty.textContent = tr('unsaved');
+
+    const tabs = document.querySelectorAll('.editor-tab');
+    tabs.forEach(tab => {
+      if (tab.dataset.tab === 'info') tab.textContent = tr('editorRestaurantTab');
+      if (tab.dataset.tab === 'config') tab.textContent = tr('editorSettingsTab');
+      if (tab.dataset.tab === 'categories') tab.textContent = tr('editorMenuTab');
+      if (tab.dataset.tab === 'qr') tab.textContent = tr('editorQrTab');
+    });
+
+    // Info bilingual row labels
+    const setRowLabel = (rowId, text) => {
+      const row = document.getElementById(rowId);
+      const label = row?.querySelector('.field-label');
+      if (label) label.textContent = text;
+    };
+    setRowLabel('infoNameEnRow', tr('nameEnglish'));
+    setRowLabel('infoNameBgRow', tr('nameBulgarian'));
+    setRowLabel('infoDescEnRow', tr('descEnglish'));
+    setRowLabel('infoDescBgRow', tr('descBulgarian'));
   }
 
   /* ── PASSWORD HASHING ───────────────────────────────────── */
@@ -448,9 +562,11 @@
       chip.innerHTML = `
         <span class="item-tag-chip__en">${esc(meta.code)}</span>
         ${meta.symbol && meta.symbol !== meta.code ? `<span class="item-tag-chip__bg">(${esc(meta.symbol)})</span>` : ''}
-        ${meta.code === currencyCfg.base ? `<span class="currency-chip__main-badge">MAIN</span>` : ''}
+        ${meta.code === currencyCfg.base ? `<span class="currency-chip__main-badge">${esc(tr('mainBadge'))}</span>` : ''}
       `;
-      chip.title = meta.code === currencyCfg.base ? 'Main currency' : 'Set as main currency';
+      chip.title = meta.code === currencyCfg.base
+        ? (adminLang === 'bg' ? 'Основна валута' : 'Main currency')
+        : (adminLang === 'bg' ? 'Задай като основна валута' : 'Set as main currency');
       chip.addEventListener('click', () => {
         currencyCfg.base = meta.code;
         if (!currencyCfg.display.includes(currencyCfg.base)) currencyCfg.display.unshift(currencyCfg.base);
@@ -473,7 +589,7 @@
       chip.innerHTML = `
         <span class="item-tag-chip__en">${esc(meta.code)}</span>
         ${meta.symbol ? `<span class="item-tag-chip__bg">(${esc(meta.symbol)})</span>` : ''}
-        ${code === currencyCfg.base ? `<span class="currency-chip__main-badge">MAIN</span>` : ''}
+        ${code === currencyCfg.base ? `<span class="currency-chip__main-badge">${esc(tr('mainBadge'))}</span>` : ''}
         <span class="currency-chip__controls">
           ${idx > 0 ? `<span class="currency-chip__ctl" data-action="up" title="Move up">↑</span>` : ''}
           ${idx < currencyCfg.display.length - 1 ? `<span class="currency-chip__ctl" data-action="down" title="Move down">↓</span>` : ''}
@@ -665,7 +781,9 @@
       adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40) });
       if (authErrorEl) {
         authErrorEl.style.display = 'block';
-        authErrorEl.textContent = 'Incorrect admin password (not authorized for this restaurant).';
+        authErrorEl.textContent = adminLang === 'bg'
+          ? 'Невалидна админ парола (няма достъп до този ресторант).'
+          : 'Incorrect admin password (not authorized for this restaurant).';
       }
       sharedPasswordInput.focus();
       if (triggerBtn) triggerBtn.disabled = false;
@@ -1035,11 +1153,11 @@
       <div class="category-block__header">
         <span class="category-block__drag" title="Drag to reorder">⠿</span>
         <span class="category-block__name">${esc(cat.name.en || cat.id)}</span>
-        <span class="category-block__count">${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
+        <span class="category-block__count">${itemCount} ${adminLang === 'bg' ? 'продукта' : `item${itemCount !== 1 ? 's' : ''}`}</span>
         <div class="category-block__actions">
           <button class="cat-btn cat-btn--up" title="Move up">↑</button>
           <button class="cat-btn cat-btn--down" title="Move down">↓</button>
-          <button class="cat-btn cat-btn--danger cat-btn--del" title="Delete category">Delete</button>
+          <button class="cat-btn cat-btn--danger cat-btn--del" title="${adminLang === 'bg' ? 'Изтрий категория' : 'Delete category'}">${adminLang === 'bg' ? 'Изтрий' : 'Delete'}</button>
         </div>
         <span class="category-block__chevron">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1053,39 +1171,39 @@
           <label class="cat-schedule-toggle">
             <input type="checkbox" class="cat-schedule-cb" ${cat.schedule && cat.schedule.enabled ? 'checked' : ''} />
             <span class="toggle-switch"></span>
-            <span class="cat-schedule-label">Timed section</span>
+            <span class="cat-schedule-label">${adminLang === 'bg' ? 'Времева секция' : 'Timed section'}</span>
           </label>
           <div class="cat-schedule-fields${cat.schedule && cat.schedule.enabled ? '' : ' hidden'}">
             <div class="cat-schedule-times">
               <div class="cat-schedule-time-field">
-                <label>From</label>
+                <label>${adminLang === 'bg' ? 'От' : 'From'}</label>
                 <input type="time" class="cat-schedule-start field-input" value="${esc((cat.schedule && cat.schedule.start_time) || '12:00')}" />
               </div>
               <div class="cat-schedule-time-field">
-                <label>To</label>
+                <label>${adminLang === 'bg' ? 'До' : 'To'}</label>
                 <input type="time" class="cat-schedule-end field-input" value="${esc((cat.schedule && cat.schedule.end_time) || '14:00')}" />
               </div>
             </div>
             <div class="cat-schedule-behavior">
-              <span class="cat-schedule-behavior-label">Behaviour</span>
+              <span class="cat-schedule-behavior-label">${adminLang === 'bg' ? 'Поведение' : 'Behaviour'}</span>
               <label class="cat-behavior-row">
                 <input type="checkbox" class="cat-schedule-cb cat-schedule-active-top"
                   ${(cat.schedule && cat.schedule.move_active_top !== false) ? 'checked' : ''} />
                 <span class="toggle-switch"></span>
-                <span>Move to top when currently active</span>
+                <span>${adminLang === 'bg' ? 'Премести най-горе, когато е активна' : 'Move to top when currently active'}</span>
               </label>
               <label class="cat-behavior-row">
                 <input type="checkbox" class="cat-schedule-cb cat-schedule-inactive-bottom"
                   ${(cat.schedule && cat.schedule.move_inactive_bottom !== false) ? 'checked' : ''} />
                 <span class="toggle-switch"></span>
-                <span>Move to bottom when currently inactive</span>
+                <span>${adminLang === 'bg' ? 'Премести най-долу, когато е неактивна' : 'Move to bottom when currently inactive'}</span>
               </label>
             </div>
             <span class="cat-schedule-status"></span>
           </div>
         </div>
         <div class="items-list" id="items-${catIdx}"></div>
-        <button class="btn-add-item">+ Add item</button>
+        <button class="btn-add-item">${adminLang === 'bg' ? '+ Добави продукт' : '+ Add item'}</button>
       </div>
     `;
 
@@ -1230,7 +1348,7 @@
     const itemsEl = catBlock.querySelector(`#items-${catIdx}`);
     itemsEl.innerHTML = '';
     catBlock.querySelector('.category-block__count').textContent =
-      `${cat.items.length} item${cat.items.length !== 1 ? 's' : ''}`;
+      `${cat.items.length} ${adminLang === 'bg' ? 'продукта' : `item${cat.items.length !== 1 ? 's' : ''}`}`;
     cat.items.forEach((item, itemIdx) => {
       itemsEl.appendChild(buildItemBlock(item, itemIdx, cat, catIdx, catBlock));
     });
@@ -1510,10 +1628,10 @@
     if (!select || !addSelectedBtn || !newEnInput || !addNewBtn) return;
 
     function placeholderText() {
-      if (field === 'tags') return 'Select tag…';
-      if (field === 'ingredients') return 'Select ingredient…';
-      if (field === 'allergens') return 'Select allergen…';
-      return 'Select…';
+      if (field === 'tags') return tr('selectTag');
+      if (field === 'ingredients') return tr('selectIngredient');
+      if (field === 'allergens') return tr('selectAllergen');
+      return adminLang === 'bg' ? 'Избери…' : 'Select…';
     }
 
     function populateSelect() {
@@ -1800,7 +1918,7 @@
           </div>
         </div>
         <div class="item-actions">
-          <button class="btn-delete-item">Delete item</button>
+          <button class="btn-delete-item">${adminLang === 'bg' ? 'Изтрий продукт' : 'Delete item'}</button>
         </div>
       </div>
     `;
@@ -1992,7 +2110,7 @@
   saveBtn.addEventListener('click', async () => {
     collectFormData();
     saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving…';
+    saveBtn.textContent = adminLang === 'bg' ? 'Запазване…' : 'Saving…';
     adminTrack('admin_save_attempt', {});
 
     const r = currentRestaurant;
@@ -2002,7 +2120,7 @@
       adminTrack('admin_save_blocked', { reason: 'no_bin' });
       showToast('No bin ID configured — cannot save to cloud.', 'error');
       saveBtn.disabled = false;
-      saveBtn.textContent = 'Save';
+      saveBtn.textContent = tr('save');
       return;
     }
 
@@ -2033,7 +2151,7 @@
       adminTrack('admin_save_fail', { message: err.message || 'error' });
       showToast('Save failed: ' + err.message, 'error');
     } finally {
-      saveBtn.textContent = 'Save';
+      saveBtn.textContent = tr('save');
       saveBtn.disabled = false;
     }
   });
