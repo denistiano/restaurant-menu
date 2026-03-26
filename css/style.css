@@ -2021,11 +2021,9 @@ body[data-theme="modern"] .empty-state { color: rgba(240,236,228,0.35); }
 .item-modal__quantity {
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 .item-modal__ingredient--quantity {
-  background: rgba(196,149,90,0.12);
-  border-color: rgba(196,149,90,0.35);
+  background: rgba(255,255,255,0.05);
   color: rgba(240,236,228,0.9);
   font-weight: 600;
 }
