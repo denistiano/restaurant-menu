@@ -236,8 +236,8 @@
         "bg": "Ресторант Хемингуей"
       },
       "description": {
-        "en": "Online menu imported and enriched for Restaurant Hemingway.",
-        "bg": "Импортирано и обогатено онлайн меню за Ресторант Хемингуей."
+        "en": "Restaurant Hemingway.",
+        "bg": "Ресторант Хемингуей."
       },
       "default_language": "bg",
       "image": "https://res.cloudinary.com/duopd4plb/image/upload/v1774543364/restaurant_menu/memory-plovdiv/ltx61xmpmv82orzmlij0.jpg",
@@ -386,6 +386,46 @@
       },
       "menu_bin_id": "69c5568cc3097a1dd5625173",
       "password_hash": "4c13a3926848ca2d3a0b51d1019c32b06fda4c6cd5ad7d8a6f4e2883ca89b6bb"
+    },
+    {
+      "id": "barber-hub-yusuf",
+      "name": {
+        "en": "Barber Hub Yusuf",
+        "bg": "Барбър Хъб Юсуф"
+      },
+      "description": {
+        "en": "Barber services menu.",
+        "bg": "Меню с барбър услуги."
+      },
+      "default_language": "bg",
+      "image": "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1400&q=80",
+      "logo": "",
+      "keywords": [
+        "Barber Hub Yusuf",
+        "barber",
+        "Plovdiv",
+        "Барбър",
+        "Юсуф"
+      ],
+      "theme": "classic",
+      "currency_reference": "EUR",
+      "currencies_supported": [
+        {
+          "code": "EUR",
+          "label": "Euro (€)",
+          "symbol": "€"
+        },
+        {
+          "code": "BGN",
+          "label": "Bulgarian lev (лв)",
+          "symbol": "лв"
+        }
+      ],
+      "currency_rates": {
+        "BGN": 1.95583
+      },
+      "menu_bin_id": "69c64f6db7ec241ddcab5f8d",
+      "password_hash": "74c24d0faf1df289987161b72ee2d673441bea70c7244887562b5f5c488197a5"
     }
   ]
 }
