@@ -2,6 +2,8 @@
 
 Your menu, in their phone.
 
+https://denistiano.github.io/restaurant-menu/
+
 ![e-Menu walkthrough](demo/demo.gif)
 
 e-Menu is a bilingual digital menu experience for restaurants: one QR code at the table, and guests instantly browse your full menu on their phone—no app downloads, no waiting, always up to date.
