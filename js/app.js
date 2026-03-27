@@ -236,7 +236,16 @@
   }
 
   function observeCards()    { observe('.l-card',                                     0.08); }
-  function observeSections() { observe('.l-feature-card, .l-step, .l-cta-block__inner', 0.1); }
+
+  function observeSections() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll('.l-feature-card, .l-step, .l-cta-block__inner').forEach(el => {
+        el.classList.add('visible');
+      });
+      return;
+    }
+    observe('.l-feature-card, .l-step, .l-cta-block__inner', 0.1);
+  }
 
   /* ============================================================
      SCROLL — frosted nav
@@ -263,6 +272,26 @@
   /* ============================================================
      FETCH & INIT
      ============================================================ */
+  /** Fetch timeout so a hung network request cannot block the whole page. */
+  const RESTAURANTS_FETCH_MS = 12000;
+
+  async function fetchRestaurantsJson() {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), RESTAURANTS_FETCH_MS);
+    try {
+      const res = await fetch('resources/restaurants.json', {
+        signal: controller.signal,
+        cache: 'default'
+      });
+      clearTimeout(tid);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      clearTimeout(tid);
+      throw e;
+    }
+  }
+
   async function init() {
     initScrollNav();
     initScrollDepth();
@@ -274,22 +303,6 @@
     });
     window.addEventListener('pagehide', firePageExit);
 
-    const spinner = document.getElementById('loadingSpinner');
-
-    try {
-      const res = await fetch('resources/restaurants.json');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const restaurants = data.restaurants || (Array.isArray(data) ? data : []);
-      if (spinner) spinner.remove();
-      renderRestaurants(restaurants);
-    } catch (err) {
-      if (spinner) {
-        spinner.innerHTML = `<p style="color:rgba(255,255,255,0.4)">Could not load restaurants.</p>`;
-      }
-      console.error('Failed to load restaurants.json:', err);
-    }
-
     /* Language toggle */
     const langBtn = document.getElementById('langToggle');
     if (langBtn) {
@@ -300,7 +313,25 @@
     }
 
     applyLang(currentLang);
+
+    /* CRITICAL: do NOT await JSON before scroll/section observers.
+       Feature cards, steps and CTA start at opacity:0 until .visible — if fetch
+       is slow or hangs, the page looked "empty" below the hero. */
     observeSections();
+
+    const spinner = document.getElementById('loadingSpinner');
+
+    try {
+      const data = await fetchRestaurantsJson();
+      const restaurants = data.restaurants || (Array.isArray(data) ? data : []);
+      if (spinner) spinner.remove();
+      renderRestaurants(restaurants);
+    } catch (err) {
+      if (spinner) {
+        spinner.innerHTML = `<p style="color:rgba(255,255,255,0.4)">Could not load restaurants.</p>`;
+      }
+      console.error('Failed to load restaurants.json:', err);
+    }
 
     /* Fire landing_view after a short delay so trackEvent is most likely ready */
     setTimeout(() => {

@@ -113,6 +113,11 @@
   let activeCategory    = 'all';
   let activeTags        = new Set();
   let allTags           = [];
+  /** Ingredient filter keys — normalized `ing.en` (fallback bg) for stable matching */
+  let activeIngredients = new Set();
+  /** Allergen keys to exclude — dishes containing any listed allergen are hidden */
+  let excludeAllergens  = new Set();
+  let advancedFiltersOpen = false;
   let initialized       = false;  // skip animations on first render
   let currentModalItem  = null;   // item currently shown in the detail modal
   let searchQuery       = '';     // live search string
@@ -741,6 +746,7 @@
     setTimeout(() => {
       updateTranslatables(lang);
       updatePageTitle();
+      if (data) renderAdvancedFilters(data.restaurant.menu.categories);
       if (currentModalItem) populateModal(currentModalItem);
       [content, filters, header].forEach(el => {
         if (el) el.style.opacity = '1';
@@ -822,6 +828,88 @@
     });
   }
 
+  function ingredientKey(ing) {
+    const raw = (ing && (ing.en || ing.bg)) ? String(ing.en || ing.bg).trim() : '';
+    return raw ? raw.toLowerCase() : '';
+  }
+
+  function allergenKey(al) {
+    const raw = (al && (al.en || al.bg)) ? String(al.en || al.bg).trim() : '';
+    return raw ? raw.toLowerCase() : '';
+  }
+
+  function itemHasIngredientKey(item, key) {
+    if (!key || !item.ingredients?.length) return false;
+    return item.ingredients.some(ing => ingredientKey(ing) === key);
+  }
+
+  function itemHasAllergenKey(item, key) {
+    if (!key || !item.allergens?.length) return false;
+    return item.allergens.some(al => allergenKey(al) === key);
+  }
+
+  /* ============================================================
+     COLLECT INGREDIENTS — frequency desc, then alpha (by EN key)
+     ============================================================ */
+  function collectIngredients(categories, categoryId) {
+    const counts = new Map();
+    const entries = new Map();
+
+    categories.forEach(cat => {
+      if (categoryId !== 'all' && cat.id !== categoryId) return;
+      (cat.items || []).forEach(item => {
+        (item.ingredients || []).forEach(ing => {
+          const k = ingredientKey(ing);
+          if (!k) return;
+          counts.set(k, (counts.get(k) || 0) + 1);
+          if (!entries.has(k)) entries.set(k, { en: ing.en || ing.bg || '', bg: ing.bg || ing.en || '' });
+        });
+      });
+    });
+
+    return [...entries.keys()].sort((a, b) => {
+      const ca = counts.get(a) || 0;
+      const cb = counts.get(b) || 0;
+      if (cb !== ca) return cb - ca;
+      return a.localeCompare(b);
+    }).map(k => ({
+      key: k,
+      label: entries.get(k),
+      count: counts.get(k) || 0
+    }));
+  }
+
+  /* ============================================================
+     COLLECT ALLERGENS — for “avoid” filter, same sort as ingredients
+     ============================================================ */
+  function collectAllergens(categories, categoryId) {
+    const counts = new Map();
+    const entries = new Map();
+
+    categories.forEach(cat => {
+      if (categoryId !== 'all' && cat.id !== categoryId) return;
+      (cat.items || []).forEach(item => {
+        (item.allergens || []).forEach(al => {
+          const k = allergenKey(al);
+          if (!k) return;
+          counts.set(k, (counts.get(k) || 0) + 1);
+          if (!entries.has(k)) entries.set(k, { en: al.en || al.bg || '', bg: al.bg || al.en || '' });
+        });
+      });
+    });
+
+    return [...entries.keys()].sort((a, b) => {
+      const ca = counts.get(a) || 0;
+      const cb = counts.get(b) || 0;
+      if (cb !== ca) return cb - ca;
+      return a.localeCompare(b);
+    }).map(k => ({
+      key: k,
+      label: entries.get(k),
+      count: counts.get(k) || 0
+    }));
+  }
+
   /* ============================================================
      CATEGORY TABS
      ============================================================ */
@@ -870,6 +958,8 @@
     });
 
     renderTagFilters(categories);
+    pruneAdvancedFilterKeys(categories);
+    renderAdvancedFilters(categories);
     applyFilters(categories);
 
     if (catId !== 'all') {
@@ -932,13 +1022,166 @@
     });
   }
 
+  function pruneAdvancedFilterKeys(categories) {
+    const ingList = collectIngredients(categories, activeCategory);
+    const algList = collectAllergens(categories, activeCategory);
+    const validIng = new Set(ingList.map(x => x.key));
+    const validAlg = new Set(algList.map(x => x.key));
+    activeIngredients = new Set([...activeIngredients].filter(k => validIng.has(k)));
+    excludeAllergens = new Set([...excludeAllergens].filter(k => validAlg.has(k)));
+  }
+
+  function updateAdvancedFiltersBadge() {
+    const badge = document.getElementById('advancedFiltersBadge');
+    if (!badge) return;
+    const n = activeIngredients.size + excludeAllergens.size;
+    if (n > 0) {
+      badge.hidden = false;
+      badge.textContent = String(n);
+    } else {
+      badge.hidden = true;
+    }
+  }
+
+  let advancedFiltersBound = false;
+
+  function bindAdvancedFiltersUiOnce() {
+    if (advancedFiltersBound) return;
+    const btn = document.getElementById('advancedFiltersToggle');
+    const panel = document.getElementById('advancedFiltersPanel');
+    if (!btn || !panel) return;
+    advancedFiltersBound = true;
+    btn.addEventListener('click', () => {
+      advancedFiltersOpen = !advancedFiltersOpen;
+      panel.classList.toggle('hidden', !advancedFiltersOpen);
+      btn.setAttribute('aria-expanded', advancedFiltersOpen ? 'true' : 'false');
+      panel.setAttribute('aria-hidden', advancedFiltersOpen ? 'false' : 'true');
+      trackRestaurantEvent('advanced_filters_toggle', { open: advancedFiltersOpen });
+      interactionCount++;
+    });
+    const clearBtn = document.getElementById('advancedFiltersClear');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        activeIngredients.clear();
+        excludeAllergens.clear();
+        if (data) {
+          renderAdvancedFilters(data.restaurant.menu.categories);
+          applyFilters(data.restaurant.menu.categories);
+        }
+        updateAdvancedFiltersBadge();
+        trackRestaurantEvent('advanced_filters_clear', {});
+        interactionCount++;
+      });
+    }
+  }
+
+  function renderAdvancedFilters(categories) {
+    bindAdvancedFiltersUiOnce();
+    pruneAdvancedFilterKeys(categories);
+
+    const toggleWrap = document.getElementById('advancedFiltersToggleWrap');
+    const panel = document.getElementById('advancedFiltersPanel');
+    const ingRow = document.getElementById('ingredientFilters');
+    const algRow = document.getElementById('allergenExcludeFilters');
+    const secIng = document.getElementById('advancedSectionIngredients');
+    const secAlg = document.getElementById('advancedSectionAllergens');
+    if (!panel || !ingRow || !algRow) return;
+
+    const ingList = collectIngredients(categories, activeCategory);
+    const algList = collectAllergens(categories, activeCategory);
+    const hasIng = ingList.length > 0;
+    const hasAlg = algList.length > 0;
+
+    if (!hasIng && !hasAlg) {
+      ingRow.innerHTML = '';
+      algRow.innerHTML = '';
+      if (toggleWrap) toggleWrap.hidden = true;
+      panel.classList.add('hidden');
+      advancedFiltersOpen = false;
+      const tgl = document.getElementById('advancedFiltersToggle');
+      if (tgl) {
+        tgl.setAttribute('aria-expanded', 'false');
+        panel.setAttribute('aria-hidden', 'true');
+      }
+      updateAdvancedFiltersBadge();
+      return;
+    }
+    if (toggleWrap) toggleWrap.hidden = false;
+
+    ingRow.innerHTML = '';
+    algRow.innerHTML = '';
+
+    if (secIng) secIng.style.display = hasIng ? '' : 'none';
+    if (secAlg) secAlg.style.display = hasAlg ? '' : 'none';
+
+    ingList.forEach(({ key, label, count }) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'filter-pill filter-pill--ingredient' + (activeIngredients.has(key) ? ' active' : '');
+      chip.dataset.kind = 'ingredient';
+      chip.dataset.key = key;
+      chip.setAttribute('aria-pressed', activeIngredients.has(key) ? 'true' : 'false');
+      const name = t(label);
+      chip.innerHTML = `<span class="filter-pill__text">${esc(name)}</span><span class="filter-pill__count">${count}</span>`;
+      chip.addEventListener('click', () => {
+        if (activeIngredients.has(key)) activeIngredients.delete(key);
+        else activeIngredients.add(key);
+        chip.classList.toggle('active', activeIngredients.has(key));
+        chip.setAttribute('aria-pressed', activeIngredients.has(key) ? 'true' : 'false');
+        if (initialized) {
+          trackRestaurantEvent('ingredient_filter', {
+            ingredient_key: key.slice(0, 80),
+            action: activeIngredients.has(key) ? 'add' : 'remove',
+            active_count: activeIngredients.size
+          });
+          interactionCount++;
+        }
+        applyFilters(categories);
+        updateAdvancedFiltersBadge();
+      });
+      ingRow.appendChild(chip);
+    });
+
+    algList.forEach(({ key, label, count }) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'filter-pill filter-pill--allergen' + (excludeAllergens.has(key) ? ' active' : '');
+      chip.dataset.kind = 'allergen';
+      chip.dataset.key = key;
+      chip.setAttribute('aria-pressed', excludeAllergens.has(key) ? 'true' : 'false');
+      const name = t(label);
+      chip.innerHTML = `<span class="filter-pill__text">${esc(name)}</span><span class="filter-pill__count">${count}</span>`;
+      chip.addEventListener('click', () => {
+        if (excludeAllergens.has(key)) excludeAllergens.delete(key);
+        else excludeAllergens.add(key);
+        chip.classList.toggle('active', excludeAllergens.has(key));
+        chip.setAttribute('aria-pressed', excludeAllergens.has(key) ? 'true' : 'false');
+        if (initialized) {
+          trackRestaurantEvent('allergen_exclude_filter', {
+            allergen_key: key.slice(0, 80),
+            action: excludeAllergens.has(key) ? 'add' : 'remove',
+            active_count: excludeAllergens.size
+          });
+          interactionCount++;
+        }
+        applyFilters(categories);
+        updateAdvancedFiltersBadge();
+      });
+      algRow.appendChild(chip);
+    });
+
+    updateAdvancedFiltersBadge();
+  }
+
   /* ============================================================
      APPLY FILTERS (show/hide items & categories)
      ============================================================ */
   function applyFilters(categories) {
     const hasTagFilter    = activeTags.size > 0;
     const hasSearchFilter = searchQuery.trim() !== '';
-    const anyFilter       = hasTagFilter || hasSearchFilter;
+    const hasIngFilter    = activeIngredients.size > 0;
+    const hasAllergenEx   = excludeAllergens.size > 0;
+    const anyFilter       = hasTagFilter || hasSearchFilter || hasIngFilter || hasAllergenEx;
     let totalVisible      = 0;
 
     categories.forEach(cat => {
@@ -959,8 +1202,12 @@
         const passesTag = !hasTagFilter ||
           Array.from(activeTags).every(activeTag =>
             (item.tags || []).some(tag => tag.en === activeTag));
+        const passesIng = !hasIngFilter ||
+          Array.from(activeIngredients).every(k => itemHasIngredientKey(item, k));
+        const passesAllergen = !hasAllergenEx ||
+          !Array.from(excludeAllergens).some(k => itemHasAllergenKey(item, k));
         const passesSearch = matchesSearch(item, searchQuery.trim());
-        const passes = passesTag && passesSearch;
+        const passes = passesTag && passesIng && passesAllergen && passesSearch;
         itemEl.classList.toggle('filtered-out', !passes);
         if (passes) visibleCount++;
       });
@@ -985,11 +1232,11 @@
         noResultsEl = document.createElement('p');
         noResultsEl.id = 'noResultsBanner';
         noResultsEl.className = 'no-results-banner';
-        noResultsEl.dataset.en = 'No items match your search.';
-        noResultsEl.dataset.bg = 'Няма намерени продукти.';
+        noResultsEl.dataset.en = 'No items match your filters.';
+        noResultsEl.dataset.bg = 'Няма намерени продукти за избраните филтри.';
         noResultsEl.textContent = currentLang === 'bg'
-          ? 'Няма намерени продукти.'
-          : 'No items match your search.';
+          ? 'Няма намерени продукти за избраните филтри.'
+          : 'No items match your filters.';
         document.getElementById('menuCategories')?.after(noResultsEl);
       }
       noResultsEl.style.display = 'block';
@@ -1237,6 +1484,32 @@
           </div>
           <div class="category-tabs" id="categoryTabs" role="tablist" aria-label="Categories"></div>
           <div class="tag-filters"   id="tagFilters"   aria-label="Tag filters"></div>
+          <div class="filters-advanced-toggle-wrap" id="advancedFiltersToggleWrap" hidden>
+            <button type="button" class="filters-advanced-toggle" id="advancedFiltersToggle"
+                    aria-expanded="false" aria-controls="advancedFiltersPanel">
+              <span class="filters-advanced-toggle__label" data-en="More filters" data-bg="Още филтри">More filters</span>
+              <span class="filters-advanced-toggle__badge" id="advancedFiltersBadge" hidden>0</span>
+            </button>
+            <button type="button" class="filters-advanced-clear" id="advancedFiltersClear"
+                    data-en="Clear" data-bg="Изчисти">Clear</button>
+          </div>
+          <div class="filters-advanced-panel hidden" id="advancedFiltersPanel" role="region"
+               aria-hidden="true" aria-label="Advanced filters">
+            <div class="filters-advanced__section" id="advancedSectionIngredients">
+              <h4 class="filters-advanced__label" data-en="Ingredients" data-bg="Съставки">Ingredients</h4>
+              <p class="filters-advanced__hint" data-en="Show dishes that include all selected ingredients."
+                 data-bg="Покажи ястия, които включват всички избрани съставки.">
+                Show dishes that include all selected ingredients.</p>
+              <div class="filter-pill-row" id="ingredientFilters"></div>
+            </div>
+            <div class="filters-advanced__section" id="advancedSectionAllergens">
+              <h4 class="filters-advanced__label" data-en="Avoid allergens" data-bg="Избягвай алергени">Avoid allergens</h4>
+              <p class="filters-advanced__hint" data-en="Hide dishes that contain any of these."
+                 data-bg="Скрий ястия, които съдържат някой от тях.">
+                Hide dishes that contain any of these.</p>
+              <div class="filter-pill-row" id="allergenExcludeFilters"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1334,6 +1607,7 @@
     const categories = restaurant.menu.categories;
     renderCategoryTabs(categories);
     renderTagFilters(categories);
+    renderAdvancedFilters(categories);
     renderMenu(categories);
     applyFilters(categories);
 

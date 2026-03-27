@@ -664,6 +664,19 @@ html:has(.landing-page) {
   transform: translateY(0);
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
+
+/* Landing: never hide static sections behind animations when user prefers reduced motion,
+   or if scroll-reveal is unnecessary — instant, reliable content. */
+@media (prefers-reduced-motion: reduce) {
+  .l-feature-card,
+  .l-step,
+  .l-cta-block__inner {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
 .l-cta-block__title {
   font-family: var(--font-serif);
   font-size: clamp(28px, 5vw, 48px);
@@ -1228,6 +1241,165 @@ html:has(.landing-page) {
   border-color: var(--color-tag-active);
 }
 
+/* Advanced filters — toggle row + ingredient / allergen pills */
+.filters-advanced-toggle-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 4px 0 8px;
+}
+.filters-advanced-toggle-wrap[hidden] {
+  display: none !important;
+}
+
+.filters-advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: rgba(196,149,90,0.1);
+  border: 1.5px solid rgba(196,149,90,0.35);
+  transition: background var(--transition), border-color var(--transition);
+}
+.filters-advanced-toggle:hover {
+  background: rgba(196,149,90,0.16);
+  border-color: rgba(196,149,90,0.5);
+}
+
+.filters-advanced-toggle__badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--color-accent);
+  color: #fff;
+  line-height: 1;
+}
+
+.filters-advanced-clear {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 4px 0;
+}
+.filters-advanced-clear:hover {
+  color: var(--color-navy);
+}
+
+.filters-advanced-panel {
+  padding: 12px 0 14px;
+  border-top: 1px solid var(--color-border);
+}
+.filters-advanced-panel.hidden {
+  display: none;
+}
+
+.filters-advanced__section {
+  margin-bottom: 14px;
+}
+.filters-advanced__section:last-child {
+  margin-bottom: 0;
+}
+
+.filters-advanced__label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-navy);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.filters-advanced__hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.filter-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: var(--color-tag-bg);
+  border: 1.5px solid transparent;
+  transition: all var(--transition);
+  max-width: 100%;
+}
+.filter-pill__text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.filter-pill__count {
+  flex-shrink: 0;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(0,0,0,0.06);
+  color: var(--color-text-muted);
+}
+.filter-pill:hover {
+  border-color: var(--color-accent);
+  color: var(--color-navy);
+}
+.filter-pill:hover .filter-pill__count {
+  background: rgba(196,149,90,0.15);
+  color: var(--color-navy);
+}
+.filter-pill.active {
+  background: var(--color-tag-active);
+  color: var(--color-tag-text-active);
+  border-color: var(--color-tag-active);
+}
+.filter-pill.active .filter-pill__count {
+  background: rgba(255,255,255,0.2);
+  color: var(--color-tag-text-active);
+}
+
+.filter-pill--allergen.active {
+  background: rgba(160, 52, 52, 0.92);
+  border-color: rgba(120, 36, 36, 0.95);
+  color: #fff;
+}
+.filter-pill--allergen.active .filter-pill__count {
+  background: rgba(255,255,255,0.22);
+  color: #fff;
+}
+
 /* ============================================================
    RESTAURANT PAGE — MENU CONTENT
    ============================================================ */
@@ -1377,6 +1549,62 @@ body[data-theme="classic"] .tag-chip.active {
   background: rgba(196,149,90,0.18);
   color: var(--color-accent);
   border-color: rgba(196,149,90,0.5);
+}
+
+body[data-theme="classic"] .filters-advanced-panel {
+  border-top-color: rgba(255,255,255,0.08);
+}
+body[data-theme="classic"] .filters-advanced__label {
+  color: rgba(240,236,228,0.88);
+}
+body[data-theme="classic"] .filters-advanced__hint {
+  color: rgba(240,236,228,0.45);
+}
+body[data-theme="classic"] .filters-advanced-toggle {
+  color: var(--color-accent);
+  background: rgba(196,149,90,0.12);
+  border-color: rgba(196,149,90,0.4);
+}
+body[data-theme="classic"] .filters-advanced-clear {
+  color: rgba(240,236,228,0.45);
+}
+body[data-theme="classic"] .filters-advanced-clear:hover {
+  color: #f0ece4;
+}
+body[data-theme="classic"] .filter-pill {
+  background: rgba(255,255,255,0.05);
+  color: rgba(240,236,228,0.4);
+  border-color: transparent;
+}
+body[data-theme="classic"] .filter-pill__count {
+  background: rgba(255,255,255,0.1);
+  color: rgba(240,236,228,0.55);
+}
+body[data-theme="classic"] .filter-pill:hover {
+  border-color: rgba(196,149,90,0.5);
+  color: rgba(240,236,228,0.85);
+}
+body[data-theme="classic"] .filter-pill:hover .filter-pill__count {
+  background: rgba(196,149,90,0.2);
+  color: rgba(240,236,228,0.9);
+}
+body[data-theme="classic"] .filter-pill--ingredient.active {
+  background: rgba(196,149,90,0.18);
+  color: var(--color-accent);
+  border-color: rgba(196,149,90,0.5);
+}
+body[data-theme="classic"] .filter-pill--ingredient.active .filter-pill__count {
+  background: rgba(196,149,90,0.35);
+  color: var(--color-accent);
+}
+body[data-theme="classic"] .filter-pill--allergen.active {
+  background: rgba(200, 72, 72, 0.42);
+  border-color: rgba(255,140,140,0.45);
+  color: #ffd4d4;
+}
+body[data-theme="classic"] .filter-pill--allergen.active .filter-pill__count {
+  background: rgba(255,255,255,0.14);
+  color: #ffd4d4;
 }
 
 /* Menu area */
@@ -1568,6 +1796,62 @@ body[data-theme="modern"] .tag-chip.active {
   background: rgba(196,149,90,0.18);
   color: var(--color-accent);
   border-color: rgba(196,149,90,0.5);
+}
+
+body[data-theme="modern"] .filters-advanced-panel {
+  border-top-color: rgba(255,255,255,0.08);
+}
+body[data-theme="modern"] .filters-advanced__label {
+  color: rgba(240,236,228,0.88);
+}
+body[data-theme="modern"] .filters-advanced__hint {
+  color: rgba(240,236,228,0.45);
+}
+body[data-theme="modern"] .filters-advanced-toggle {
+  color: var(--color-accent);
+  background: rgba(196,149,90,0.12);
+  border-color: rgba(196,149,90,0.4);
+}
+body[data-theme="modern"] .filters-advanced-clear {
+  color: rgba(240,236,228,0.45);
+}
+body[data-theme="modern"] .filters-advanced-clear:hover {
+  color: #f0ece4;
+}
+body[data-theme="modern"] .filter-pill {
+  background: rgba(255,255,255,0.05);
+  color: rgba(240,236,228,0.4);
+  border-color: transparent;
+}
+body[data-theme="modern"] .filter-pill__count {
+  background: rgba(255,255,255,0.1);
+  color: rgba(240,236,228,0.55);
+}
+body[data-theme="modern"] .filter-pill:hover {
+  border-color: rgba(196,149,90,0.5);
+  color: rgba(240,236,228,0.85);
+}
+body[data-theme="modern"] .filter-pill:hover .filter-pill__count {
+  background: rgba(196,149,90,0.2);
+  color: rgba(240,236,228,0.9);
+}
+body[data-theme="modern"] .filter-pill--ingredient.active {
+  background: rgba(196,149,90,0.18);
+  color: var(--color-accent);
+  border-color: rgba(196,149,90,0.5);
+}
+body[data-theme="modern"] .filter-pill--ingredient.active .filter-pill__count {
+  background: rgba(196,149,90,0.35);
+  color: var(--color-accent);
+}
+body[data-theme="modern"] .filter-pill--allergen.active {
+  background: rgba(200, 72, 72, 0.42);
+  border-color: rgba(255,140,140,0.45);
+  color: #ffd4d4;
+}
+body[data-theme="modern"] .filter-pill--allergen.active .filter-pill__count {
+  background: rgba(255,255,255,0.14);
+  color: #ffd4d4;
 }
 
 /* Menu content area */
