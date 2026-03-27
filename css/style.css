@@ -1285,6 +1285,10 @@ html:has(.landing-page) {
   color: #fff;
   line-height: 1;
 }
+/* [hidden] must win — base .filters-advanced-toggle__badge { display: inline-flex } overrides UA [hidden] */
+.filters-advanced-toggle__badge[hidden] {
+  display: none !important;
+}
 
 .filters-advanced-clear {
   font-size: 12px;

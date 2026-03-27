@@ -14,6 +14,10 @@
  *   • Param name   : snake_case, ≤ 40 chars
  *   • Param value  : string ≤ 100 chars  OR  number
  *   • Max params   : 25 per event
+ *
+ * Custom parameters (e.g. search_term, filter_type, item_name) must be
+ * registered as custom dimensions in GA4 Admin → Data display → Custom definitions
+ * before they appear in standard reports and Explorations.
  */
 
 import { initializeApp }                      from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';

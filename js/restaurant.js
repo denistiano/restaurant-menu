@@ -2,22 +2,32 @@
    restaurant.js — Restaurant page logic + Analytics
    Expects: window.RESTAURANT_ID, window.RESOURCES_BASE
 
+   Every event includes (via trackRestaurantEvent):
+     restaurant_id, restaurant_name (EN), restaurant_name_bg
+
    EVENTS FIRED ON THIS PAGE
-   ┌──────────────────────┬──────────────────────────────────────────────────┐
-   │ Event                │ Key params                                       │
-   ├──────────────────────┼──────────────────────────────────────────────────┤
-   │ menu_view            │ restaurant_id/name, theme, language,             │
-   │                      │ category_count, item_count                       │
-   │ category_select      │ restaurant_id, category_id, category_name        │
-   │ tag_filter           │ restaurant_id, tag, action, active_count         │
-   │ search  (GA4 std)    │ search_term, restaurant_id, results_count        │
-   │ item_view            │ restaurant_id, item_name, item_price,            │
-   │                      │ category_id, category_name                       │
-   │ theme_change         │ restaurant_id, from_theme, to_theme              │
-   │ language_change      │ restaurant_id, from_lang, to_lang                │
-   │ contact_click        │ restaurant_id, contact_type (phone|email)        │
-   │ menu_exit            │ restaurant_id, duration_sec, interaction_count   │
-   └──────────────────────┴──────────────────────────────────────────────────┘
+   ┌──────────────────────────┬────────────────────────────────────────────────┐
+   │ Event                    │ Key params (in addition to restaurant fields)  │
+   ├──────────────────────────┼────────────────────────────────────────────────┤
+   │ menu_view                │ theme, language, category_count, item_count      │
+   │ category_select          │ filter_type, action, category_id,              │
+   │                          │ previous_category_id, category_name            │
+   │ tag_filter               │ filter_type, action, tag, tag_label            │
+   │ ingredient_filter        │ filter_type, action, ingredient_key,           │
+   │                          │ ingredient_label                               │
+   │ allergen_exclude_filter  │ filter_type, action, allergen_key,             │
+   │                          │ allergen_label                                 │
+   │ advanced_filters_toggle│ filter_type, panel_open                        │
+   │ advanced_filters_clear   │ filter_type, action                            │
+   │ search (GA4)             │ search_term, results_count                     │
+   │ item_view                │ item_name (localized), item_name_en/bg,        │
+   │                          │ item_price, category_id, category_name_en/bg   │
+   │ theme_change             │ from_theme, to_theme                           │
+   │ language_change          │ from_lang, to_lang                             │
+   │ contact_click            │ contact_type (phone|email)                     │
+   │ menu_exit                │ duration_sec, interaction_count                │
+   └──────────────────────────┴────────────────────────────────────────────────┘
+   Register custom dimensions in GA4 for params you need in reports.
    ============================================================ */
 
 (function () {
@@ -86,6 +96,7 @@
     const merged = {
       restaurant_id: RESTAURANT_ID,
       restaurant_name: (pageRestaurantNameEn || RESTAURANT_ID).slice(0, 100),
+      restaurant_name_bg: (pageRestaurantNameBg || '').slice(0, 100),
       ...params,
     };
     window.trackEvent?.(eventName, merged);
@@ -578,21 +589,25 @@
     document.body.style.overflow = 'hidden';
 
     /* Look up the category that owns this item (reference equality) */
-    let categoryId = '', categoryName = '';
+    let categoryId = '', categoryNameEn = '', categoryNameBg = '';
     for (const cat of data?.restaurant?.menu?.categories || []) {
       if (cat.items?.some(i => i === item)) {
-        categoryId   = cat.id;
-        categoryName = cat.name.en || cat.id;
+        categoryId     = cat.id;
+        categoryNameEn = cat.name?.en || cat.id;
+        categoryNameBg = cat.name?.bg || '';
         break;
       }
     }
 
     trackRestaurantEvent('item_view', {
-      item_name:      (item.name.en || '').slice(0, 100),
-      item_name_bg:   (item.name.bg || '').slice(0, 100),
-      item_price:     item.price ?? 0,
-      category_id:    categoryId,
-      category_name:  categoryName
+      item_name:         t(item.name).slice(0, 100),
+      item_name_en:      (item.name.en || '').slice(0, 100),
+      item_name_bg:      (item.name.bg || '').slice(0, 100),
+      item_price:        item.price ?? 0,
+      category_id:       categoryId,
+      category_name:     categoryNameEn.slice(0, 100),
+      category_name_en:  categoryNameEn.slice(0, 100),
+      category_name_bg:  categoryNameBg.slice(0, 100)
     });
     interactionCount++;
 
@@ -941,12 +956,22 @@
 
   /* selectCategory — no DOM rebuild, just show/hide */
   function selectCategory(catId, categories) {
+    const previousCategoryId = activeCategory;
     if (initialized) {
       const cat = categories.find(c => c.id === catId);
+      const prevCat = previousCategoryId === 'all'
+        ? null
+        : categories.find(c => c.id === previousCategoryId);
       trackRestaurantEvent('category_select', {
-        category_id:    catId,
-        category_name:  cat ? (cat.name.en || catId) : catId,
-        item_count:     cat ? (cat.items?.length || 0) : 0
+        filter_type:            'category',
+        action:                 catId === 'all' ? 'clear' : 'select',
+        category_id:          catId,
+        previous_category_id: previousCategoryId,
+        category_name:        cat ? (cat.name.en || catId).slice(0, 100) : String(catId).slice(0, 100),
+        previous_category_name: prevCat
+          ? (prevCat.name.en || prevCat.id).slice(0, 100)
+          : 'all',
+        item_count:           cat ? (cat.items?.length || 0) : 0
       });
       interactionCount++;
     }
@@ -1007,9 +1032,13 @@
       activeTags.delete(tagEn);
     }
     if (initialized) {
+      const tagObj = allTags.find(t => t.en === tagEn);
+      const tagLabel = tagObj ? t(tagObj) : tagEn;
       trackRestaurantEvent('tag_filter', {
-        tag:           tagEn,
+        filter_type:   'tag',
         action:        adding ? 'add' : 'remove',
+        tag:           tagEn.slice(0, 100),
+        tag_label:     tagLabel.slice(0, 100),
         active_count:  activeTags.size,
         active_tags:   Array.from(activeTags).join(',').slice(0, 100)
       });
@@ -1058,7 +1087,12 @@
       panel.classList.toggle('hidden', !advancedFiltersOpen);
       btn.setAttribute('aria-expanded', advancedFiltersOpen ? 'true' : 'false');
       panel.setAttribute('aria-hidden', advancedFiltersOpen ? 'false' : 'true');
-      trackRestaurantEvent('advanced_filters_toggle', { open: advancedFiltersOpen });
+      trackRestaurantEvent('advanced_filters_toggle', {
+        filter_type:  'advanced_panel',
+        action:       advancedFiltersOpen ? 'open' : 'close',
+        panel_open:   advancedFiltersOpen,
+        open:         advancedFiltersOpen
+      });
       interactionCount++;
     });
     const clearBtn = document.getElementById('advancedFiltersClear');
@@ -1072,7 +1106,10 @@
         } else {
           updateAdvancedFiltersBadge();
         }
-        trackRestaurantEvent('advanced_filters_clear', {});
+        trackRestaurantEvent('advanced_filters_clear', {
+          filter_type: 'advanced_panel',
+          action:      'clear'
+        });
         interactionCount++;
       });
     }
@@ -1132,10 +1169,13 @@
         chip.classList.toggle('active', activeIngredients.has(key));
         chip.setAttribute('aria-pressed', activeIngredients.has(key) ? 'true' : 'false');
         if (initialized) {
+          const ingLabel = t(label);
           trackRestaurantEvent('ingredient_filter', {
-            ingredient_key: key.slice(0, 80),
-            action: activeIngredients.has(key) ? 'add' : 'remove',
-            active_count: activeIngredients.size
+            filter_type:       'ingredient',
+            action:            activeIngredients.has(key) ? 'add' : 'remove',
+            ingredient_key:    key.slice(0, 100),
+            ingredient_label:  ingLabel.slice(0, 100),
+            active_count:      activeIngredients.size
           });
           interactionCount++;
         }
@@ -1159,10 +1199,13 @@
         chip.classList.toggle('active', excludeAllergens.has(key));
         chip.setAttribute('aria-pressed', excludeAllergens.has(key) ? 'true' : 'false');
         if (initialized) {
+          const alLabel = t(label);
           trackRestaurantEvent('allergen_exclude_filter', {
-            allergen_key: key.slice(0, 80),
-            action: excludeAllergens.has(key) ? 'add' : 'remove',
-            active_count: excludeAllergens.size
+            filter_type:      'allergen_exclude',
+            action:           excludeAllergens.has(key) ? 'add' : 'remove',
+            allergen_key:     key.slice(0, 100),
+            allergen_label:   alLabel.slice(0, 100),
+            active_count:     excludeAllergens.size
           });
           interactionCount++;
         }
@@ -1585,8 +1628,8 @@
           });
           /* Use GA4 standard 'search' event so it populates built-in reports */
           trackRestaurantEvent('search', {
-            search_term:    term.slice(0, 100),
-            results_count:  resultsCount
+            search_term:   term.slice(0, 100),
+            results_count: resultsCount
           });
           interactionCount++;
         }, 1200);
