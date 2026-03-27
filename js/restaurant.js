@@ -1035,11 +1035,13 @@
     const badge = document.getElementById('advancedFiltersBadge');
     if (!badge) return;
     const n = activeIngredients.size + excludeAllergens.size;
+    badge.textContent = n > 0 ? String(n) : '';
     if (n > 0) {
-      badge.hidden = false;
-      badge.textContent = String(n);
+      badge.removeAttribute('hidden');
+      badge.setAttribute('aria-hidden', 'false');
     } else {
-      badge.hidden = true;
+      badge.setAttribute('hidden', '');
+      badge.setAttribute('aria-hidden', 'true');
     }
   }
 
@@ -1067,8 +1069,9 @@
         if (data) {
           renderAdvancedFilters(data.restaurant.menu.categories);
           applyFilters(data.restaurant.menu.categories);
+        } else {
+          updateAdvancedFiltersBadge();
         }
-        updateAdvancedFiltersBadge();
         trackRestaurantEvent('advanced_filters_clear', {});
         interactionCount++;
       });
@@ -1137,7 +1140,6 @@
           interactionCount++;
         }
         applyFilters(categories);
-        updateAdvancedFiltersBadge();
       });
       ingRow.appendChild(chip);
     });
@@ -1165,7 +1167,6 @@
           interactionCount++;
         }
         applyFilters(categories);
-        updateAdvancedFiltersBadge();
       });
       algRow.appendChild(chip);
     });
@@ -1243,6 +1244,8 @@
     } else if (noResultsEl) {
       noResultsEl.style.display = 'none';
     }
+
+    updateAdvancedFiltersBadge();
   }
 
   /* ============================================================
@@ -1500,14 +1503,20 @@
               <p class="filters-advanced__hint" data-en="Show dishes that include all selected ingredients."
                  data-bg="Покажи ястия, които включват всички избрани съставки.">
                 Show dishes that include all selected ingredients.</p>
-              <div class="filter-pill-row" id="ingredientFilters"></div>
+              <div class="filter-pill-slider" id="ingredientFiltersSlider" role="group"
+                   aria-label="Ingredient filters">
+                <div class="filter-pill-row filter-pill-row--scroll" id="ingredientFilters"></div>
+              </div>
             </div>
             <div class="filters-advanced__section" id="advancedSectionAllergens">
               <h4 class="filters-advanced__label" data-en="Avoid allergens" data-bg="Избягвай алергени">Avoid allergens</h4>
               <p class="filters-advanced__hint" data-en="Hide dishes that contain any of these."
                  data-bg="Скрий ястия, които съдържат някой от тях.">
                 Hide dishes that contain any of these.</p>
-              <div class="filter-pill-row" id="allergenExcludeFilters"></div>
+              <div class="filter-pill-slider" id="allergenExcludeFiltersSlider" role="group"
+                   aria-label="Allergen exclusions">
+                <div class="filter-pill-row filter-pill-row--scroll" id="allergenExcludeFilters"></div>
+              </div>
             </div>
           </div>
         </div>

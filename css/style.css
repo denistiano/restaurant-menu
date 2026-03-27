@@ -1336,6 +1336,48 @@ html:has(.landing-page) {
   gap: 6px;
 }
 
+/* Horizontal scroll “slider” for many ingredient / allergen pills */
+.filter-pill-slider {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  margin: 0 -4px;
+  padding: 2px 4px 8px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 14px,
+    black calc(100% - 14px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 14px,
+    black calc(100% - 14px),
+    transparent 100%
+  );
+  scroll-snap-type: x proximity;
+}
+.filter-pill-slider::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-pill-row--scroll {
+  flex-wrap: nowrap;
+  width: max-content;
+  max-width: none;
+  align-items: center;
+  min-height: 34px;
+}
+.filter-pill-slider .filter-pill {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
 .filter-pill {
   display: inline-flex;
   align-items: center;
