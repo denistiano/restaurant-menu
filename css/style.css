@@ -1253,22 +1253,59 @@ html:has(.landing-page) {
   display: none !important;
 }
 
+/* “More filters” — cool slate/cyan control (filter pills stay warm gold) */
 .filters-advanced-toggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 6px 12px 6px 14px;
   border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-accent);
-  background: rgba(196,149,90,0.1);
-  border: 1.5px solid rgba(196,149,90,0.35);
-  transition: background var(--transition), border-color var(--transition);
+  color: #2a4a62;
+  background: rgba(70, 130, 190, 0.12);
+  border: 1.5px solid rgba(70, 130, 200, 0.42);
+  box-shadow: none;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .filters-advanced-toggle:hover {
-  background: rgba(196,149,90,0.16);
-  border-color: rgba(196,149,90,0.5);
+  background: rgba(70, 130, 190, 0.18);
+  border-color: rgba(50, 120, 200, 0.55);
+  color: #1e3d55;
+}
+/* Panel open — “enabled” state */
+.filters-advanced-toggle--expanded {
+  color: #0f3550;
+  background: rgba(50, 160, 210, 0.2);
+  border-color: rgba(40, 150, 210, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(60, 180, 220, 0.25),
+    0 2px 10px rgba(40, 120, 180, 0.12);
+}
+.filters-advanced-toggle--expanded:hover {
+  background: rgba(45, 170, 215, 0.24);
+  border-color: rgba(35, 160, 210, 0.75);
+}
+
+.filters-advanced-toggle__chevron {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  opacity: 0.75;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  margin-left: 1px;
+}
+.filters-advanced-toggle--expanded .filters-advanced-toggle__chevron {
+  transform: rotate(180deg);
+  opacity: 0.95;
 }
 
 .filters-advanced-toggle__badge {
@@ -1281,9 +1318,14 @@ html:has(.landing-page) {
   border-radius: var(--radius-pill);
   font-size: 11px;
   font-weight: 700;
-  background: var(--color-accent);
+  background: rgba(55, 120, 200, 0.55);
   color: #fff;
   line-height: 1;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.filters-advanced-toggle--expanded .filters-advanced-toggle__badge {
+  background: rgba(30, 150, 200, 0.9);
+  color: #fff;
 }
 /* [hidden] must win — base .filters-advanced-toggle__badge { display: inline-flex } overrides UA [hidden] */
 .filters-advanced-toggle__badge[hidden] {
@@ -1607,9 +1649,35 @@ body[data-theme="classic"] .filters-advanced__hint {
   color: rgba(240,236,228,0.45);
 }
 body[data-theme="classic"] .filters-advanced-toggle {
-  color: var(--color-accent);
-  background: rgba(196,149,90,0.12);
-  border-color: rgba(196,149,90,0.4);
+  color: rgba(185, 225, 255, 0.95);
+  background: rgba(55, 95, 145, 0.28);
+  border-color: rgba(120, 175, 235, 0.42);
+  box-shadow: none;
+}
+body[data-theme="classic"] .filters-advanced-toggle:hover {
+  color: #f0f7ff;
+  background: rgba(60, 110, 170, 0.35);
+  border-color: rgba(140, 195, 255, 0.5);
+}
+body[data-theme="classic"] .filters-advanced-toggle--expanded {
+  color: #ffffff;
+  background: rgba(35, 120, 165, 0.42);
+  border-color: rgba(90, 200, 255, 0.58);
+  box-shadow:
+    0 0 0 1px rgba(80, 190, 255, 0.18),
+    0 3px 14px rgba(20, 80, 140, 0.25);
+}
+body[data-theme="classic"] .filters-advanced-toggle--expanded:hover {
+  background: rgba(40, 130, 175, 0.48);
+  border-color: rgba(110, 210, 255, 0.62);
+}
+body[data-theme="classic"] .filters-advanced-toggle__badge {
+  background: rgba(100, 165, 235, 0.95);
+  color: #0a1424;
+}
+body[data-theme="classic"] .filters-advanced-toggle--expanded .filters-advanced-toggle__badge {
+  background: rgba(130, 215, 255, 0.98);
+  color: #061018;
 }
 body[data-theme="classic"] .filters-advanced-clear {
   color: rgba(240,236,228,0.45);
@@ -1854,9 +1922,35 @@ body[data-theme="modern"] .filters-advanced__hint {
   color: rgba(240,236,228,0.45);
 }
 body[data-theme="modern"] .filters-advanced-toggle {
-  color: var(--color-accent);
-  background: rgba(196,149,90,0.12);
-  border-color: rgba(196,149,90,0.4);
+  color: rgba(185, 225, 255, 0.95);
+  background: rgba(55, 95, 145, 0.28);
+  border-color: rgba(120, 175, 235, 0.42);
+  box-shadow: none;
+}
+body[data-theme="modern"] .filters-advanced-toggle:hover {
+  color: #f0f7ff;
+  background: rgba(60, 110, 170, 0.35);
+  border-color: rgba(140, 195, 255, 0.5);
+}
+body[data-theme="modern"] .filters-advanced-toggle--expanded {
+  color: #ffffff;
+  background: rgba(35, 120, 165, 0.42);
+  border-color: rgba(90, 200, 255, 0.58);
+  box-shadow:
+    0 0 0 1px rgba(80, 190, 255, 0.18),
+    0 3px 14px rgba(20, 80, 140, 0.25);
+}
+body[data-theme="modern"] .filters-advanced-toggle--expanded:hover {
+  background: rgba(40, 130, 175, 0.48);
+  border-color: rgba(110, 210, 255, 0.62);
+}
+body[data-theme="modern"] .filters-advanced-toggle__badge {
+  background: rgba(100, 165, 235, 0.95);
+  color: #0a1424;
+}
+body[data-theme="modern"] .filters-advanced-toggle--expanded .filters-advanced-toggle__badge {
+  background: rgba(130, 215, 255, 0.98);
+  color: #061018;
 }
 body[data-theme="modern"] .filters-advanced-clear {
   color: rgba(240,236,228,0.45);

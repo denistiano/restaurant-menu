@@ -1074,6 +1074,13 @@
     }
   }
 
+  /** Keeps “More filters” button styling in sync with panel open/closed (not filter count). */
+  function syncAdvancedFiltersToggleVisual() {
+    const btn = document.getElementById('advancedFiltersToggle');
+    if (!btn) return;
+    btn.classList.toggle('filters-advanced-toggle--expanded', advancedFiltersOpen);
+  }
+
   let advancedFiltersBound = false;
 
   function bindAdvancedFiltersUiOnce() {
@@ -1087,6 +1094,7 @@
       panel.classList.toggle('hidden', !advancedFiltersOpen);
       btn.setAttribute('aria-expanded', advancedFiltersOpen ? 'true' : 'false');
       panel.setAttribute('aria-hidden', advancedFiltersOpen ? 'false' : 'true');
+      syncAdvancedFiltersToggleVisual();
       trackRestaurantEvent('advanced_filters_toggle', {
         filter_type:  'advanced_panel',
         action:       advancedFiltersOpen ? 'open' : 'close',
@@ -1143,6 +1151,7 @@
         tgl.setAttribute('aria-expanded', 'false');
         panel.setAttribute('aria-hidden', 'true');
       }
+      syncAdvancedFiltersToggleVisual();
       updateAdvancedFiltersBadge();
       return;
     }
@@ -1214,6 +1223,7 @@
       algRow.appendChild(chip);
     });
 
+    syncAdvancedFiltersToggleVisual();
     updateAdvancedFiltersBadge();
   }
 
@@ -1535,6 +1545,7 @@
                     aria-expanded="false" aria-controls="advancedFiltersPanel">
               <span class="filters-advanced-toggle__label" data-en="More filters" data-bg="Още филтри">More filters</span>
               <span class="filters-advanced-toggle__badge" id="advancedFiltersBadge" hidden>0</span>
+              <span class="filters-advanced-toggle__chevron" aria-hidden="true"></span>
             </button>
             <button type="button" class="filters-advanced-clear" id="advancedFiltersClear"
                     data-en="Clear" data-bg="Изчисти">Clear</button>
