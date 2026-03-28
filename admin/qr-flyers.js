@@ -29,7 +29,13 @@
     { id: 'fine',    label: 'Fine dining', labelBg: 'Фино', build: buildFine },
     { id: 'family',  label: 'Family / café', labelBg: 'Семейно', build: buildFamily },
     { id: 'terrace', label: 'Terrace', labelBg: 'Тераса', build: buildTerrace },
-    { id: 'bistro',  label: 'Bistro', labelBg: 'Бистро', build: buildBistro }
+    { id: 'bistro',  label: 'Bistro', labelBg: 'Бистро', build: buildBistro },
+    { id: 'luxury',  label: 'Luxury scan', labelBg: 'Лукс скан', build: buildLuxuryScan },
+    { id: 'noir',    label: 'Noir split', labelBg: 'Ноар', build: buildNoirSplit },
+    { id: 'weave',   label: 'Soft weave', labelBg: 'Плетка', build: buildWeave },
+    { id: 'sunset',  label: 'Sunset', labelBg: 'Залез', build: buildSunset },
+    { id: 'lineart', label: 'Line frame', labelBg: 'Рамка', build: buildLineArt },
+    { id: 'metro',   label: 'Metro grid', labelBg: 'Метро', build: buildMetro }
   ];
 
   const PRESETS = [
@@ -37,7 +43,11 @@
     { id: 'p2', starterId: 'fine',    formatId: 'a5',   label: 'Fine · A5' },
     { id: 'p3', starterId: 'family',  formatId: 'a6',   label: 'Family · A6' },
     { id: 'p4', starterId: 'classic', formatId: 'card', label: 'Minimal · card' },
-    { id: 'p5', starterId: 'bistro',  formatId: 'dl',   label: 'Bistro · DL' }
+    { id: 'p5', starterId: 'bistro',  formatId: 'dl',   label: 'Bistro · DL' },
+    { id: 'p6', starterId: 'luxury',  formatId: 'a4',   label: 'Luxury · A4' },
+    { id: 'p7', starterId: 'luxury',  formatId: 'dl',   label: 'Luxury · DL' },
+    { id: 'p8', starterId: 'noir',    formatId: 'a5',   label: 'Noir · A5' },
+    { id: 'p9', starterId: 'metro',   formatId: 'a4',   label: 'Metro · A4' }
   ];
 
   const FONT_OPTIONS = [
@@ -90,10 +100,13 @@
     return JSON.parse(JSON.stringify(o || {}));
   }
 
+  /** Gold accent for modern templates (≈ reference flyer) */
+  const GOLD = '#c59d2a';
+
   function defaultZoneStyle(zone) {
     const z = {};
     if (zone === 'sheet') {
-      return { background: '', paddingMm: null };
+      return { background: '', backgroundImage: '', backgroundOverlay: null, paddingMm: null };
     }
     return {
       fontFamily: '',
@@ -312,6 +325,183 @@
       sheetMainClose() + sheetShellClose();
   }
 
+  /** Gold L-brackets around QR (reference flyer style). */
+  function qrGoldBracketFrame(qrDataUrl, fmt, sc) {
+    const qr = fmt.qr;
+    const t = Math.max(0.35, 0.55 * sc);
+    const L = 8 * sc;
+    return `
+      <div style="position:relative;display:inline-block;line-height:0;">
+        <img class="qr-sheet__qr" src="${esc(qrDataUrl)}" alt="" style="width:${qr}mm;height:${qr}mm;display:block;object-fit:contain;image-rendering:pixelated;"/>
+        <span style="position:absolute;left:${-1.2 * sc}mm;top:${-1.2 * sc}mm;width:${L}mm;height:${L}mm;border-left:${t}mm solid ${GOLD};border-top:${t}mm solid ${GOLD};pointer-events:none;"></span>
+        <span style="position:absolute;right:${-1.2 * sc}mm;top:${-1.2 * sc}mm;width:${L}mm;height:${L}mm;border-right:${t}mm solid ${GOLD};border-top:${t}mm solid ${GOLD};pointer-events:none;"></span>
+        <span style="position:absolute;left:${-1.2 * sc}mm;bottom:${-1.2 * sc}mm;width:${L}mm;height:${L}mm;border-left:${t}mm solid ${GOLD};border-bottom:${t}mm solid ${GOLD};pointer-events:none;"></span>
+        <span style="position:absolute;right:${-1.2 * sc}mm;bottom:${-1.2 * sc}mm;width:${L}mm;height:${L}mm;border-right:${t}mm solid ${GOLD};border-bottom:${t}mm solid ${GOLD};pointer-events:none;"></span>
+      </div>`;
+  }
+
+  /** Luxury vertical overlay — reference: dark column, gold accents, script “Menu”, footer bar. */
+  function buildLuxuryScan(d, fmt, es) {
+    const sc = fmt.scale;
+    const sh = es.sheet || {};
+    const defaultBg =
+      'linear-gradient(rgba(0,0,0,.52), rgba(0,0,0,.58)), url(https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&q=80) center/cover no-repeat';
+    const sheetBg = sh.background && !sh.backgroundImage ? sh.background : defaultBg;
+    const pad = sh.paddingMm != null ? sh.paddingMm : fmt.pad;
+    const colW = fmt.id === 'card' ? '100%' : '72%';
+    const scanEn = 'Scan for';
+    const scanBg = 'Сканирайте за';
+    const menuWord = d.lang === 'bg' ? 'Меню' : 'Menu';
+    return `
+      <div class="qr-sheet" data-fmt="${esc(fmt.id)}"
+           style="width:${fmt.w}mm;height:${fmt.h}mm;min-height:${fmt.h}mm;max-height:${fmt.h}mm;
+                  box-sizing:border-box;padding:0;margin:0;position:relative;
+                  display:flex;flex-direction:column;align-items:center;
+                  font-family:'Montserrat',system-ui,sans-serif;color:#fff;
+                  background:${sheetBg};background-size:cover;background-position:center;">
+        <div class="qr-sheet__main" style="flex:1 1 auto;width:${colW};max-width:100%;min-height:0;display:flex;flex-direction:column;
+                    align-items:center;box-sizing:border-box;padding:${pad}mm ${3 * sc}mm;
+                    background:rgba(0,0,0,.58);margin:${2 * sc}mm auto 0;">
+          <div style="margin-bottom:${3 * sc}mm;opacity:.95;color:${GOLD};">
+            <svg width="${28 * sc}" height="${28 * sc}" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path d="M14 8v14M18 8v14M14 22v18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M24 4v40M21 12h6M21 18h6M21 24h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <ellipse cx="34" cy="10" rx="9" ry="5" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M25 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h1 data-qr="title" style="font-family:'Cinzel',Georgia,serif;font-size:${sPx(17, fmt)}px;font-weight:600;letter-spacing:.35em;
+            text-transform:uppercase;color:#fff;margin:0 0 ${2 * sc}mm;text-align:center;line-height:1.25;">${esc(d.nameLine)}</h1>
+          <p data-qr="subtitle" style="font-family:'Montserrat',sans-serif;font-size:${sPx(9, fmt)}px;color:rgba(255,255,255,.7);margin:0 0 ${4 * sc}mm;text-align:center;">${esc(d.tagline)}</p>
+          <p style="font-size:${sPx(11, fmt)}px;font-weight:500;color:rgba(255,255,255,.92);margin:0 0 ${1 * sc}mm;text-align:center;">${d.lang === 'bg' ? scanBg : scanEn}</p>
+          <p data-qr="cta" style="font-family:'Great Vibes',cursive;font-size:${sPx(40, fmt)}px;font-weight:400;color:${GOLD};margin:0 0 ${4 * sc}mm;line-height:1;text-align:center;">${esc(menuWord)}</p>
+          <p data-qr="body" style="font-size:${sPx(10, fmt)}px;line-height:1.55;color:rgba(255,255,255,.78);text-align:center;margin:0 0 ${5 * sc}mm;max-width:100%;">${esc(d.hintLine)}</p>
+          <div style="text-align:center;margin-bottom:${4 * sc}mm;">${qrGoldBracketFrame(d.qrDataUrl, fmt, sc)}</div>
+        </div>
+        <footer data-qr="footer" class="qr-sheet__footer" style="flex-shrink:0;width:100%;margin-top:auto;background:${GOLD};color:#fff;
+                    padding:${3.5 * sc}mm ${pad}mm;text-align:center;box-sizing:border-box;">
+          <p style="font-family:'Montserrat',sans-serif;font-size:${sPx(11, fmt)}px;letter-spacing:.28em;text-transform:lowercase;margin:0;font-weight:500;">${esc(getMenuUrl().replace(/^https?:\/\//i, ''))}</p>
+          <p style="font-size:${sPx(8, fmt)}px;margin:${2 * sc}mm 0 0;opacity:.85;">${esc(SERVICE.brand)} · ${esc(SERVICE.phone)}</p>
+        </footer>
+      </div>`;
+  }
+
+  function buildNoirSplit(d, fmt, es) {
+    const sc = fmt.scale;
+    return sheetShellOpen(fmt, es, {
+      bg: '#0a0a0c',
+      extra: 'background:linear-gradient(180deg,#0a0a0c 0%,#0a0a0c 48%,#f5f2ec 48%,#f5f2ec 100%);color:#e8e4dc;padding:0;'
+    }) +
+      sheetMainOpen() +
+      `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:${6 * sc}mm ${fmt.pad}mm;color:#e8e4dc;">
+        <p data-qr="cta" style="font-size:${sPx(10, fmt)}px;letter-spacing:.4em;text-transform:uppercase;margin:0 0 ${3 * sc}mm;color:${GOLD};opacity:.9;">Scan</p>
+        <h1 data-qr="title" style="font-family:'Playfair Display',Georgia,serif;font-size:${sPx(36, fmt)}px;font-weight:700;margin:0 0 ${2 * sc}mm;line-height:1.1;">${esc(d.nameLine)}</h1>
+        <p data-qr="subtitle" style="font-size:${sPx(12, fmt)}px;color:rgba(255,255,255,.55);margin:0 0 ${5 * sc}mm;">${esc(d.tagline)}</p>
+        <div style="width:${18 * sc}mm;height:1px;background:${GOLD};margin:0 auto ${5 * sc}mm;opacity:.8;"></div>
+        ${qrImgTag(d.qrDataUrl, fmt)}
+      </div>
+      <div style="background:#f5f2ec;padding:${5 * sc}mm ${fmt.pad}mm;text-align:center;color:#2a2824;">
+        <p data-qr="body" style="font-size:${sPx(11, fmt)}px;line-height:1.5;margin:0 0 ${4 * sc}mm;max-width:100%;">${esc(d.hintLine)}</p>
+        <footer data-qr="footer" style="font-size:${sPx(10, fmt)}px;color:#5c5a56;">
+          <span>${esc(SERVICE.phone)}</span> · <span>${esc(SERVICE.email)}</span>
+        </footer>
+      </div>` +
+      sheetMainClose() + sheetShellClose();
+  }
+
+  function buildWeave(d, fmt, es) {
+    const sc = fmt.scale;
+    const extra = {
+      bg: '#e8e4dc',
+      extra: 'background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.03) 0,rgba(0,0,0,.03) 1px,transparent 1px,transparent 8px),linear-gradient(145deg,#f0ebe3,#e2dcd2);'
+    };
+    return sheetShellOpen(fmt, es, extra) +
+      sheetMainOpen() +
+      `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${5 * sc}mm;">
+        <div style="background:rgba(255,255,255,.72);backdrop-filter:blur(8px);border-radius:${12 * sc}px;padding:${6 * sc}mm ${5 * sc}mm;max-width:${fmt.w - 2 * fmt.pad - 6}mm;box-shadow:0 12px 40px rgba(0,0,0,.08);border:1px solid rgba(255,255,255,.6);text-align:center;">
+          <h1 data-qr="title" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:${sPx(34, fmt)}px;font-weight:600;color:#2c2c2c;margin:0 0 ${2 * sc}mm;">${esc(d.nameLine)}</h1>
+          <p data-qr="subtitle" style="font-size:${sPx(13, fmt)}px;color:#666;font-style:italic;margin:0 0 ${5 * sc}mm;">${esc(d.tagline)}</p>
+          <p data-qr="cta" style="font-size:${sPx(9, fmt)}px;letter-spacing:.25em;text-transform:uppercase;color:#8a7a68;margin:0 0 ${4 * sc}mm;">Digital menu</p>
+          ${qrImgTag(d.qrDataUrl, fmt)}
+          <p data-qr="body" style="font-size:${sPx(11, fmt)}px;color:#555;line-height:1.5;margin:${5 * sc}mm 0 0;">${esc(d.hintLine)}</p>
+        </div>
+      </div>
+      <footer data-qr="footer" class="qr-sheet__footer" style="flex-shrink:0;text-align:center;padding-bottom:${3 * sc}mm;font-size:${sPx(9, fmt)}px;color:#777;">
+        ${esc(SERVICE.brand)} · ${esc(SERVICE.phone)}
+      </footer>` +
+      sheetMainClose() + sheetShellClose();
+  }
+
+  function buildSunset(d, fmt, es) {
+    const sc = fmt.scale;
+    return sheetShellOpen(fmt, es, {
+      bg: 'linear-gradient(165deg,#1a0f2e 0%,#4a2c4a 40%,#c76b4a 85%,#e8a05a 100%)',
+      extra: 'color:#fff;'
+    }) +
+      sheetMainOpen() +
+      `<div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:${8 * sc}mm ${fmt.pad}mm;">
+        <h1 data-qr="title" style="font-family:'Montserrat',sans-serif;font-size:${sPx(30, fmt)}px;font-weight:800;letter-spacing:-.02em;margin:0 0 ${2 * sc}mm;text-shadow:0 2px 20px rgba(0,0,0,.2);">${esc(d.nameLine)}</h1>
+        <p data-qr="subtitle" style="font-size:${sPx(12, fmt)}px;opacity:.9;margin:0 0 ${6 * sc}mm;">${esc(d.tagline)}</p>
+        <p data-qr="cta" style="font-size:${sPx(10, fmt)}px;letter-spacing:.3em;text-transform:uppercase;opacity:.85;margin:0 0 ${5 * sc}mm;">Tap · Scan · Enjoy</p>
+        <div style="background:rgba(255,255,255,.12);border-radius:${14 * sc}px;padding:${4 * sc}mm;border:1px solid rgba(255,255,255,.25);">
+          ${qrImgTag(d.qrDataUrl, fmt)}
+        </div>
+        <p data-qr="body" style="font-size:${sPx(11, fmt)}px;line-height:1.5;margin:${6 * sc}mm 0 0;opacity:.92;max-width:100%;">${esc(d.hintLine)}</p>
+      </div>
+      <footer data-qr="footer" class="qr-sheet__footer" style="flex-shrink:0;text-align:center;font-size:${sPx(10, fmt)}px;padding-bottom:${4 * sc}mm;opacity:.88;">
+        ${esc(SERVICE.email)} · ${esc(SERVICE.phone)}
+      </footer>` +
+      sheetMainClose() + sheetShellClose();
+  }
+
+  function buildLineArt(d, fmt, es) {
+    const sc = fmt.scale;
+    return sheetShellOpen(fmt, es, { bg: '#fafafa', extra: 'border:1px solid #ddd;' }) +
+      sheetMainOpen() +
+      `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${7 * sc}mm ${fmt.pad + 2}mm;text-align:center;color:#111;">
+        <div style="border:2px solid #111;padding:${2 * sc}mm ${8 * sc}mm;margin-bottom:${6 * sc}mm;">
+          <span style="font-size:${sPx(9, fmt)}px;letter-spacing:.5em;">QR</span>
+        </div>
+        <h1 data-qr="title" style="font-family:'Inter',system-ui,sans-serif;font-size:${sPx(26, fmt)}px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:0 0 ${3 * sc}mm;">${esc(d.nameLine)}</h1>
+        <p data-qr="subtitle" style="font-size:${sPx(11, fmt)}px;color:#666;margin:0 0 ${2 * sc}mm;">${esc(d.tagline)}</p>
+        <p data-qr="cta" style="font-size:${sPx(9, fmt)}px;letter-spacing:.2em;color:#999;margin:0 0 ${6 * sc}mm;">MENU ACCESS</p>
+        <div style="border:1px solid #ccc;padding:${4 * sc}mm;display:inline-block;">
+          ${qrImgTag(d.qrDataUrl, fmt)}
+        </div>
+        <p data-qr="body" style="font-size:${sPx(10, fmt)}px;color:#555;line-height:1.5;margin:${6 * sc}mm 0 0;max-width:100%;">${esc(d.hintLine)}</p>
+      </div>
+      <footer data-qr="footer" class="qr-sheet__footer" style="flex-shrink:0;border-top:1px solid #ddd;padding-top:${4 * sc}mm;text-align:center;font-size:${sPx(9, fmt)}px;color:#888;">
+        ${esc(SERVICE.brand)} · ${esc(SERVICE.phone)}
+      </footer>` +
+      sheetMainClose() + sheetShellClose();
+  }
+
+  function buildMetro(d, fmt, es) {
+    const sc = fmt.scale;
+    const grid = 'background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:12mm 12mm;';
+    return sheetShellOpen(fmt, es, { bg: '#0f1419', extra: grid + 'color:#e6edf3;' }) +
+      sheetMainOpen() +
+      `<div style="flex:1;display:flex;flex-direction:column;padding:${fmt.pad}mm;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:${4 * sc}mm;margin-bottom:${6 * sc}mm;">
+          <div style="text-align:left;">
+            <h1 data-qr="title" style="font-family:'Inter',system-ui,sans-serif;font-size:${sPx(22, fmt)}px;font-weight:800;letter-spacing:-.03em;margin:0 0 ${1 * sc}mm;line-height:1.15;">${esc(d.nameLine)}</h1>
+            <p data-qr="subtitle" style="font-size:${sPx(10, fmt)}px;color:#8b9cad;margin:0;">${esc(d.tagline)}</p>
+          </div>
+          <p data-qr="cta" style="font-size:${sPx(8, fmt)}px;letter-spacing:.2em;text-transform:uppercase;color:${GOLD};margin:0;">Scan →</p>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+          <div style="background:#fff;padding:${3 * sc}mm;border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,.35);">
+            ${qrImgTag(d.qrDataUrl, fmt)}
+          </div>
+        </div>
+        <p data-qr="body" style="font-size:${sPx(10, fmt)}px;color:#9dafbf;line-height:1.5;margin:${6 * sc}mm 0 0;text-align:center;">${esc(d.hintLine)}</p>
+      </div>
+      <footer data-qr="footer" class="qr-sheet__footer" style="flex-shrink:0;border-top:1px solid rgba(255,255,255,.08);padding:${4 * sc}mm ${fmt.pad}mm;font-size:${sPx(9, fmt)}px;color:#7d8fa3;text-align:center;">
+        ${esc(SERVICE.phone)} · ${esc(SERVICE.email)}
+      </footer>` +
+      sheetMainClose() + sheetShellClose();
+  }
+
   function buildHtml(d, qrDataUrl) {
     const starter = STARTERS.find(s => s.id === designState.starterId) || STARTERS[0];
     const fmt = getFmt();
@@ -336,7 +526,25 @@
     });
     const sheet = host.querySelector('.qr-sheet');
     if (sheet && es.sheet) {
-      if (es.sheet.background) sheet.style.background = es.sheet.background;
+      const sh = es.sheet;
+      const overlay = sh.backgroundOverlay != null && sh.backgroundOverlay !== ''
+        ? Math.min(0.92, Math.max(0, Number(sh.backgroundOverlay)))
+        : null;
+      const img = (sh.backgroundImage && String(sh.backgroundImage).trim()) || '';
+
+      if (img) {
+        const safe = img.replace(/\\/g, '/').replace(/"/g, '\\"');
+        const ov = overlay != null ? overlay : 0.45;
+        sheet.style.background = `linear-gradient(rgba(0,0,0,${ov}), rgba(0,0,0,${ov})), url("${safe}")`;
+        sheet.style.backgroundSize = 'cover';
+        sheet.style.backgroundPosition = 'center';
+        sheet.style.backgroundRepeat = 'no-repeat';
+      } else if (sh.background) {
+        sheet.style.background = sh.background;
+        sheet.style.backgroundSize = '';
+        sheet.style.backgroundPosition = '';
+        sheet.style.backgroundRepeat = '';
+      }
       if (es.sheet.paddingMm != null) sheet.style.padding = es.sheet.paddingMm + 'mm';
     }
   }
@@ -353,11 +561,38 @@
   }
 
   function getPrintCss(fmt) {
+    const w = fmt.w;
+    const h = fmt.h;
     return `
-    @page { size: ${fmt.page}; margin: 3mm; }
+    @page { size: ${fmt.page}; margin: 0; }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .qr-sheet { page-break-after: always; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: ${w}mm;
+      height: ${h}mm;
+      max-height: ${h}mm;
+      overflow: hidden;
+      background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .qr-sheet {
+      width: ${w}mm !important;
+      height: ${h}mm !important;
+      min-height: ${h}mm !important;
+      max-height: ${h}mm !important;
+      margin: 0 !important;
+      page-break-after: avoid;
+      page-break-inside: avoid;
+      overflow: hidden;
+    }
+    .qr-sheet__main {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .qr-sheet__footer { flex-shrink: 0; }
     .qr-sheet__qr { image-rendering: pixelated; }
     `;
   }
@@ -462,7 +697,7 @@
       .then(qrDataUrl => {
         const copy = gatherCopy();
         const bodyHtml = buildHtml({ ...copy, qrDataUrl }, qrDataUrl);
-        const fontLink = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&family=Inter:wght@400;500;600&family=Nunito:wght@400;600;700&family=Playfair+Display:wght@400;700&display=swap';
+        const fontLink = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700&family=Playfair+Display:wght@400;700&display=swap';
         const w = window.open('', '_blank');
         if (!w) {
           showToastLocal('Pop-up blocked — allow pop-ups to print.');
@@ -578,23 +813,59 @@
     if (!panel) return;
 
     if (zone === 'sheet') {
+      const ov = es.backgroundOverlay != null && es.backgroundOverlay !== ''
+        ? Number(es.backgroundOverlay)
+        : '';
       panel.innerHTML = `
         <div class="qr-field-grid">
-          <label class="qr-mini-label">Background</label>
+          <label class="qr-mini-label">Background color</label>
           <input type="color" id="qrFldBg" class="field-input" value="${sheetBgToColorInput(es.background)}" />
+          <label class="qr-mini-label">Background image URL</label>
+          <input type="url" id="qrFldBgImg" class="field-input" value="${esc(es.backgroundImage || '')}" placeholder="https://… or leave empty" />
+          <label class="qr-mini-label">Image darkening (0–0.85)</label>
+          <input type="number" id="qrFldOv" class="field-input" min="0" max="0.85" step="0.05" value="${ov === '' ? '' : ov}" placeholder="0.45 default" />
           <label class="qr-mini-label">Padding (mm)</label>
           <input type="number" id="qrFldPad" class="field-input" min="0" max="30" step="0.5" value="${es.paddingMm != null ? es.paddingMm : ''}" placeholder="auto" />
+          <div class="qr-sheet-actions">
+            <button type="button" class="btn-qr-secondary" id="qrFldBgImgClear">Clear image</button>
+          </div>
+          <p class="qr-zone-fields__hint">With an image, color shows behind if you remove the image. Darkening overlays the image for readability.</p>
         </div>`;
-      ['input', 'change'].forEach(evt => {
-        panel.querySelector('#qrFldBg').addEventListener(evt, e => {
-          ensureStyleZone('sheet').background = e.target.value;
-          renderPreview();
-        });
-        panel.querySelector('#qrFldPad').addEventListener(evt, e => {
-          const v = e.target.value.trim();
-          ensureStyleZone('sheet').paddingMm = v === '' ? null : parseFloat(v);
-          renderPreview();
-        });
+      const bind = (sel, fn) => {
+        const el = panel.querySelector(sel);
+        if (!el) return;
+        el.addEventListener('input', fn);
+        el.addEventListener('change', fn);
+      };
+      bind('#qrFldBg', e => {
+        ensureStyleZone('sheet').background = e.target.value;
+        renderPreview();
+      });
+      bind('#qrFldBgImg', e => {
+        ensureStyleZone('sheet').backgroundImage = e.target.value.trim();
+        renderPreview();
+      });
+      bind('#qrFldOv', e => {
+        const v = e.target.value.trim();
+        const z = ensureStyleZone('sheet');
+        if (v === '') delete z.backgroundOverlay;
+        else z.backgroundOverlay = parseFloat(v);
+        renderPreview();
+      });
+      bind('#qrFldPad', e => {
+        const v = e.target.value.trim();
+        ensureStyleZone('sheet').paddingMm = v === '' ? null : parseFloat(v);
+        renderPreview();
+      });
+      panel.querySelector('#qrFldBgImgClear')?.addEventListener('click', () => {
+        const z = ensureStyleZone('sheet');
+        delete z.backgroundImage;
+        delete z.backgroundOverlay;
+        const inp = panel.querySelector('#qrFldBgImg');
+        const ovi = panel.querySelector('#qrFldOv');
+        if (inp) inp.value = '';
+        if (ovi) ovi.value = '';
+        renderPreview();
       });
       return;
     }
