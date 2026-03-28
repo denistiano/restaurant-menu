@@ -1165,9 +1165,10 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .qr-media-pick__row .field-label {
   margin: 0;
 }
-.qr-media-pick__format-select {
-  width: 100%;
-  max-width: 100%;
+.qr-media-pick__size-label {
+  display: block;
+  text-align: center;
+  margin: 0 0 8px;
 }
 .qr-media-pick__row--style {
   margin-bottom: 0;

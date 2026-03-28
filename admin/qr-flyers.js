@@ -553,29 +553,48 @@
   function getPrintCss(fmt) {
     const w = fmt.w;
     const h = fmt.h;
+    /* Single page for every format: @page size matches FORMATS; in print, html/body/sheet use 100% of the page box
+       so mm rounding cannot spill onto a second sheet (common with A5/DL/card vs A4). */
     return `
     @page { size: ${fmt.page}; margin: 0; }
     * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      padding: 0;
+    html {
+      margin: 0 !important;
+      padding: 0 !important;
       width: ${w}mm;
       height: ${h}mm;
-      max-height: ${h}mm;
-      overflow: hidden;
+      overflow: hidden !important;
       background: #fff;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
-    .qr-sheet {
+    body {
+      position: relative;
+      margin: 0 !important;
+      padding: 0 !important;
       width: ${w}mm !important;
       height: ${h}mm !important;
       min-height: ${h}mm !important;
       max-height: ${h}mm !important;
+      overflow: hidden !important;
+      background: #fff !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .qr-sheet {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: ${w}mm !important;
+      height: ${h}mm !important;
       margin: 0 !important;
-      page-break-after: avoid;
-      page-break-inside: avoid;
-      overflow: hidden;
+      page-break-after: avoid !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      break-after: avoid !important;
+      overflow: hidden !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     .qr-sheet__main {
       flex: 1 1 auto;
@@ -583,7 +602,31 @@
       overflow: hidden;
     }
     .qr-sheet__footer { flex-shrink: 0; }
-    .qr-sheet__qr { image-rendering: pixelated; }
+    .qr-sheet__qr { image-rendering: pixelated; max-width: 100%; }
+    @media print {
+      html {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow: clip !important;
+      }
+      body {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        overflow: clip !important;
+      }
+      .qr-sheet {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        left: 0 !important;
+        top: 0 !important;
+        box-sizing: border-box !important;
+      }
+    }
     `;
   }
 
@@ -778,9 +821,6 @@
   }
 
   function syncEditorControlsFromState() {
-    const fmtSel = document.getElementById('qrFormatSelect');
-    if (fmtSel) fmtSel.value = designState.formatId;
-
     const z = document.getElementById('qrZoneSelect') && document.getElementById('qrZoneSelect').value;
     if (z) fillZoneEditor(z);
 
@@ -993,7 +1033,7 @@
     });
   }
 
-  /** Paper-size quick chips (independent from style). Syncs with #qrFormatSelect. */
+  /** Paper size — pill buttons only (independent from style). */
   function buildFormatBar() {
     const bar = document.getElementById('qrFormatBar');
     if (!bar) return;
@@ -1007,8 +1047,6 @@
       b.title = `${f.label} — ${f.w}×${f.h} mm`;
       b.addEventListener('click', () => {
         designState.formatId = f.id;
-        const fmtSel = document.getElementById('qrFormatSelect');
-        if (fmtSel) fmtSel.value = f.id;
         buildFormatBar();
         updatePreviewChrome();
         renderPreview();
@@ -1033,21 +1071,7 @@
   }
 
   function wireEditorPanel() {
-    const fmtSel = document.getElementById('qrFormatSelect');
     const zoneSel = document.getElementById('qrZoneSelect');
-
-    if (fmtSel && !fmtSel.dataset.bound) {
-      fmtSel.dataset.bound = '1';
-      fmtSel.innerHTML = Object.values(FORMATS).map(f =>
-        `<option value="${esc(f.id)}">${esc(f.label)} (${f.w}×${f.h} mm)</option>`).join('');
-      fmtSel.addEventListener('change', () => {
-        designState.formatId = fmtSel.value;
-        buildFormatBar();
-        updatePreviewChrome();
-        renderPreview();
-        track('admin_qr_format', { format_id: fmtSel.value.slice(0, 24), source: 'select' });
-      });
-    }
 
     if (zoneSel && !zoneSel.dataset.bound) {
       zoneSel.dataset.bound = '1';
