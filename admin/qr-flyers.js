@@ -83,6 +83,8 @@
 
   let getRestaurant = null;
   let getMenuUrlFn  = null;
+  /** Set from AdminQrFlyers.init — Cloudinary upload like logo/cover (admin.js). */
+  let uploadSheetBackgroundFn = null;
   let editMode      = false;
 
   let designState = {
@@ -807,6 +809,21 @@
     return designState.styles[zone];
   }
 
+  /** Preview URL for sheet background (HTTPS, data, or filename → restaurant resources). */
+  function resolveSheetBgPreviewUrl(val) {
+    if (!val) return null;
+    if (/^https?:\/\//i.test(val) || val.startsWith('/') || val.startsWith('data:')) return val;
+    const r = getRestaurant && getRestaurant();
+    if (r && r.id) {
+      try {
+        return new URL(`../resources/${encodeURI(r.id)}/${val}`, window.location.href).href;
+      } catch (_) {
+        return `../resources/${r.id}/${val}`;
+      }
+    }
+    return null;
+  }
+
   function fillZoneEditor(zone) {
     const es = getEffectiveStyles()[zone];
     const panel = document.getElementById('qrZoneFields');
@@ -820,8 +837,17 @@
         <div class="qr-field-grid">
           <label class="qr-mini-label">Background color</label>
           <input type="color" id="qrFldBg" class="field-input" value="${sheetBgToColorInput(es.background)}" />
-          <label class="qr-mini-label">Background image URL</label>
-          <input type="url" id="qrFldBgImg" class="field-input" value="${esc(es.backgroundImage || '')}" placeholder="https://… or leave empty" />
+          <label class="qr-mini-label qr-sheet-bg-label">Background image</label>
+          <div class="field-url-wrap qr-sheet-bg-url-wrap">
+            <div class="field-url-input-row">
+              <input type="text" id="qrFldBgImg" class="field-input" value="${esc(es.backgroundImage || '')}" placeholder="https://… or cover.jpg" autocomplete="off" spellcheck="false" />
+              <button type="button" class="btn-upload-img" id="qrFldBgImgUpload" title="Upload to Cloudinary" ${uploadSheetBackgroundFn ? '' : 'disabled'}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                Upload
+              </button>
+            </div>
+            <div class="field-url-preview" id="qrFldBgImgPreview"></div>
+          </div>
           <label class="qr-mini-label">Image darkening (0–0.85)</label>
           <input type="number" id="qrFldOv" class="field-input" min="0" max="0.85" step="0.05" value="${ov === '' ? '' : ov}" placeholder="0.45 default" />
           <label class="qr-mini-label">Padding (mm)</label>
@@ -829,7 +855,7 @@
           <div class="qr-sheet-actions">
             <button type="button" class="btn-qr-secondary" id="qrFldBgImgClear">Clear image</button>
           </div>
-          <p class="qr-zone-fields__hint">With an image, color shows behind if you remove the image. Darkening overlays the image for readability.</p>
+          <p class="qr-zone-fields__hint">Paste a URL, a filename (e.g. <code>cover.jpg</code> in your restaurant folder), or <strong>Upload</strong> like logo/cover. Darkening overlays the image for readability.</p>
         </div>`;
       const bind = (sel, fn) => {
         const el = panel.querySelector(sel);
@@ -837,12 +863,28 @@
         el.addEventListener('input', fn);
         el.addEventListener('change', fn);
       };
+      const previewEl = panel.querySelector('#qrFldBgImgPreview');
+      const showBgThumb = () => {
+        if (!previewEl) return;
+        const raw = (panel.querySelector('#qrFldBgImg') && panel.querySelector('#qrFldBgImg').value.trim()) || '';
+        if (!raw) {
+          previewEl.innerHTML = '';
+          return;
+        }
+        const src = resolveSheetBgPreviewUrl(raw);
+        if (!src) {
+          previewEl.innerHTML = '';
+          return;
+        }
+        previewEl.innerHTML = `<img src="${esc(src)}" alt="" onerror="this.parentElement.innerHTML='<span class=\\'url-preview-err\\'>Preview failed</span>'" />`;
+      };
       bind('#qrFldBg', e => {
         ensureStyleZone('sheet').background = e.target.value;
         renderPreview();
       });
       bind('#qrFldBgImg', e => {
         ensureStyleZone('sheet').backgroundImage = e.target.value.trim();
+        showBgThumb();
         renderPreview();
       });
       bind('#qrFldOv', e => {
@@ -857,6 +899,14 @@
         ensureStyleZone('sheet').paddingMm = v === '' ? null : parseFloat(v);
         renderPreview();
       });
+      showBgThumb();
+      const upBtn = panel.querySelector('#qrFldBgImgUpload');
+      const imgInp = panel.querySelector('#qrFldBgImg');
+      if (upBtn && imgInp && uploadSheetBackgroundFn) {
+        upBtn.addEventListener('click', () => {
+          uploadSheetBackgroundFn(imgInp, previewEl);
+        });
+      }
       panel.querySelector('#qrFldBgImgClear')?.addEventListener('click', () => {
         const z = ensureStyleZone('sheet');
         delete z.backgroundImage;
@@ -865,6 +915,7 @@
         const ovi = panel.querySelector('#qrFldOv');
         if (inp) inp.value = '';
         if (ovi) ovi.value = '';
+        if (previewEl) previewEl.innerHTML = '';
         renderPreview();
       });
       return;
@@ -963,7 +1014,8 @@
     PRESETS.forEach(p => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'qr-preset-chip';
+      const isActive = p.starterId === designState.starterId && p.formatId === designState.formatId;
+      b.className = 'qr-preset-chip' + (isActive ? ' qr-preset-chip--active' : '');
       b.textContent = p.label;
       b.addEventListener('click', () => {
         designState.starterId = p.starterId;
@@ -1003,6 +1055,7 @@
         `<option value="${esc(f.id)}">${esc(f.label)} (${f.w}×${f.h} mm)</option>`).join('');
       fmtSel.addEventListener('change', () => {
         designState.formatId = fmtSel.value;
+        buildPresetBar();
         renderPreview();
         track('admin_qr_format', { format_id: fmtSel.value.slice(0, 24) });
       });
@@ -1088,6 +1141,7 @@
   function init(opts) {
     getRestaurant = opts.getRestaurant;
     getMenuUrlFn  = opts.getMenuUrl;
+    uploadSheetBackgroundFn = typeof opts.uploadSheetBackground === 'function' ? opts.uploadSheetBackground : null;
 
     wireEditorPanel();
     syncEditorControlsFromState();

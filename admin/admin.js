@@ -911,7 +911,11 @@
     if (window.AdminQrFlyers) {
       window.AdminQrFlyers.init({
         getRestaurant: () => (menuData && menuData.restaurant) || {},
-        getMenuUrl:    getPublicMenuUrl
+        getMenuUrl:    getPublicMenuUrl,
+        uploadSheetBackground: (targetInput, previewEl) => {
+          const rid = currentRestaurant?.id || 'general';
+          triggerImageUpload(targetInput, previewEl, `restaurant_menu/${rid}/qr_media`);
+        }
       });
     }
   }
