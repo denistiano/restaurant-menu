@@ -336,6 +336,18 @@
               <button type="button" class="btn-qr-secondary" id="qrBtnRefresh">Refresh QR</button>
               <button type="button" class="btn-qr-primary" id="qrBtnPrint">Print</button>
             </div>
+            <div class="qr-media-pick">
+              <p class="qr-media-pick__intro">Pick a <strong>paper size</strong> and a <strong>style</strong> — any combination (e.g. Noir on a business card).</p>
+              <div class="qr-media-pick__row">
+                <label class="field-label" for="qrFormatSelect">Paper size</label>
+                <select class="field-input field-select qr-media-pick__format-select" id="qrFormatSelect"></select>
+              </div>
+              <div class="qr-format-bar" id="qrFormatBar" role="group" aria-label="Paper size shortcuts"></div>
+              <div class="qr-media-pick__row qr-media-pick__row--style">
+                <span class="field-label">Style</span>
+                <div class="qr-tpl-picker" id="qrTemplatePicker"></div>
+              </div>
+            </div>
             <p class="qr-preview-hero__label">Preview <span class="qr-preview-hero__hint">(scaled)</span></p>
             <div class="qr-preview-scaler qr-preview-scaler--hero" id="qrPreviewScaler">
               <div class="qr-preview-zoom" aria-hidden="true">
@@ -348,17 +360,9 @@
           <div id="qrEditorPanel" class="qr-editor-panel hidden">
             <h4 class="qr-editor-panel__title">Layout editor</h4>
             <p class="qr-editor-panel__hint">Pick a zone, then adjust typography or page background. Title/subtitle overrides below apply only to this media (not your saved restaurant profile).</p>
-            <div class="qr-editor-grid">
+            <div class="qr-editor-grid qr-editor-grid--single">
               <div class="field-row">
-                <label class="field-label">Paper size</label>
-                <select class="field-input field-select" id="qrFormatSelect"></select>
-              </div>
-              <div class="field-row">
-                <label class="field-label">Starter look</label>
-                <select class="field-input field-select" id="qrStarterSelect"></select>
-              </div>
-              <div class="field-row">
-                <label class="field-label">Edit zone</label>
+                <label class="field-label" for="qrZoneSelect">Edit zone</label>
                 <select class="field-input field-select" id="qrZoneSelect"></select>
               </div>
             </div>
@@ -375,13 +379,6 @@
             </div>
           </div>
         </div>
-
-        <details class="qr-media-details">
-          <summary class="qr-media-details__summary">Quick starters <span class="qr-media-details__meta">presets by size</span></summary>
-          <div class="qr-preset-bar" id="qrPresetBar"></div>
-          <p class="qr-media-details__hint">Or pick a base look (you can still change paper size above).</p>
-          <div class="qr-tpl-picker qr-tpl-picker--compact" id="qrTemplatePicker"></div>
-        </details>
 
         <details class="qr-media-details">
           <summary class="qr-media-details__summary">Saved on this device <span class="qr-media-details__meta">per restaurant</span></summary>

@@ -1,6 +1,6 @@
 /**
- * admin/qr-flyers.js — QR media: starters, formats, light page builder, localStorage customs
- * (global QRious from CDN)
+ * admin/qr-flyers.js — QR media: styles (STARTERS) × paper sizes (FORMATS) independently,
+ * light page builder, localStorage customs. (global QRious from CDN)
  */
 (function (window) {
   'use strict';
@@ -15,13 +15,13 @@
 
   const STORAGE_KEY = 'qr_media_designs_v2';
 
-  /** ISO & common print sizes (mm) */
+  /** ISO & common print sizes (mm). `shortLabel` = compact chip text. */
   const FORMATS = {
-    a4:   { id: 'a4',   label: 'A4 portrait',     w: 210,   h: 297,   qr: 46,  pad: 12, scale: 1,    page: '210mm 297mm' },
-    a5:   { id: 'a5',   label: 'A5 portrait',     w: 148,   h: 210,   qr: 36,  pad: 10, scale: 0.82, page: '148mm 210mm' },
-    a6:   { id: 'a6',   label: 'A6 portrait',     w: 105,   h: 148,   qr: 28,  pad: 7,  scale: 0.68, page: '105mm 148mm' },
-    dl:   { id: 'dl',   label: 'DL / flyer',      w: 110,   h: 220,   qr: 38,  pad: 9,  scale: 0.72, page: '110mm 220mm' },
-    card: { id: 'card', label: 'ISO card 85×54', w: 85.6,  h: 53.98, qr: 22,  pad: 3,  scale: 0.42, page: '85.6mm 53.98mm' }
+    a4:   { id: 'a4',   label: 'A4 portrait',     shortLabel: 'A4',   w: 210,   h: 297,   qr: 46,  pad: 12, scale: 1,    page: '210mm 297mm' },
+    a5:   { id: 'a5',   label: 'A5 portrait',     shortLabel: 'A5',   w: 148,   h: 210,   qr: 36,  pad: 10, scale: 0.82, page: '148mm 210mm' },
+    a6:   { id: 'a6',   label: 'A6 portrait',     shortLabel: 'A6',   w: 105,   h: 148,   qr: 28,  pad: 7,  scale: 0.68, page: '105mm 148mm' },
+    dl:   { id: 'dl',   label: 'DL / flyer',      shortLabel: 'DL',   w: 110,   h: 220,   qr: 38,  pad: 9,  scale: 0.72, page: '110mm 220mm' },
+    card: { id: 'card', label: 'ISO card 85×54', shortLabel: 'Card', w: 85.6,  h: 53.98, qr: 22,  pad: 3,  scale: 0.42, page: '85.6mm 53.98mm' }
   };
 
   const STARTERS = [
@@ -36,18 +36,6 @@
     { id: 'sunset',  label: 'Sunset', labelBg: 'Залез', build: buildSunset },
     { id: 'lineart', label: 'Line frame', labelBg: 'Рамка', build: buildLineArt },
     { id: 'metro',   label: 'Metro grid', labelBg: 'Метро', build: buildMetro }
-  ];
-
-  const PRESETS = [
-    { id: 'p1', starterId: 'classic', formatId: 'a4',   label: 'Classic · A4' },
-    { id: 'p2', starterId: 'fine',    formatId: 'a5',   label: 'Fine · A5' },
-    { id: 'p3', starterId: 'family',  formatId: 'a6',   label: 'Family · A6' },
-    { id: 'p4', starterId: 'classic', formatId: 'card', label: 'Minimal · card' },
-    { id: 'p5', starterId: 'bistro',  formatId: 'dl',   label: 'Bistro · DL' },
-    { id: 'p6', starterId: 'luxury',  formatId: 'a4',   label: 'Luxury · A4' },
-    { id: 'p7', starterId: 'luxury',  formatId: 'dl',   label: 'Luxury · DL' },
-    { id: 'p8', starterId: 'noir',    formatId: 'a5',   label: 'Noir · A5' },
-    { id: 'p9', starterId: 'metro',   formatId: 'a4',   label: 'Metro · A4' }
   ];
 
   const FONT_OPTIONS = [
@@ -781,7 +769,7 @@
     designState = deepClone(entry.state);
     syncEditorControlsFromState();
     buildStarterPicker();
-    buildPresetBar();
+    buildFormatBar();
     if (editMode) {
       const zs = document.getElementById('qrZoneSelect');
       if (zs) fillZoneEditor(zs.value);
@@ -791,9 +779,7 @@
 
   function syncEditorControlsFromState() {
     const fmtSel = document.getElementById('qrFormatSelect');
-    const stSel  = document.getElementById('qrStarterSelect');
     if (fmtSel) fmtSel.value = designState.formatId;
-    if (stSel) stSel.value = designState.starterId;
 
     const z = document.getElementById('qrZoneSelect') && document.getElementById('qrZoneSelect').value;
     if (z) fillZoneEditor(z);
@@ -1000,31 +986,33 @@
         designState.starterId = t.id;
         track('admin_qr_template_select', { template_id: t.id.slice(0, 40) });
         buildStarterPicker();
-        buildPresetBar();
+        buildFormatBar();
         renderPreview();
       });
       wrap.appendChild(btn);
     });
   }
 
-  function buildPresetBar() {
-    const bar = document.getElementById('qrPresetBar');
+  /** Paper-size quick chips (independent from style). Syncs with #qrFormatSelect. */
+  function buildFormatBar() {
+    const bar = document.getElementById('qrFormatBar');
     if (!bar) return;
     bar.innerHTML = '';
-    PRESETS.forEach(p => {
+    Object.values(FORMATS).forEach(f => {
       const b = document.createElement('button');
       b.type = 'button';
-      const isActive = p.starterId === designState.starterId && p.formatId === designState.formatId;
-      b.className = 'qr-preset-chip' + (isActive ? ' qr-preset-chip--active' : '');
-      b.textContent = p.label;
+      const active = designState.formatId === f.id;
+      b.className = 'qr-format-chip' + (active ? ' qr-format-chip--active' : '');
+      b.textContent = f.shortLabel || f.id;
+      b.title = `${f.label} — ${f.w}×${f.h} mm`;
       b.addEventListener('click', () => {
-        designState.starterId = p.starterId;
-        designState.formatId = p.formatId;
-        syncEditorControlsFromState();
-        buildStarterPicker();
-        buildPresetBar();
+        designState.formatId = f.id;
+        const fmtSel = document.getElementById('qrFormatSelect');
+        if (fmtSel) fmtSel.value = f.id;
+        buildFormatBar();
+        updatePreviewChrome();
         renderPreview();
-        track('admin_qr_preset', { preset: p.id });
+        track('admin_qr_format', { format_id: f.id.slice(0, 24), source: 'chip' });
       });
       bar.appendChild(b);
     });
@@ -1046,7 +1034,6 @@
 
   function wireEditorPanel() {
     const fmtSel = document.getElementById('qrFormatSelect');
-    const stSel  = document.getElementById('qrStarterSelect');
     const zoneSel = document.getElementById('qrZoneSelect');
 
     if (fmtSel && !fmtSel.dataset.bound) {
@@ -1055,20 +1042,10 @@
         `<option value="${esc(f.id)}">${esc(f.label)} (${f.w}×${f.h} mm)</option>`).join('');
       fmtSel.addEventListener('change', () => {
         designState.formatId = fmtSel.value;
-        buildPresetBar();
+        buildFormatBar();
+        updatePreviewChrome();
         renderPreview();
-        track('admin_qr_format', { format_id: fmtSel.value.slice(0, 24) });
-      });
-    }
-
-    if (stSel && !stSel.dataset.bound) {
-      stSel.dataset.bound = '1';
-      stSel.innerHTML = STARTERS.map(s => `<option value="${esc(s.id)}">${esc(s.label)}</option>`).join('');
-      stSel.addEventListener('change', () => {
-        designState.starterId = stSel.value;
-        buildStarterPicker();
-        buildPresetBar();
-        renderPreview();
+        track('admin_qr_format', { format_id: fmtSel.value.slice(0, 24), source: 'select' });
       });
     }
 
@@ -1146,7 +1123,7 @@
     wireEditorPanel();
     syncEditorControlsFromState();
     buildStarterPicker();
-    buildPresetBar();
+    buildFormatBar();
     populateSavedSelect();
 
     const btnPrt = document.getElementById('qrBtnPrint');
@@ -1161,8 +1138,12 @@
   function refresh() {
     populateSavedSelect();
     updatePreviewChrome();
+    buildFormatBar();
     renderPreview();
   }
+
+  /** @deprecated No bundled presets — use style + paper size independently. */
+  const PRESETS = [];
 
   window.AdminQrFlyers = { init, refresh, STARTERS, FORMATS, PRESETS };
 })(window);
