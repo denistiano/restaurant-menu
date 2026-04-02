@@ -6,6 +6,17 @@
  *   window.trackEvent(name, params)  — fire a GA4 event
  *   window._sessionStartMs           — ms timestamp of this page load
  *
+ * Story / sequence correlation (every event):
+ *   • Firebase User-ID = anonymous id (localStorage, stable across visits)
+ *   • journey_id       = per browser-tab id (sessionStorage)
+ *   • story_step       = 0,1,2,… within that tab (sessionStorage)
+ *   • page_kind        = landing | menu | admin (derived from pathname)
+ *   • journey_start    = fired once per tab when analytics first loads
+ *
+ * In GA4 Explorations: filter by journey_id, sort by story_step, or use User-ID
+ * for cross-session paths. Register custom dimensions for journey_id, story_step,
+ * page_kind if needed.
+ *
  * Uses an event queue so events fired BEFORE this async module finishes
  * loading from the CDN are buffered and replayed — nothing is lost.
  *
@@ -21,13 +32,99 @@
  */
 
 import { initializeApp }                      from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
-import { getAnalytics, logEvent, isSupported } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js';
+import { getAnalytics, logEvent, isSupported, setUserId } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js';
 
 /* ── Session start time ──────────────────────────────────────
    Exposed so app.js / restaurant.js can compute page duration
    without relying on their own Date.now() calls.
    ─────────────────────────────────────────────────────────── */
 window._sessionStartMs = Date.now();
+
+/* ── Story correlation IDs ───────────────────────────────────
+   Goal: reconstruct per-user action sequences without needing a backend.
+   - anon_user_id: uses GA4 "User-ID" feature (not a custom dimension)
+   - journey_id: per-tab anonymous journey id (event param)
+   - story_step: monotonically increasing step index per journey (event param)
+   */
+const STORY_USER_KEY    = 'e_menu_anon_user_id_v1';
+const STORY_JOURNEY_KEY = 'e_menu_journey_id_v1';
+const STORY_STEP_KEY    = 'e_menu_story_step_v1';
+
+function safeStorageGet(storage, key) {
+  try { return storage.getItem(key); } catch { return null; }
+}
+function safeStorageSet(storage, key, val) {
+  try { storage.setItem(key, val); } catch { }
+}
+function uuidV4() {
+  try {
+    if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch { /* ignore */ }
+  // Fallback: not cryptographically strong, but good enough for correlation.
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+const anonUserId = (() => {
+  const existing = safeStorageGet(localStorage, STORY_USER_KEY);
+  if (existing) return existing;
+  const created = uuidV4();
+  safeStorageSet(localStorage, STORY_USER_KEY, created);
+  return created;
+})();
+
+const journeyId = (() => {
+  const existing = safeStorageGet(sessionStorage, STORY_JOURNEY_KEY);
+  if (existing) return existing;
+  const created = uuidV4();
+  safeStorageSet(sessionStorage, STORY_JOURNEY_KEY, created);
+  // Reset step counter for a new journey.
+  safeStorageSet(sessionStorage, STORY_STEP_KEY, '0');
+  return created;
+})();
+
+let storyStep = (() => {
+  const raw = safeStorageGet(sessionStorage, STORY_STEP_KEY);
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+})();
+
+function nextStoryStep() {
+  const cur = storyStep;
+  storyStep = cur + 1;
+  safeStorageSet(sessionStorage, STORY_STEP_KEY, String(storyStep));
+  return cur;
+}
+
+/** Read-only debug (console): journey id + current step counter. */
+window.__eMenuStory = {
+  get journeyId() { return journeyId; },
+  get nextStep() { return storyStep; }
+};
+
+/** High-level page bucket for Explorations (path-based, no PII). */
+function inferPageKind() {
+  const raw = (window.location.pathname || '/').replace(/\/index\.html$/i, '/');
+  if (raw.includes('/admin')) return 'admin';
+  if (raw === '/' || raw === '') return 'landing';
+  return 'menu';
+}
+
+/**
+ * All events get the same story fields. Applied inside realTrack only so
+ * queued events are not double-enriched and post-init calls still get steps.
+ */
+function withStoryContext(params = {}) {
+  return {
+    ...params,
+    journey_id: journeyId,
+    story_step: nextStoryStep(),
+    page_kind:  inferPageKind()
+  };
+}
 
 /* ── Event queue ─────────────────────────────────────────────
    Other scripts call window.trackEvent() before this module
@@ -38,6 +135,16 @@ window._analyticsQueue = [];
 window.trackEvent = (name, params = {}) => {
   window._analyticsQueue.push({ name, params });
 };
+
+/* Mark start of a new journey once per-tab */
+(() => {
+  const startedKey = 'e_menu_journey_started_v1';
+  const already = safeStorageGet(sessionStorage, startedKey);
+  if (already) return;
+  safeStorageSet(sessionStorage, startedKey, '1');
+  // Use the queue so event ordering stays correct.
+  window.trackEvent('journey_start', { source_page: window.location.pathname });
+})();
 
 /* ── Firebase config ─────────────────────────────────────────
    These values are NOT secrets — they identify the GA4 property
@@ -68,16 +175,22 @@ const firebaseConfig = {
     const app       = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
 
+    /* Enable GA4 User-ID correlation (best practice vs custom dimension). */
+    try {
+      if (anonUserId) setUserId(analytics, anonUserId);
+    } catch (e) {
+      console.debug('[analytics] setUserId failed:', e && e.message ? e.message : e);
+    }
+
     /* Real tracker — logs to GA4 and prints debug line to console */
     const realTrack = (name, params = {}) => {
       try {
-        logEvent(analytics, name, {
-          ...params,
-          /* Automatically enrich every event with the current URL path so
-             GA4 Explorer can filter events by page without extra setup.    */
+        const merged = {
+          ...withStoryContext(params),
           page_path: window.location.pathname
-        });
-        console.debug(`[analytics] ✓ ${name}`, params);
+        };
+        logEvent(analytics, name, merged);
+        console.debug(`[analytics] ✓ ${name}`, merged);
       } catch (e) {
         console.debug('[analytics] logEvent error:', e.message);
       }
@@ -88,7 +201,7 @@ const firebaseConfig = {
     window._analyticsQueue = [];
     queued.forEach(({ name, params }) => realTrack(name, params));
 
-    /* Swap in the live tracker */
+    /* Swap in the live tracker (must still apply story context + page_path) */
     window.trackEvent = realTrack;
 
     console.debug('[analytics] Firebase Analytics ready ✓');

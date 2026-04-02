@@ -13,6 +13,8 @@
    │ language_change     │ from_lang, to_lang, page:"landing"                │
    │ page_exit           │ duration_sec, max_scroll_pct, page:"landing"      │
    └─────────────────────┴───────────────────────────────────────────────────┘
+   Story fields (journey_id, story_step, page_kind) are added in analytics.js
+   for every event. Same tab keeps one journey across landing → restaurant pages.
    ============================================================ */
 
 (function () {

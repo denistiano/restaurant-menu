@@ -25,9 +25,11 @@
    │ theme_change             │ from_theme, to_theme                           │
    │ language_change          │ from_lang, to_lang                             │
    │ contact_click            │ contact_type (phone|email)                     │
-   │ menu_exit                │ duration_sec, interaction_count                │
+   │ menu_exit                │ duration_sec, interaction_count, item_view_count,│
+   │                          │ filter snapshot fields (category_id, counts, …)  │
    └──────────────────────────┴────────────────────────────────────────────────┘
-   Register custom dimensions in GA4 for params you need in reports.
+   Story correlation (journey_id, story_step, page_kind) is added in analytics.js
+   for every GA4 event. Register custom dimensions in GA4 as needed.
    ============================================================ */
 
 (function () {
@@ -103,12 +105,31 @@
   }
 
   /* ── Analytics: fire menu_exit exactly once ─────────────── */
+  function buildFilterSnapshot() {
+    const parts = [];
+    if (activeCategory && activeCategory !== 'all') parts.push(`cat:${activeCategory}`);
+    if (activeTags.size) parts.push(`tags:${activeTags.size}`);
+    if (activeIngredients.size) parts.push(`ing:${activeIngredients.size}`);
+    if (excludeAllergens.size) parts.push(`ex:${excludeAllergens.size}`);
+    if (searchQuery.trim()) parts.push(`q:${searchQuery.trim().slice(0, 24)}`);
+    return parts.join('|').slice(0, 100);
+  }
+
   function fireMenuExit() {
     if (menuExitFired || !initialized) return;
     menuExitFired = true;
     trackRestaurantEvent('menu_exit', {
       duration_sec:      Math.round((Date.now() - pageStartMs) / 1000),
-      interaction_count: interactionCount
+      interaction_count: interactionCount,
+      item_view_count:   itemViewCount,
+      category_id:       activeCategory,
+      tags_count:        activeTags.size,
+      ingredients_count: activeIngredients.size,
+      allergens_exclude_count: excludeAllergens.size,
+      advanced_filters_open: advancedFiltersOpen ? 1 : 0,
+      search_active:     searchQuery.trim() ? 1 : 0,
+      search_term:       searchQuery.trim().slice(0, 50),
+      filter_snapshot:   buildFilterSnapshot()
     });
   }
   document.addEventListener('visibilitychange', () => {
@@ -136,6 +157,7 @@
   /* ── Per-session analytics state ────────────────────────── */
   const pageStartMs      = window._sessionStartMs || Date.now();
   let   interactionCount = 0;   // incremented on every meaningful interaction
+  let   itemViewCount    = 0;   // dish detail modals opened
   let   menuExitFired    = false;
 
   /* ── Timed-section minute timer ─────────────────────────── */
@@ -604,12 +626,14 @@
       item_name_en:      (item.name.en || '').slice(0, 100),
       item_name_bg:      (item.name.bg || '').slice(0, 100),
       item_price:        item.price ?? 0,
+      is_available:      item.availability ? 1 : 0,
       category_id:       categoryId,
       category_name:     categoryNameEn.slice(0, 100),
       category_name_en:  categoryNameEn.slice(0, 100),
       category_name_bg:  categoryNameBg.slice(0, 100)
     });
     interactionCount++;
+    itemViewCount++;
 
     setTimeout(() => {
       document.getElementById('itemModalClose')?.focus();
