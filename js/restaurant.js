@@ -101,6 +101,9 @@
       restaurant_name_bg: (pageRestaurantNameBg || '').slice(0, 100),
       ...params,
     };
+    Object.keys(merged).forEach(k => {
+      if (merged[k] === undefined) delete merged[k];
+    });
     window.trackEvent?.(eventName, merged);
   }
 

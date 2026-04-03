@@ -388,6 +388,48 @@
       "password_hash": "4c13a3926848ca2d3a0b51d1019c32b06fda4c6cd5ad7d8a6f4e2883ca89b6bb"
     },
     {
+      "id": "oasis",
+      "name": {
+        "en": "Oasis Bar & Dinner",
+        "bg": "Oasis Bar & Dinner"
+      },
+      "description": {
+        "en": "Bulgarian kitchen and grill",
+        "bg": "Българска кухня и скара"
+      },
+      "default_language": "bg",
+      "image": "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1400&q=80",
+      "logo": "",
+      "keywords": [
+        "Oasis",
+        "Oasis Bar",
+        "Bulgarian restaurant",
+        "скара",
+        "ракия",
+        "обедно меню",
+        "Пловдив"
+      ],
+      "theme": "classic",
+      "currency_reference": "EUR",
+      "currencies_supported": [
+        {
+          "code": "EUR",
+          "label": "Euro (€)",
+          "symbol": "€"
+        },
+        {
+          "code": "BGN",
+          "label": "Bulgarian lev (лв)",
+          "symbol": "лв"
+        }
+      ],
+      "currency_rates": {
+        "BGN": 1.95583
+      },
+      "menu_bin_id": "69cf957836566621a8764e2f",
+      "password_hash": "ba09da35b323e37fa03ea43ba51ac1d00e09478a99d3510e422c9879e2572c8b"
+    },
+    {
       "id": "barber-hub-yusuf",
       "name": {
         "en": "Barber Hub Yusuf",

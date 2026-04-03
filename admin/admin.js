@@ -307,6 +307,7 @@
     const rid = (currentRestaurant && currentRestaurant.id) ? String(currentRestaurant.id).slice(0, 40) : '';
     const merged = { restaurant_id: rid, ...params };
     for (const k of Object.keys(merged)) {
+      if (merged[k] === undefined) delete merged[k];
       const v = merged[k];
       if (typeof v === 'string' && v.length > 100) merged[k] = v.slice(0, 100);
     }

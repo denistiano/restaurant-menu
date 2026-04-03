@@ -166,8 +166,8 @@ const firebaseConfig = {
        cannot work (blocked cookies, Safari ITP, SSR, etc.)       */
     const supported = await isSupported();
     if (!supported) {
-      console.debug('[analytics] not supported in this environment');
-      window.trackEvent = () => {};
+      console.warn('[analytics] Firebase Analytics not supported here (private mode, blocked storage, etc.). Events disabled.');
+      window.trackEvent = noopTrackEvent;
       window._analyticsQueue = [];
       return;
     }
@@ -182,17 +182,71 @@ const firebaseConfig = {
       console.debug('[analytics] setUserId failed:', e && e.message ? e.message : e);
     }
 
+    /* GA4 / Firebase: max 25 params per event; string values max 100 chars.
+       Exceeding limits can cause logEvent to fail or drop the event. */
+    const MAX_EVENT_PARAMS = 25;
+    const MAX_PARAM_STR = 100;
+    const STORY_KEYS_FIRST = ['journey_id', 'story_step', 'page_kind', 'page_path'];
+
+    function sanitizeValue(v) {
+      if (v === null || v === undefined) return undefined;
+      if (typeof v === 'number') return Number.isFinite(v) ? v : undefined;
+      if (typeof v === 'boolean') return v ? 1 : 0;
+      const s = String(v);
+      return s.length > MAX_PARAM_STR ? s.slice(0, MAX_PARAM_STR) : s;
+    }
+
+    function sanitizeGa4Params(raw) {
+      const entries = Object.entries(raw).filter(([, v]) => v !== null && v !== undefined);
+      const story = [];
+      const rest = [];
+      entries.forEach(([k, v]) => {
+        const sv = sanitizeValue(v);
+        if (sv === undefined) return;
+        if (STORY_KEYS_FIRST.includes(k)) story.push([k, sv]);
+        else rest.push([k, sv]);
+      });
+      rest.sort(([a], [b]) => {
+        const pa = a.startsWith('restaurant_') ? 0 : 1;
+        const pb = b.startsWith('restaurant_') ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        return a.localeCompare(b);
+      });
+      const ordered = [...story, ...rest];
+      const finalEntries = ordered.slice(0, MAX_EVENT_PARAMS);
+      if (ordered.length > MAX_EVENT_PARAMS) {
+        console.warn(`[analytics] Event had ${ordered.length} params → trimmed to ${MAX_EVENT_PARAMS} (GA4 limit).`);
+      }
+      return Object.fromEntries(finalEntries);
+    }
+
+    function isValidEventName(name) {
+      const n = String(name || '');
+      return n.length > 0 && n.length <= 40 && /^[a-zA-Z][a-zA-Z0-9_]*$/.test(n);
+    }
+
     /* Real tracker — logs to GA4 and prints debug line to console */
     const realTrack = (name, params = {}) => {
       try {
+        if (!isValidEventName(name)) {
+          console.warn('[analytics] Invalid event name (use snake_case, ≤40 chars):', name);
+          return;
+        }
         const merged = {
           ...withStoryContext(params),
           page_path: window.location.pathname
         };
-        logEvent(analytics, name, merged);
-        console.debug(`[analytics] ✓ ${name}`, merged);
+        const safe = sanitizeGa4Params(merged);
+        logEvent(analytics, name, safe);
+        const verbose = window.__DEBUG_ANALYTICS__ === true ||
+          (typeof localStorage !== 'undefined' && localStorage.getItem('e_menu_debug_analytics') === '1');
+        if (verbose) {
+          console.info(`[analytics] ✓ ${name}`, safe);
+        } else {
+          console.debug(`[analytics] ✓ ${name}`, safe);
+        }
       } catch (e) {
-        console.debug('[analytics] logEvent error:', e.message);
+        console.warn('[analytics] logEvent failed:', e && e.message ? e.message : e, name);
       }
     };
 
@@ -207,8 +261,14 @@ const firebaseConfig = {
     console.debug('[analytics] Firebase Analytics ready ✓');
 
   } catch (err) {
-    /* Analytics blocked by ad-blocker or browser restriction — degrade silently */
-    console.debug('[analytics] init failed (likely blocked):', err.message);
-    window.trackEvent = () => {};
+    console.warn('[analytics] Firebase init failed (network, ad-blocker, or CSP):', err && err.message ? err.message : err);
+    window.trackEvent = noopTrackEvent;
   }
 })();
+
+/** Warn once when events cannot be sent (no-op). */
+function noopTrackEvent() {
+  if (noopTrackEvent._warned) return;
+  noopTrackEvent._warned = true;
+  console.warn('[analytics] trackEvent is a no-op — check ad-blockers, gstatic.com access, or console above.');
+}
