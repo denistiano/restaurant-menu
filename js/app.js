@@ -169,6 +169,9 @@
       card.style.transitionDelay = `${index * 80}ms`;
 
       card.addEventListener('click', () => {
+        try {
+          sessionStorage.setItem('e_menu_last_restaurant_id_v1', String(r.id));
+        } catch { /* ignore */ }
         window.trackEvent?.('restaurant_select', {
           restaurant_id:   r.id,
           restaurant_name: r.name.en,
