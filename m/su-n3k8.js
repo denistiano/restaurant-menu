@@ -2,6 +2,7 @@
   'use strict';
 
   var TOKEN_KEY = 'menu_admin_jwt';
+  var SUPER_MIRROR_KEY = 'menu_admin_jwt_super_mirror';
   var DEFAULT_LOCAL = 'http://127.0.0.1:8080';
 
   function getMenuApiBase() {
@@ -28,11 +29,19 @@
     return sessionStorage.getItem(TOKEN_KEY) || '';
   }
   function setToken(t) {
-    if (t) sessionStorage.setItem(TOKEN_KEY, t);
+    if (t) {
+      sessionStorage.setItem(TOKEN_KEY, t);
+      try {
+        localStorage.setItem(SUPER_MIRROR_KEY, t);
+      } catch (_) {}
+    }
   }
   function clearToken() {
     try {
       sessionStorage.removeItem(TOKEN_KEY);
+    } catch (_) {}
+    try {
+      localStorage.removeItem(SUPER_MIRROR_KEY);
     } catch (_) {}
   }
 
@@ -100,10 +109,7 @@
       el('suLogin').classList.add('su-hidden');
       el('suMain').classList.remove('su-hidden');
       var logsA = el('suLogsLink');
-      if (logsA) {
-        var b = getMenuApiBase();
-        logsA.href = b ? b + '/ui' : '#';
-      }
+      if (logsA) logsA.href = 'logs.html';
       return refreshList().then(function () {
         return true;
       });

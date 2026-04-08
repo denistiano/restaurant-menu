@@ -7,6 +7,8 @@
 
   /* ── CONFIG ─────────────────────────────────────────────── */
   const SESSION_TOKEN_KEY = 'menu_admin_jwt';
+  /** Super-admin JWT mirror for cross-tab tools (e.g. m/logs.html) — cleared on sign-out. */
+  const SUPER_JWT_MIRROR_KEY = 'menu_admin_jwt_super_mirror';
   const ADMIN_LANG_KEY    = 'preferredLang';
   let adminLang           = localStorage.getItem(ADMIN_LANG_KEY) || 'bg';
 
@@ -35,6 +37,7 @@
   }
   function clearAuthToken() {
     try { sessionStorage.removeItem(SESSION_TOKEN_KEY); } catch (_) {}
+    try { localStorage.removeItem(SUPER_JWT_MIRROR_KEY); } catch (_) {}
   }
   function authJsonHeaders() {
     const h = { 'Content-Type': 'application/json' };
@@ -555,8 +558,7 @@
     if (superOpsLink) superOpsLink.classList.toggle('hidden', !sessionSuperAdmin);
     if (logsDashboardLink) {
       logsDashboardLink.classList.toggle('hidden', !sessionSuperAdmin);
-      const apiBase = getMenuApiBase();
-      logsDashboardLink.href = apiBase ? `${apiBase}/ui` : '#';
+      logsDashboardLink.href = 'logs.html';
     }
     if (superOnlyHint) {
       superOnlyHint.classList.toggle('hidden', scopedRestaurantIds.length > 0);
@@ -613,6 +615,12 @@
       const me = await res.json();
       scopedRestaurantIds = Array.isArray(me.restaurants) ? me.restaurants : [];
       sessionSuperAdmin = !!me.superAdmin;
+      try {
+        if (sessionSuperAdmin && t) localStorage.setItem(SUPER_JWT_MIRROR_KEY, t);
+        else localStorage.removeItem(SUPER_JWT_MIRROR_KEY);
+      } catch (_) {
+        /* ignore */
+      }
       await loadQuantityMetricsOnly();
       showPostAuthUi();
       return true;
@@ -796,7 +804,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password: pw }),
-        /* Required for cross-origin login: browser stores HttpOnly MT_ACCESS_TOKEN on the API host (telemetry /ui). */
+        /* Cross-origin: allows HttpOnly dashboard cookie on API host; telemetry UI uses Bearer + logs.html. */
         credentials: 'include'
       });
     } catch (err) {
@@ -831,6 +839,12 @@
     sessionSuperAdmin = !!body.superAdmin;
     scopedRestaurantIds = allowed;
     setAuthToken(token);
+    try {
+      if (body.superAdmin) localStorage.setItem(SUPER_JWT_MIRROR_KEY, token);
+      else localStorage.removeItem(SUPER_JWT_MIRROR_KEY);
+    } catch (_) {
+      /* ignore */
+    }
     await loadQuantityMetricsOnly();
 
     if (!scopedRestaurantIds.length && !sessionSuperAdmin) {

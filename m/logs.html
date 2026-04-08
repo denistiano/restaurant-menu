@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telemetry · Logs</title>
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="logs.css" />
+  <meta name="menu-api-base" content="https://tebeshir.online" />
+</head>
+<body>
+  <div class="logs-wrap">
+    <a class="logs-back" href="index.html">← Back to admin</a>
+
+    <div id="logsGate" class="logs-gate">
+      <h1>Telemetry</h1>
+      <p id="logsGateText">Checking access…</p>
+      <a class="logs-btn logs-btn--primary" href="index.html">Open admin sign-in</a>
+    </div>
+
+    <div id="logsMain" class="hidden">
+      <header class="logs-header">
+        <div>
+          <h1>Telemetry console</h1>
+          <p>Search events via the API using your super-admin JWT. Exports use the same filters as the list (current query).</p>
+        </div>
+        <div class="logs-header__actions">
+          <button type="button" class="logs-btn logs-btn--small" id="logsMetricsBtn">Metrics (JSON)</button>
+        </div>
+      </header>
+
+      <div id="logsMetricsPanel" class="logs-card hidden" style="margin-bottom: 20px">
+        <strong style="font-size: 13px">GET /api/v1/metrics/by-app</strong>
+        <pre id="logsMetricsOut" class="logs-metrics-pre"></pre>
+      </div>
+
+      <div id="logsError" class="logs-err hidden"></div>
+
+      <div class="logs-layout">
+        <aside class="logs-filters">
+          <h2>Filters</h2>
+          <form id="logsFilterForm">
+            <div class="logs-field">
+              <label for="filterApp">Application</label>
+              <input id="filterApp" name="app" type="text" autocomplete="off" placeholder="app id" />
+            </div>
+            <div class="logs-field">
+              <label for="filterSession">Session ID</label>
+              <input id="filterSession" name="sessionId" type="text" autocomplete="off" />
+            </div>
+            <div class="logs-field">
+              <label for="filterUser">User ID</label>
+              <input id="filterUser" name="userId" type="text" autocomplete="off" />
+            </div>
+            <div class="logs-field">
+              <label for="filterEventType">Event type</label>
+              <input id="filterEventType" name="eventType" type="text" autocomplete="off" />
+            </div>
+            <div class="logs-field">
+              <label for="filterEventName">Event name</label>
+              <input id="filterEventName" name="eventName" type="text" autocomplete="off" />
+            </div>
+            <div class="logs-field">
+              <label for="filterFrom">From (ISO-8601)</label>
+              <input id="filterFrom" name="from" type="text" autocomplete="off" placeholder="2026-01-01T00:00:00Z" />
+            </div>
+            <div class="logs-field">
+              <label for="filterTo">To (ISO-8601)</label>
+              <input id="filterTo" name="to" type="text" autocomplete="off" />
+            </div>
+            <div class="logs-field">
+              <label for="filterPayload">Payload contains</label>
+              <input id="filterPayload" name="payloadContains" type="text" autocomplete="off" />
+            </div>
+            <div id="logsJsonRows">
+              <div class="logs-field logs-json-row">
+                <label>JSON path</label>
+                <input type="text" class="logs-json-path" placeholder="$.field" autocomplete="off" />
+                <label style="margin-top: 8px">Equals</label>
+                <input type="text" class="logs-json-val" placeholder="value" autocomplete="off" />
+              </div>
+            </div>
+            <button type="button" class="logs-btn logs-btn--small" id="logsAddJsonRow" style="margin-bottom: 12px">+ JSON filter row</button>
+            <div class="logs-field">
+              <label for="filterSize">Page size</label>
+              <input id="filterSize" name="size" type="number" min="1" max="500" value="50" />
+            </div>
+            <div class="logs-field-row">
+              <button type="submit" class="logs-btn logs-btn--primary">Apply</button>
+            </div>
+          </form>
+          <div class="logs-export-row">
+            <span style="font-size: 11px; color: var(--muted); width: 100%; margin-bottom: 4px">Export (uses filters above)</span>
+            <button type="button" class="logs-btn logs-btn--small" id="logsExportJson">JSON</button>
+            <button type="button" class="logs-btn logs-btn--small" id="logsExportCsv">CSV</button>
+          </div>
+        </aside>
+
+        <main>
+          <div id="logsLoading" class="logs-loading hidden">
+            <div class="admin-spinner"></div>
+          </div>
+          <div id="logsStats" class="logs-stats"></div>
+          <p id="logsEmpty" class="hidden" style="color: var(--muted); padding: 24px; text-align: center">No events match.</p>
+          <ul id="logsList" class="logs-list"></ul>
+          <nav class="logs-pager">
+            <button type="button" class="logs-btn" id="logsPrev">← Newer</button>
+            <span id="logsPagerMeta"></span>
+            <button type="button" class="logs-btn" id="logsNext">Older →</button>
+          </nav>
+        </main>
+      </div>
+    </div>
+  </div>
+  <script src="logs.js" defer></script>
+</body>
+</html>
