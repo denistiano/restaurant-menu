@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Content</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+  <!-- API origin (scheme+host+port). Production server; use http://127.0.0.1:8080 for local API only. -->
+  <meta name="menu-api-base" content="https://tebeshir.online" />
+</head>
+<body>
+
+  <!-- ── AUTH SCREEN ─────────────────────────────────────── -->
+  <div id="authScreen" class="screen">
+    <header class="auth-header">
+      <a href="../" class="auth-back" id="authBackLink">← Back to site</a>
+      <div class="auth-logo">
+        <span class="auth-logo__dot">●</span>
+        <span class="auth-logo__text" id="authLogoText">Content</span>
+      </div>
+      <button class="admin-lang-toggle" id="adminLangToggleAuth" type="button">EN</button>
+    </header>
+
+    <main class="auth-main">
+      <h1 class="auth-title" id="authTitle">Sign in</h1>
+      <p class="auth-sub" id="authSub">Use the username and password from your server. No venue list is shown until you are signed in.</p>
+
+      <div id="authCredentialsBlock">
+      <div class="api-key-row">
+        <label class="api-key-row__label" for="usernameInput">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Username
+        </label>
+        <div class="api-key-row__field">
+          <input type="text" id="usernameInput" class="api-key-input"
+                 placeholder="Backend account" autocomplete="username" spellcheck="false" />
+        </div>
+        <p class="api-key-hint">Same user as configured on the API server (SQLite + JWT).</p>
+      </div>
+
+      <div class="api-key-row">
+        <label class="api-key-row__label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Password
+        </label>
+        <div class="api-key-row__field">
+          <input type="password" id="sharedPasswordInput" class="api-key-input"
+                 placeholder="Password" autocomplete="current-password" />
+          <button class="api-key-toggle" id="sharedPasswordToggle" title="Show/hide password" type="button">
+            <svg class="eye-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.3"/></svg>
+          </button>
+        </div>
+        <p class="api-key-hint">JWT is stored in sessionStorage for this tab only.</p>
+      </div>
+
+      <div class="auth-grid" id="authGrid">
+        <div class="form-section" style="padding:0;border:none;">
+          <div class="field-row" style="padding-top:0;">
+            <button class="auth-card__submit" id="authSignInBtn" type="button">Sign in</button>
+          </div>
+          <p class="auth-card__error" id="authError">Incorrect admin password</p>
+        </div>
+      </div>
+      </div><!-- /authCredentialsBlock -->
+
+      <div id="postAuthPanel" class="post-auth-panel hidden">
+        <p class="auth-sub post-auth-hint" id="postAuthHint"></p>
+        <p class="auth-sub hidden" id="superOnlyHint"></p>
+        <div class="venue-tab-strip" id="venueTabStrip" role="tablist"></div>
+        <div class="post-auth-actions">
+          <a href="su-n3k8.html" class="auth-ops-link hidden" id="superOpsLink" rel="nofollow noopener">Operations</a>
+          <button type="button" class="auth-sign-out" id="authSignOutBtn">Sign out</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── EDITOR SCREEN ───────────────────────────────────── -->
+  <div id="editorScreen" class="screen hidden">
+
+    <!-- Top bar -->
+    <header class="editor-topbar">
+      <button class="editor-topbar__back" id="backBtn" title="Back to workspace list">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="editor-topbar__title" id="editorTitle">Edit restaurant</div>
+      <div class="editor-topbar__actions">
+        <button class="admin-lang-toggle" id="adminLangToggleEditor" type="button">EN</button>
+        <span class="dirty-badge hidden" id="dirtyBadge">Unsaved</span>
+        <a class="editor-topbar__preview" id="previewLink" href="#" target="_blank">Preview ↗</a>
+        <button class="editor-topbar__save" id="saveBtn">Save</button>
+      </div>
+    </header>
+
+    <nav class="editor-venue-strip hidden" id="editorVenueStrip" role="tablist" aria-label="Workspaces"></nav>
+
+    <!-- Tab nav -->
+    <nav class="editor-tabs" id="editorTabs">
+      <button class="editor-tab active" data-tab="info">Restaurant</button>
+      <button class="editor-tab" data-tab="config">Settings</button>
+      <button class="editor-tab" data-tab="categories">Menu</button>
+      <button class="editor-tab" data-tab="qr">QR media</button>
+    </nav>
+
+    <!-- Panels -->
+    <div class="editor-body">
+
+      <!-- INFO panel -->
+      <section class="editor-panel active" id="panel-info">
+        <div class="form-section">
+          <h3 class="form-section__title" id="infoSectionNameTitle">Name</h3>
+          <div class="field-row" id="infoNameEnRow">
+            <label class="field-label">English</label>
+            <input class="field-input" id="infoNameEn" type="text" placeholder="Restaurant name in English" />
+          </div>
+          <div class="field-row" id="infoNameBgRow">
+            <label class="field-label">Bulgarian</label>
+            <input class="field-input" id="infoNameBg" type="text" placeholder="Име на ресторанта" />
+          </div>
+        </div>
+        <div class="form-section">
+          <h3 class="form-section__title" id="infoSectionDescTitle">Tagline / Description</h3>
+          <div class="field-row" id="infoDescEnRow">
+            <label class="field-label">English</label>
+            <textarea class="field-input field-textarea" id="infoDescEn" placeholder="Short description in English"></textarea>
+          </div>
+          <div class="field-row" id="infoDescBgRow">
+            <label class="field-label">Bulgarian</label>
+            <textarea class="field-input field-textarea" id="infoDescBg" placeholder="Кратко описание на български"></textarea>
+          </div>
+        </div>
+        <div class="form-section">
+          <h3 class="form-section__title" id="infoSectionAppearanceTitle">Appearance</h3>
+          <div class="field-row">
+            <label class="field-label">Theme</label>
+            <select class="field-input field-select" id="infoTheme">
+              <option value="classic">Classic (clean list)</option>
+              <option value="modern">Modern (dark cards)</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label class="field-label">Default language</label>
+            <select class="field-input field-select" id="infoLang">
+              <option value="en">English</option>
+              <option value="bg">Bulgarian</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-section">
+          <h3 class="form-section__title" id="infoSectionMediaTitle">Media</h3>
+          <p class="form-section__desc">Paste a URL or click <strong>Upload</strong> to upload directly to Cloudinary. Use a filename (e.g. <code>cover.jpg</code>) for local assets.</p>
+          <div class="field-row">
+            <label class="field-label">
+              Logo
+              <span class="field-label__hint">Shown as a circle thumbnail in the header</span>
+            </label>
+            <div class="field-url-wrap">
+              <div class="field-url-input-row">
+                <input class="field-input" id="infoLogo" type="text" placeholder="logo.jpg or https://…" autocomplete="off" spellcheck="false" />
+                <button class="btn-upload-img" id="infoLogoUpload" type="button" title="Upload to Cloudinary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                  Upload
+                </button>
+              </div>
+              <div class="field-url-preview" id="infoLogoPreview"></div>
+            </div>
+          </div>
+          <div class="field-row">
+            <label class="field-label">
+              Cover image
+              <span class="field-label__hint">Card thumbnail on the restaurant listing page</span>
+            </label>
+            <div class="field-url-wrap">
+              <div class="field-url-input-row">
+                <input class="field-input" id="infoImage" type="text" placeholder="cover.jpg or https://…" autocomplete="off" spellcheck="false" />
+                <button class="btn-upload-img" id="infoImageUpload" type="button" title="Upload to Cloudinary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                  Upload
+                </button>
+              </div>
+              <div class="field-url-preview" id="infoImagePreview"></div>
+            </div>
+          </div>
+          <div class="field-row">
+            <label class="field-label">
+              Header background
+              <span class="field-label__hint">Full-bleed banner behind the restaurant name</span>
+            </label>
+            <div class="field-url-wrap">
+              <div class="field-url-input-row">
+                <input class="field-input" id="infoBgImage" type="text" placeholder="cover.jpg or https://…" autocomplete="off" spellcheck="false" />
+                <button class="btn-upload-img" id="infoBgImageUpload" type="button" title="Upload to Cloudinary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                  Upload
+                </button>
+              </div>
+              <div class="field-url-preview" id="infoBgImagePreview"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONFIG panel -->
+      <section class="editor-panel hidden" id="panel-config">
+        <div class="form-section">
+          <h3 class="form-section__title" id="cfgSectionDisplayTitle">Display options</h3>
+          <p class="form-section__desc" id="cfgSectionDisplayDesc">Control which fields are shown on the public menu.</p>
+          <div class="toggle-list">
+            <label class="toggle-row">
+              <span class="toggle-row__label">Show price</span>
+              <span class="toggle-row__hint">Display price next to each item</span>
+              <input type="checkbox" class="toggle-cb" id="cfgPrice" />
+              <span class="toggle-switch"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-row__label">Show description</span>
+              <span class="toggle-row__hint">Show item description text</span>
+              <input type="checkbox" class="toggle-cb" id="cfgDesc" />
+              <span class="toggle-switch"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-row__label">Show tags</span>
+              <span class="toggle-row__hint">Display tags and enable tag filters</span>
+              <input type="checkbox" class="toggle-cb" id="cfgTags" />
+              <span class="toggle-switch"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-row__label">Show ingredients</span>
+              <span class="toggle-row__hint">List ingredients under each item</span>
+              <input type="checkbox" class="toggle-cb" id="cfgIngredients" />
+              <span class="toggle-switch"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-row__label">Show allergens</span>
+              <span class="toggle-row__hint">Display allergen information</span>
+              <input type="checkbox" class="toggle-cb" id="cfgAllergens" />
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="form-section__title" id="cfgSectionCurrencyTitle">Currency</h3>
+          <p class="form-section__desc" id="cfgSectionCurrencyDesc">Choose which currency your menu prices are entered in, then choose the currencies guests should see and their display order.</p>
+          <div class="field-row">
+            <label class="field-label" id="cfgCurrencyMainLabel">Main</label>
+            <div id="cfgCurrencyMainChips" class="currency-chip-row"></div>
+          </div>
+          <div class="field-row">
+            <label class="field-label" id="cfgCurrencyDisplayLabel">Display</label>
+            <div style="flex:1;min-width:0;">
+              <div id="cfgCurrencyDisplayChips" class="currency-chip-list"></div>
+              <div style="margin-top:10px;">
+                <div class="field-label__hint" id="cfgCurrencyAddHint">Add currencies</div>
+                <div id="cfgCurrencyAvailableChips" class="currency-chip-row" style="margin-top:8px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="form-section__title" id="cfgSectionTimeTitle">Time &amp; Scheduling</h3>
+          <p class="form-section__desc" id="cfgSectionTimeDesc">Required for timed sections (e.g. lunch menu 12:00–14:00) to activate at the correct local time.</p>
+          <div class="field-row">
+            <label class="field-label">Timezone</label>
+            <select class="field-input field-select" id="cfgTimezone">
+              <option value="Europe/Sofia">Europe/Sofia (Bulgaria, EET/EEST)</option>
+              <option value="Europe/London">Europe/London (UK)</option>
+              <option value="Europe/Paris">Europe/Paris (France, CET/CEST)</option>
+              <option value="Europe/Berlin">Europe/Berlin (Germany)</option>
+              <option value="Europe/Rome">Europe/Rome (Italy)</option>
+              <option value="Europe/Madrid">Europe/Madrid (Spain)</option>
+              <option value="Europe/Athens">Europe/Athens (Greece)</option>
+              <option value="Europe/Istanbul">Europe/Istanbul (Turkey)</option>
+              <option value="Europe/Bucharest">Europe/Bucharest (Romania)</option>
+              <option value="Europe/Kiev">Europe/Kiev (Ukraine)</option>
+              <option value="Europe/Moscow">Europe/Moscow (Russia)</option>
+              <option value="Asia/Dubai">Asia/Dubai (UAE)</option>
+              <option value="Asia/Nicosia">Asia/Nicosia (Cyprus)</option>
+              <option value="America/New_York">America/New_York (EST/EDT)</option>
+              <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+              <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+              <option value="UTC">UTC</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- CATEGORIES / MENU panel -->
+      <section class="editor-panel hidden" id="panel-categories">
+        <div class="categories-toolbar">
+          <span class="categories-toolbar__hint" id="categoriesToolbarHint">Drag ↕ to reorder. Click a category to expand.</span>
+          <button class="btn-add-cat" id="addCategoryBtn">+ Add category</button>
+        </div>
+        <div class="categories-list" id="categoriesList"></div>
+      </section>
+
+      <!-- QR MEDIA panel -->
+      <section class="editor-panel hidden" id="panel-qr">
+        <div class="qr-media-hero">
+          <div class="qr-preview-outer qr-preview-outer--hero">
+            <div class="qr-hero-toolbar">
+              <button type="button" class="btn-qr-secondary" id="qrBtnEditToggle">Edit layout</button>
+              <button type="button" class="btn-qr-secondary" id="qrBtnRefresh">Refresh QR</button>
+              <button type="button" class="btn-qr-primary" id="qrBtnPrint">Print</button>
+            </div>
+            <div class="qr-media-pick">
+              <p class="qr-media-pick__intro">Pick a <strong>paper size</strong> and a <strong>style</strong> — any combination (e.g. Noir on a business card).</p>
+              <span class="field-label qr-media-pick__size-label">Paper size</span>
+              <div class="qr-format-bar" id="qrFormatBar" role="group" aria-label="Paper size"></div>
+              <div class="qr-media-pick__row qr-media-pick__row--style">
+                <span class="field-label">Style</span>
+                <div class="qr-tpl-picker" id="qrTemplatePicker"></div>
+              </div>
+            </div>
+            <p class="qr-preview-hero__label">Preview <span class="qr-preview-hero__hint">(scaled)</span></p>
+            <div class="qr-preview-scaler qr-preview-scaler--hero" id="qrPreviewScaler">
+              <div class="qr-preview-zoom" aria-hidden="true">
+                <div class="qr-preview-host" id="qrPreviewHost"></div>
+              </div>
+            </div>
+            <p class="qr-url-note">Menu link in QR: <code id="qrUrlDisplay" class="qr-url-code"></code></p>
+          </div>
+
+          <div id="qrEditorPanel" class="qr-editor-panel hidden">
+            <h4 class="qr-editor-panel__title">Layout editor</h4>
+            <p class="qr-editor-panel__hint">Pick a zone, then adjust typography or page background. Title/subtitle overrides below apply only to this media (not your saved restaurant profile).</p>
+            <div class="qr-editor-grid qr-editor-grid--single">
+              <div class="field-row">
+                <label class="field-label" for="qrZoneSelect">Edit zone</label>
+                <select class="field-input field-select" id="qrZoneSelect"></select>
+              </div>
+            </div>
+            <div id="qrZoneFields" class="qr-zone-fields"></div>
+            <div class="qr-text-overrides">
+              <div class="field-row">
+                <label class="field-label">Title override <span class="field-label__hint">optional</span></label>
+                <input type="text" class="field-input" id="qrTextTitle" placeholder="Leave empty to use restaurant name" autocomplete="off" />
+              </div>
+              <div class="field-row">
+                <label class="field-label">Subtitle override <span class="field-label__hint">optional</span></label>
+                <input type="text" class="field-input" id="qrTextSubtitle" placeholder="Leave empty to use tagline from profile" autocomplete="off" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <details class="qr-media-details">
+          <summary class="qr-media-details__summary">Saved on this device <span class="qr-media-details__meta">per restaurant</span></summary>
+          <div class="qr-saved-row">
+            <select class="field-input field-select qr-saved-select" id="qrSavedSelect">
+              <option value="">— Load saved —</option>
+            </select>
+            <input type="text" class="field-input qr-saved-name" id="qrCustomName" placeholder="Name for save…" maxlength="80" autocomplete="off" />
+            <button type="button" class="btn-qr-secondary" id="qrBtnSaveCustom">Save current</button>
+            <button type="button" class="btn-qr-danger" id="qrBtnDeleteCustom">Delete</button>
+          </div>
+        </details>
+
+        <p class="qr-flyer__status" id="qrFlyerStatus" aria-live="polite"></p>
+      </section>
+
+    </div><!-- /editor-body -->
+  </div><!-- /editorScreen -->
+
+  <!-- ── TOAST ─────────────────────────────────────────────── -->
+  <div class="toast hidden" id="toast"></div>
+
+  <!-- ── CONFIRM MODAL ──────────────────────────────────────── -->
+  <div class="modal-backdrop hidden" id="modalBackdrop">
+    <div class="modal">
+      <p class="modal__msg" id="modalMsg">Are you sure?</p>
+      <div class="modal__actions">
+        <button class="modal__cancel" id="modalCancel">Cancel</button>
+        <button class="modal__confirm" id="modalConfirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="../js/analytics.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" crossorigin="anonymous"></script>
+  <script src="qr-flyers.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

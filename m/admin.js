@@ -46,9 +46,16 @@
   const I18N = {
     en: {
       backToSite: '← Back to site',
-      selectRestaurant: 'Select a restaurant',
-      authSub: 'Sign in with your backend username and password, then choose a restaurant.',
-      restaurant: 'Restaurant',
+      signInTitle: 'Sign in',
+      authSub:
+        'Use your server username and password. Venues linked to your account appear only after you sign in.',
+      signIn: 'Sign in',
+      chooseWorkspaceHint:
+        'Open a workspace below. Labels are neutral (not public restaurant names).',
+      superOnlyHint: 'No venues are linked to this account. You can still open Operations to manage users.',
+      operationsLink: 'Operations',
+      signOut: 'Sign out',
+      workspacePrefix: 'Workspace',
       openEditor: 'Open editor',
       incorrectPassword: 'Incorrect admin password',
       editorRestaurantTab: 'Restaurant',
@@ -92,9 +99,17 @@
     },
     bg: {
       backToSite: '← Назад към сайта',
-      selectRestaurant: 'Избери ресторант',
-      authSub: 'Влез с потребителско име и парола от сървъра, след това избери ресторант.',
-      restaurant: 'Ресторант',
+      signInTitle: 'Вход',
+      authSub:
+        'Потребителско име и парола от сървъра. Обектите, към които имаш достъп, се показват едва след вход.',
+      signIn: 'Вход',
+      chooseWorkspaceHint:
+        'Избери работно място по-долу. Етикетите са неутрални (не са публични имена на ресторанти).',
+      superOnlyHint:
+        'Няма свързани обекти. Можеш да отвориш Operations за управление на потребители.',
+      operationsLink: 'Операции',
+      signOut: 'Изход',
+      workspacePrefix: 'Профил',
       openEditor: 'Отвори редактора',
       incorrectPassword: 'Невалидна админ парола',
       editorRestaurantTab: 'Ресторант',
@@ -286,9 +301,11 @@
   }
 
   /* ── STATE ──────────────────────────────────────────────── */
-  let restaurants     = [];
-  let quantityMetrics = [];       // from restaurants.json
-  let currentRestaurant = null;   // entry from restaurants.json
+  let quantityMetrics = [];       // from restaurants.json (loaded only after sign-in)
+  let currentRestaurant = null;   // minimal { id } then full from API menu payload
+  let sessionSuperAdmin = false;
+  let scopedRestaurantIds = [];
+  let activeWorkspaceId = null;
   let menuData        = null;     // the full { restaurant: {...} } object
   let isDirty         = false;
   let editorSessionStart = 0;
@@ -314,8 +331,15 @@
   const authScreen   = document.getElementById('authScreen');
   const editorScreen = document.getElementById('editorScreen');
   const authGrid     = document.getElementById('authGrid');
-  const restaurantSelect = document.getElementById('restaurantSelect');
-  const authLoginBtn     = document.getElementById('authLoginBtn');
+  const authCredentialsBlock = document.getElementById('authCredentialsBlock');
+  const postAuthPanel = document.getElementById('postAuthPanel');
+  const postAuthHint = document.getElementById('postAuthHint');
+  const superOnlyHint = document.getElementById('superOnlyHint');
+  const venueTabStrip = document.getElementById('venueTabStrip');
+  const superOpsLink = document.getElementById('superOpsLink');
+  const authSignOutBtn = document.getElementById('authSignOutBtn');
+  const authSignInBtn = document.getElementById('authSignInBtn');
+  const editorVenueStrip = document.getElementById('editorVenueStrip');
   const authErrorEl      = document.getElementById('authError');
   const editorTitle  = document.getElementById('editorTitle');
   const previewLink  = document.getElementById('previewLink');
@@ -368,11 +392,14 @@
       if (el) el.textContent = tr(key);
     };
     setText('authBackLink', 'backToSite');
-    setText('authTitle', 'selectRestaurant');
+    setText('authTitle', 'signInTitle');
     setText('authSub', 'authSub');
-    setText('restaurantSelectLabel', 'restaurant');
-    setText('authLoginBtn', 'openEditor');
+    setText('authSignInBtn', 'signIn');
     setText('authError', 'incorrectPassword');
+    const logo = document.getElementById('authLogoText');
+    if (logo) logo.textContent = adminLang === 'bg' ? 'Съдържание' : 'Content';
+    setText('superOpsLink', 'operationsLink');
+    setText('authSignOutBtn', 'signOut');
     // section headings
     const nameTitle = document.getElementById('infoSectionNameTitle'); if (nameTitle) nameTitle.textContent = adminLang === 'bg' ? 'Имена' : 'Name';
     const descTitle = document.getElementById('infoSectionDescTitle'); if (descTitle) descTitle.textContent = adminLang === 'bg' ? 'Слоган / Описание' : 'Tagline / Description';
@@ -449,44 +476,124 @@
     saveBtn.disabled = false;
   }
 
-  /* ── FETCH RESTAURANTS ───────────────────────────────────── */
-  async function loadRestaurants() {
+  /* ── QUANTITY METRICS (after sign-in only; no venue list for auth UI) ── */
+  async function loadQuantityMetricsOnly() {
     try {
       const res = await fetch('../resources/restaurants.json');
       if (!res.ok) throw new Error();
       const data = await res.json();
-      // Extract restaurants and metrics from new structure
       quantityMetrics = data.quantity_metrics || [];
-      restaurants = data.restaurants || (Array.isArray(data) ? data : []);
-      renderRestaurantSelect();
     } catch {
-      authGrid.innerHTML = '<p style="color:rgba(240,236,228,0.4);grid-column:1/-1">Could not load restaurants list.</p>';
+      quantityMetrics = [];
     }
   }
 
-  /* ── RESTAURANT SELECT ────────────────────────────────────── */
-  function renderRestaurantSelect() {
-    if (!restaurantSelect) return;
-    restaurantSelect.innerHTML = '';
+  function workspaceLabelAt(index) {
+    const p = tr('workspacePrefix');
+    return `${p} ${index + 1}`;
+  }
 
-    const opts = restaurants
-      .map(r => ({
-        value: r.id,
-        label: `${r.name.en || r.id}`
-      }))
-      .filter(x => x.value);
-
-    opts.forEach(o => {
-      const opt = document.createElement('option');
-      opt.value = o.value;
-      opt.textContent = o.label;
-      restaurantSelect.appendChild(opt);
+  function renderVenueTabs(container, activeId, onPick) {
+    if (!container) return;
+    container.innerHTML = '';
+    scopedRestaurantIds.forEach((rid, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'venue-tab' + (rid === activeId ? ' venue-tab--active' : '');
+      btn.textContent = workspaceLabelAt(i);
+      btn.setAttribute('aria-selected', rid === activeId ? 'true' : 'false');
+      btn.addEventListener('click', () => onPick(rid));
+      container.appendChild(btn);
     });
+  }
 
-    if (!restaurantSelect.value && opts[0]) restaurantSelect.value = opts[0].value;
+  function renderEditorVenueStrip() {
+    if (!editorVenueStrip) return;
+    if (scopedRestaurantIds.length <= 1) {
+      editorVenueStrip.classList.add('hidden');
+      return;
+    }
+    editorVenueStrip.classList.remove('hidden');
+    renderVenueTabs(editorVenueStrip, activeWorkspaceId, async rid => {
+      if (rid === activeWorkspaceId) return;
+      if (isDirty) {
+        const ok = await confirm(
+          adminLang === 'bg'
+            ? 'Има незаписани промени. Да превключим без запазване?'
+            : 'You have unsaved changes. Switch workspace without saving?'
+        );
+        if (!ok) return;
+      }
+      setDirty(false);
+      activeWorkspaceId = rid;
+      currentRestaurant = { id: rid };
+      await loadAndOpenEditor();
+    });
+  }
 
-    // Auto-clear error and allow Enter key to submit.
+  function showCredentialsUi() {
+    authCredentialsBlock?.classList.remove('hidden');
+    postAuthPanel?.classList.add('hidden');
+  }
+
+  function showPostAuthUi() {
+    authCredentialsBlock?.classList.add('hidden');
+    postAuthPanel?.classList.remove('hidden');
+    if (superOpsLink) superOpsLink.classList.toggle('hidden', !sessionSuperAdmin);
+    if (superOnlyHint) {
+      superOnlyHint.classList.toggle('hidden', scopedRestaurantIds.length > 0);
+      superOnlyHint.textContent = tr('superOnlyHint');
+    }
+    if (postAuthHint) {
+      postAuthHint.classList.toggle('hidden', scopedRestaurantIds.length === 0);
+      postAuthHint.textContent = tr('chooseWorkspaceHint');
+    }
+    if (venueTabStrip) {
+      venueTabStrip.classList.toggle('hidden', scopedRestaurantIds.length === 0);
+      renderVenueTabs(venueTabStrip, activeWorkspaceId, async rid => {
+        await openEditorForRestaurantId(rid);
+      });
+    }
+  }
+
+  function signOutSession() {
+    clearAuthToken();
+    sessionSuperAdmin = false;
+    scopedRestaurantIds = [];
+    activeWorkspaceId = null;
+    menuData = null;
+    currentRestaurant = null;
+    showCredentialsUi();
     if (authErrorEl) authErrorEl.style.display = 'none';
+  }
+
+  async function openEditorForRestaurantId(rid) {
+    activeWorkspaceId = rid;
+    currentRestaurant = { id: rid };
+    await loadAndOpenEditor();
+  }
+
+  async function restoreSessionIfPossible() {
+    const t = getAuthToken();
+    if (!t) return false;
+    const base = getMenuApiBase();
+    if (!base) return false;
+    try {
+      const res = await fetch(`${base}/api/auth/me`, { headers: { Authorization: 'Bearer ' + t } });
+      if (!res.ok) {
+        clearAuthToken();
+        return false;
+      }
+      const me = await res.json();
+      scopedRestaurantIds = Array.isArray(me.restaurants) ? me.restaurants : [];
+      sessionSuperAdmin = !!me.superAdmin;
+      await loadQuantityMetricsOnly();
+      showPostAuthUi();
+      return true;
+    } catch {
+      clearAuthToken();
+      return false;
+    }
   }
 
   function normalizeCurrencyConfig(currencies = {}, restaurantEntry = null) {
@@ -620,18 +727,14 @@
     sharedPasswordToggle.title = isHidden ? 'Hide password' : 'Show password';
   });
   sharedPasswordInput?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      if (authLoginBtn) authLoginBtn.click();
-    }
+    if (e.key === 'Enter') authSignInBtn?.click();
   });
   usernameInput?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      if (authLoginBtn) authLoginBtn.click();
-    }
+    if (e.key === 'Enter') authSignInBtn?.click();
   });
 
   /* ── AUTHENTICATE (JWT via backend) ──────────────────────── */
-  async function attemptAuth(restaurantEntry, triggerBtn) {
+  async function handleSignIn(triggerBtn) {
     const username = usernameInput.value.trim();
     const pw = sharedPasswordInput.value.trim();
 
@@ -642,7 +745,10 @@
       showToast(adminLang === 'bg' ? 'Въведи потребителско име.' : 'Please enter your username.', 'error');
       return;
     }
-    if (!pw) { sharedPasswordInput.focus(); return; }
+    if (!pw) {
+      sharedPasswordInput.focus();
+      return;
+    }
 
     const base = getMenuApiBase();
     if (!base) {
@@ -673,7 +779,7 @@
 
     if (!loginRes.ok) {
       clearAuthToken();
-      adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40) });
+      adminTrack('admin_auth_fail', {});
       if (authErrorEl) {
         authErrorEl.style.display = 'block';
         authErrorEl.textContent = adminLang === 'bg'
@@ -693,23 +799,40 @@
       if (triggerBtn) triggerBtn.disabled = false;
       return;
     }
-    if (!allowed.includes(restaurantEntry.id)) {
+
+    sessionSuperAdmin = !!body.superAdmin;
+    scopedRestaurantIds = allowed;
+    setAuthToken(token);
+    await loadQuantityMetricsOnly();
+
+    if (!scopedRestaurantIds.length && !sessionSuperAdmin) {
       clearAuthToken();
-      adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40), reason: 'no_restaurant_scope' });
+      adminTrack('admin_auth_fail', { reason: 'no_restaurant_scope' });
       if (authErrorEl) {
         authErrorEl.style.display = 'block';
         authErrorEl.textContent = adminLang === 'bg'
-          ? 'Нямате достъп до този ресторант (провери assignments на сървъра).'
-          : 'You do not have access to this restaurant (check server assignments).';
+          ? 'Няма свързани обекти за този акаунт.'
+          : 'No workspaces are linked to this account.';
       }
       if (triggerBtn) triggerBtn.disabled = false;
       return;
     }
 
-    setAuthToken(token);
-    adminTrack('admin_auth_ok', { restaurant_id: String(restaurantEntry.id).slice(0, 40) });
-    currentRestaurant = restaurantEntry;
-    await loadAndOpenEditor();
+    adminTrack('admin_auth_ok', { venue_count: scopedRestaurantIds.length, super: sessionSuperAdmin ? 1 : 0 });
+
+    if (!scopedRestaurantIds.length && sessionSuperAdmin) {
+      showPostAuthUi();
+      if (triggerBtn) triggerBtn.disabled = false;
+      return;
+    }
+
+    if (scopedRestaurantIds.length === 1) {
+      await openEditorForRestaurantId(scopedRestaurantIds[0]);
+      if (triggerBtn) triggerBtn.disabled = false;
+      return;
+    }
+
+    showPostAuthUi();
     if (triggerBtn) triggerBtn.disabled = false;
   }
 
@@ -740,6 +863,7 @@
       const wrapper = await res.json();
       menuData = wrapper.record;
       if (!menuData || !menuData.restaurant) throw new Error('Empty menu payload');
+      currentRestaurant = menuData.restaurant;
       openEditor();
     } catch (err) {
       adminTrack('admin_menu_load_fail', {
@@ -766,6 +890,7 @@
     authScreen.classList.add('hidden');
     editorScreen.classList.remove('hidden');
     window.scrollTo(0, 0);
+    renderEditorVenueStrip();
 
     const r = menuData.restaurant;
     editorTitle.textContent = 'Editing: ' + (r.name.en || r.id);
@@ -808,6 +933,7 @@
     menuData = null;
     currentRestaurant = null;
     setDirty(false);
+    showPostAuthUi();
     document.querySelectorAll('.editor-tab').forEach(t => {
       t.classList.toggle('active', t.dataset.tab === 'info');
     });
@@ -2111,23 +2237,19 @@
   });
 
   /* ── INIT ────────────────────────────────────────────────── */
-  if (authLoginBtn) {
-    authLoginBtn.addEventListener('click', async () => {
-      if (!restaurants || !restaurants.length) return;
-      const rid = restaurantSelect?.value;
-      const entry = restaurants.find(r => r.id === rid);
-      if (!entry) {
-        if (authErrorEl) {
-          authErrorEl.style.display = 'block';
-          authErrorEl.textContent = 'Pick a restaurant first.';
-        }
-        return;
-      }
-      await attemptAuth(entry, authLoginBtn);
-    });
-  }
+  authSignInBtn?.addEventListener('click', async () => {
+    await handleSignIn(authSignInBtn);
+  });
+  authSignOutBtn?.addEventListener('click', () => signOutSession());
+
   adminLangToggleAuth?.addEventListener('click', () => applyAdminLang(adminLang === 'bg' ? 'en' : 'bg'));
   adminLangToggleEditor?.addEventListener('click', () => applyAdminLang(adminLang === 'bg' ? 'en' : 'bg'));
   applyAdminLang(adminLang, false);
-  loadRestaurants();
+
+  (async () => {
+    const restored = await restoreSessionIfPossible();
+    if (!restored) {
+      showCredentialsUi();
+    }
+  })();
 })();

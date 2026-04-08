@@ -120,7 +120,7 @@ window.__eMenuStory = {
 /** High-level page bucket for Explorations (path-based, no PII). */
 function inferPageKind() {
   const raw = (window.location.pathname || '/').replace(/\/index\.html$/i, '/');
-  if (raw.includes('/admin')) return 'admin';
+  if (raw.includes('/admin') || /\/m(\/|$)/.test(raw)) return 'admin';
   if (raw === '/' || raw === '') return 'landing';
   return 'menu';
 }
@@ -166,7 +166,7 @@ const LAST_RESTAURANT_SESSION_KEY = 'e_menu_last_restaurant_id_v1';
 
 function inferRestaurantScope() {
   const raw = (window.location.pathname || '/').replace(/\/index\.html$/i, '/');
-  if (raw.includes('/admin')) return 'admin';
+  if (raw.includes('/admin') || /\/m(\/|$)/.test(raw)) return 'admin';
   if (raw === '/' || raw === '') return 'landing';
   return 'menu';
 }
@@ -174,7 +174,7 @@ function inferRestaurantScope() {
 function parseRestaurantSlugFromPath() {
   const parts = (window.location.pathname || '/').replace(/\/index\.html$/i, '/').split('/').filter(Boolean);
   if (!parts.length) return null;
-  if (parts[0] === 'admin') return null;
+  if (parts[0] === 'admin' || parts[0] === 'm') return null;
   return parts[0];
 }
 
