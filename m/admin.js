@@ -54,6 +54,7 @@
         'Open a workspace below. Labels are neutral (not public restaurant names).',
       superOnlyHint: 'No venues are linked to this account. You can still open Operations to manage users.',
       operationsLink: 'Operations',
+      logsDashboardLink: 'Telemetry logs',
       signOut: 'Sign out',
       workspacePrefix: 'Workspace',
       openEditor: 'Open editor',
@@ -110,6 +111,7 @@
       superOnlyHint:
         'Няма свързани обекти. Можеш да отвориш Operations за управление на потребители.',
       operationsLink: 'Операции',
+      logsDashboardLink: 'Телеметрия (логове)',
       signOut: 'Изход',
       workspacePrefix: 'Профил',
       openEditor: 'Отвори редактора',
@@ -341,6 +343,7 @@
   const superOnlyHint = document.getElementById('superOnlyHint');
   const venueTabStrip = document.getElementById('venueTabStrip');
   const superOpsLink = document.getElementById('superOpsLink');
+  const logsDashboardLink = document.getElementById('logsDashboardLink');
   const authSignOutBtn = document.getElementById('authSignOutBtn');
   const authSignInBtn = document.getElementById('authSignInBtn');
   const editorVenueStrip = document.getElementById('editorVenueStrip');
@@ -408,6 +411,7 @@
     const logo = document.getElementById('authLogoText');
     if (logo) logo.textContent = adminLang === 'bg' ? 'Съдържание' : 'Content';
     setText('superOpsLink', 'operationsLink');
+    setText('logsDashboardLink', 'logsDashboardLink');
     setText('authSignOutBtn', 'signOut');
     // section headings
     const nameTitle = document.getElementById('infoSectionNameTitle'); if (nameTitle) nameTitle.textContent = adminLang === 'bg' ? 'Имена' : 'Name';
@@ -549,6 +553,11 @@
     authCredentialsBlock?.classList.add('hidden');
     postAuthPanel?.classList.remove('hidden');
     if (superOpsLink) superOpsLink.classList.toggle('hidden', !sessionSuperAdmin);
+    if (logsDashboardLink) {
+      logsDashboardLink.classList.toggle('hidden', !sessionSuperAdmin);
+      const apiBase = getMenuApiBase();
+      logsDashboardLink.href = apiBase ? `${apiBase}/ui` : '#';
+    }
     if (superOnlyHint) {
       superOnlyHint.classList.toggle('hidden', scopedRestaurantIds.length > 0);
       superOnlyHint.textContent = tr('superOnlyHint');
@@ -565,7 +574,15 @@
     }
   }
 
-  function signOutSession() {
+  async function signOutSession() {
+    const apiBase = getMenuApiBase();
+    if (apiBase) {
+      try {
+        await fetch(`${apiBase}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (_) {
+        /* ignore */
+      }
+    }
     clearAuthToken();
     sessionSuperAdmin = false;
     scopedRestaurantIds = [];
@@ -778,7 +795,9 @@
       loginRes = await fetch(`${base}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password: pw })
+        body: JSON.stringify({ username, password: pw }),
+        /* Required for cross-origin login: browser stores HttpOnly MT_ACCESS_TOKEN on the API host (telemetry /ui). */
+        credentials: 'include'
       });
     } catch (err) {
       showToast((adminLang === 'bg' ? 'Мрежова грешка: ' : 'Network error: ') + (err.message || ''), 'error');

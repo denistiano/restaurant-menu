@@ -70,7 +70,8 @@
     return fetch(base + path, {
       method: opts.method || 'GET',
       headers: headers,
-      body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.body
+      body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.body,
+      credentials: 'include'
     });
   }
 
@@ -98,6 +99,11 @@
       }
       el('suLogin').classList.add('su-hidden');
       el('suMain').classList.remove('su-hidden');
+      var logsA = el('suLogsLink');
+      if (logsA) {
+        var b = getMenuApiBase();
+        logsA.href = b ? b + '/ui' : '#';
+      }
       return refreshList().then(function () {
         return true;
       });
@@ -306,7 +312,8 @@
     fetch(base + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username, password: password })
+      body: JSON.stringify({ username: username, password: password }),
+      credentials: 'include'
     })
       .then(function (res) {
         if (!res.ok) {
@@ -335,9 +342,17 @@
   });
 
   el('suLogoutBtn').addEventListener('click', function () {
-    clearToken();
-    el('suMain').classList.add('su-hidden');
-    el('suLogin').classList.remove('su-hidden');
+    var base = getMenuApiBase();
+    function done() {
+      clearToken();
+      el('suMain').classList.add('su-hidden');
+      el('suLogin').classList.remove('su-hidden');
+    }
+    if (base) {
+      fetch(base + '/api/auth/logout', { method: 'POST', credentials: 'include' }).finally(done);
+    } else {
+      done();
+    }
   });
 
   el('suRefreshBtn').addEventListener('click', function () {
