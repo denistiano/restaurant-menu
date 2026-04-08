@@ -76,11 +76,12 @@
     if (opts.json !== undefined) headers['Content-Type'] = 'application/json';
     var t = getToken();
     if (t) headers['Authorization'] = 'Bearer ' + t;
+    /* Omit credentials: Operations uses Bearer only. Including cookies requires
+       Access-Control-Allow-Credentials: true on /api/** — our API only enables that for /api/auth/login|logout. */
     return fetch(base + path, {
       method: opts.method || 'GET',
       headers: headers,
-      body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.body,
-      credentials: 'include'
+      body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.body
     });
   }
 
