@@ -121,8 +121,8 @@
       return res.json().then(function (users) {
         var tbody = el('suTbody');
         tbody.innerHTML = '';
-        for (var i = 0; i < users.length; i++) {
-          var u = users[i];
+        /* forEach + .bind: a `for` loop with `var u` made every row's Setup link / Delete target the last user. */
+        users.forEach(function (u) {
           var tr = document.createElement('tr');
           var venues = (u.assignments || [])
             .map(function (a) {
@@ -150,20 +150,16 @@
           linkBtn.className = 'su-btn';
           linkBtn.textContent = 'Setup link';
           linkBtn.title = 'Generate URL + QR for password set/reset';
-          linkBtn.addEventListener('click', function () {
-            generateSetupLink(u.id);
-          });
+          linkBtn.addEventListener('click', generateSetupLink.bind(null, u.id));
           var delBtn = document.createElement('button');
           delBtn.className = 'su-btn su-btn--danger';
           delBtn.textContent = 'Delete';
-          delBtn.addEventListener('click', function () {
-            deleteUser(u.id, u.username);
-          });
+          delBtn.addEventListener('click', deleteUser.bind(null, u.id, u.username));
           cell.appendChild(editBtn);
           cell.appendChild(linkBtn);
           cell.appendChild(delBtn);
           tbody.appendChild(tr);
-        }
+        });
       });
     });
   }
