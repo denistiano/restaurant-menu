@@ -836,6 +836,116 @@
     if (triggerBtn) triggerBtn.disabled = false;
   }
 
+  /**
+   * API (mt-server) persists menu items as string `quantity` + string `unit` (metric code, e.g. grams).
+   * This admin UI edits `item.quantity = { value, metric }` for compatibility with the public menu (restaurant.js).
+   * Convert API → editor shape after load, and editor → API shape in buildMenuPayloadForApi() before PUT.
+   */
+  function resolveMetricCodeFromApi(rawU) {
+    if (rawU == null || rawU === '') return undefined;
+    if (typeof rawU === 'string') {
+      const s = rawU.trim();
+      if (!s) return undefined;
+      if (quantityMetrics.some(m => m.code === s)) return s;
+      const hit = quantityMetrics.find(m => m.label && (m.label.en === s || m.label.bg === s));
+      return hit ? hit.code : s;
+    }
+    if (typeof rawU === 'object') {
+      const en = rawU.en != null ? String(rawU.en).trim() : '';
+      const bg = rawU.bg != null ? String(rawU.bg).trim() : '';
+      const byCode = quantityMetrics.find(m => m.code === en || m.code === bg);
+      if (byCode) return byCode.code;
+      const byLabel = quantityMetrics.find(
+        m => m.label && (m.label.en === en || m.label.en === bg || m.label.bg === en || m.label.bg === bg)
+      );
+      return byLabel ? byLabel.code : en || bg || undefined;
+    }
+    return undefined;
+  }
+
+  function normalizeItemQuantityFromApi(item) {
+    if (!item || typeof item !== 'object') return;
+    if (
+      item.quantity &&
+      typeof item.quantity === 'object' &&
+      !Array.isArray(item.quantity) &&
+      ('value' in item.quantity || 'metric' in item.quantity)
+    ) {
+      delete item.unit;
+      return;
+    }
+
+    let value;
+    const rawQ = item.quantity;
+    const rawU = item.unit;
+
+    if (typeof rawQ === 'number' && !Number.isNaN(rawQ)) {
+      value = rawQ;
+    } else if (typeof rawQ === 'string' && rawQ.trim()) {
+      const n = parseFloat(rawQ.replace(',', '.'));
+      if (!Number.isNaN(n)) value = n;
+    } else if (rawQ && typeof rawQ === 'object') {
+      const en = rawQ.en != null ? String(rawQ.en).trim() : '';
+      const bg = rawQ.bg != null ? String(rawQ.bg).trim() : '';
+      const s = en || bg;
+      if (s) {
+        const n = parseFloat(s.replace(',', '.'));
+        if (!Number.isNaN(n)) value = n;
+      }
+    }
+
+    const metric = resolveMetricCodeFromApi(rawU);
+
+    delete item.quantity;
+    delete item.unit;
+
+    if (value != null && value !== '' && !Number.isNaN(value) && value !== 0) {
+      item.quantity = { value };
+      if (metric) item.quantity.metric = metric;
+    } else if (metric) {
+      item.quantity = { metric };
+    }
+  }
+
+  function normalizeAllMenuItemsQuantityFromApi(menuData) {
+    const cats = menuData && menuData.restaurant && menuData.restaurant.menu && menuData.restaurant.menu.categories;
+    if (!cats) return;
+    cats.forEach(cat => (cat.items || []).forEach(normalizeItemQuantityFromApi));
+  }
+
+  function formatQuantityForApi(n) {
+    if (n == null || Number.isNaN(Number(n))) return '';
+    const num = Number(n);
+    if (Math.abs(num - Math.round(num)) < 1e-9) return String(Math.round(num));
+    let s = String(num);
+    s = s.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+    return s;
+  }
+
+  function buildMenuPayloadForApi(menuData) {
+    const payload = JSON.parse(JSON.stringify(menuData));
+    const cats = payload && payload.restaurant && payload.restaurant.menu && payload.restaurant.menu.categories;
+    if (!cats) return payload;
+    cats.forEach(cat => {
+      (cat.items || []).forEach(item => {
+        const q = item.quantity;
+        if (q && typeof q === 'object' && !Array.isArray(q) && ('value' in q || 'metric' in q)) {
+          const val = q.value;
+          const metric = q.metric != null ? String(q.metric).trim() : '';
+          delete item.quantity;
+          delete item.unit;
+          if (val != null && val !== '' && !Number.isNaN(Number(val)) && Number(val) !== 0) {
+            item.quantity = formatQuantityForApi(Number(val));
+          }
+          if (metric) {
+            item.unit = metric;
+          }
+        }
+      });
+    });
+    return payload;
+  }
+
   /* ── LOAD MENU FROM BACKEND (JPA) ───────────────────────── */
   async function loadAndOpenEditor() {
     saveBtn.disabled = true;
@@ -864,6 +974,7 @@
       menuData = wrapper.record;
       if (!menuData || !menuData.restaurant) throw new Error('Empty menu payload');
       currentRestaurant = menuData.restaurant;
+      normalizeAllMenuItemsQuantityFromApi(menuData);
       openEditor();
     } catch (err) {
       adminTrack('admin_menu_load_fail', {
@@ -2156,15 +2267,19 @@
     }
 
     try {
+      const payload = buildMenuPayloadForApi(menuData);
       const res = await fetch(`${getMenuApiBase()}/api/admin/menu/${encodeURIComponent(r.id)}`, {
         method: 'PUT',
         headers: authJsonHeaders(),
-        body: JSON.stringify(menuData)
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || err.error || `HTTP ${res.status}`);
+        const detail = [err.message, err.error, Array.isArray(err.details) ? err.details.join('; ') : '']
+          .filter(Boolean)
+          .join(' — ');
+        throw new Error(detail || `HTTP ${res.status}`);
       }
 
       const cacheVersion = 'v3';

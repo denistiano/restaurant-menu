@@ -1531,6 +1531,81 @@
   }
 
   /* ============================================================
+     QUANTITY / UNIT (API uses flat strings; UI expects { value, metric })
+     ============================================================ */
+  function resolveMetricCodeForPublic(rawU) {
+    if (rawU == null || rawU === '') return undefined;
+    if (typeof rawU === 'string') {
+      const s = rawU.trim();
+      if (!s) return undefined;
+      if (quantityMetrics.some(m => m.code === s)) return s;
+      const hit = quantityMetrics.find(m => m.label && (m.label.en === s || m.label.bg === s));
+      return hit ? hit.code : s;
+    }
+    if (typeof rawU === 'object') {
+      const en = rawU.en != null ? String(rawU.en).trim() : '';
+      const bg = rawU.bg != null ? String(rawU.bg).trim() : '';
+      const byCode = quantityMetrics.find(m => m.code === en || m.code === bg);
+      if (byCode) return byCode.code;
+      const byLabel = quantityMetrics.find(
+        m => m.label && (m.label.en === en || m.label.en === bg || m.label.bg === en || m.label.bg === bg)
+      );
+      return byLabel ? byLabel.code : en || bg || undefined;
+    }
+    return undefined;
+  }
+
+  function normalizeItemQuantityForPublic(item) {
+    if (!item || typeof item !== 'object') return;
+    if (
+      item.quantity &&
+      typeof item.quantity === 'object' &&
+      !Array.isArray(item.quantity) &&
+      ('value' in item.quantity || 'metric' in item.quantity)
+    ) {
+      delete item.unit;
+      return;
+    }
+
+    let value;
+    const rawQ = item.quantity;
+    const rawU = item.unit;
+
+    if (typeof rawQ === 'number' && !Number.isNaN(rawQ)) {
+      value = rawQ;
+    } else if (typeof rawQ === 'string' && rawQ.trim()) {
+      const n = parseFloat(rawQ.replace(',', '.'));
+      if (!Number.isNaN(n)) value = n;
+    } else if (rawQ && typeof rawQ === 'object') {
+      const en = rawQ.en != null ? String(rawQ.en).trim() : '';
+      const bg = rawQ.bg != null ? String(rawQ.bg).trim() : '';
+      const s = en || bg;
+      if (s) {
+        const n = parseFloat(s.replace(',', '.'));
+        if (!Number.isNaN(n)) value = n;
+      }
+    }
+
+    const metric = resolveMetricCodeForPublic(rawU);
+
+    delete item.quantity;
+    delete item.unit;
+
+    if (value != null && value !== '' && !Number.isNaN(value) && value !== 0) {
+      item.quantity = { value };
+      if (metric) item.quantity.metric = metric;
+    } else if (metric) {
+      item.quantity = { metric };
+    }
+  }
+
+  function normalizeRecordQuantityForPublic(record) {
+    const cats = record && record.restaurant && record.restaurant.menu && record.restaurant.menu.categories;
+    if (!cats) return;
+    cats.forEach(cat => (cat.items || []).forEach(normalizeItemQuantityForPublic));
+  }
+
+  /* ============================================================
      BUILD PAGE STRUCTURE
      ============================================================ */
   function buildPage(restaurant) {
@@ -1820,6 +1895,7 @@
           }
         } catch (_) { /* ignore */ }
       }
+      normalizeRecordQuantityForPublic(data);
       buildPage(data.restaurant);
       startMenuRevisionPolling();
       return;
@@ -1870,6 +1946,7 @@
         } catch (_) { /* optional metadata */ }
       }
 
+      normalizeRecordQuantityForPublic(rawData);
       cacheSet(MENU_KEY, rawData, serverRev);
       console.debug(`[menu] fetched & cached for 1 h (revision ${serverRev})`);
 
@@ -1886,6 +1963,7 @@
         console.debug(`[menu] serving stale cache (age ${Math.round(stale.age_ms / 60000)} min)`);
         data = stale.value;
         if (!currentLang) currentLang = data.restaurant.default_language || 'en';
+        normalizeRecordQuantityForPublic(data);
         buildPage(data.restaurant);
         setTimeout(() => {
           const banner = document.createElement('div');
