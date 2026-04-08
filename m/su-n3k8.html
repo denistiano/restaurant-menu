@@ -27,7 +27,20 @@
     .su-back:hover { color: var(--accent); }
     .su-err { color: var(--danger); font-size: 13px; margin-top: 8px; }
     .su-hidden { display: none !important; }
+    .su-modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .su-modal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      max-width: 520px; width: 100%; max-height: 90vh; overflow: auto; padding: 20px;
+    }
+    .su-modal__title { font-family: var(--font-serif); font-size: 1.15rem; margin-bottom: 12px; }
+    .su-modal__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    #suQrCanvas { display: block; margin: 12px auto; border-radius: 8px; background: #fff; padding: 8px; }
+    .su-url-field { width: 100%; font-size: 12px; padding: 8px; word-break: break-all; font-family: ui-monospace, monospace; }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="su-wrap">
@@ -50,7 +63,7 @@
 
     <div id="suMain" class="su-hidden">
       <h1 class="su-h1">Users</h1>
-      <p class="su-muted">Create and edit API accounts. Assign venues as <code>restaurantId:ADMIN</code> or <code>restaurantId:EDITOR</code> (one per line).</p>
+      <p class="su-muted">Create and edit API accounts. Assign venues as <code>restaurantId:ADMIN</code> or <code>restaurantId:EDITOR</code> (one per line). Use <strong>Setup link</strong> for a QR + URL so staff can set their password without you knowing it.</p>
       <button type="button" class="su-btn" id="suRefreshBtn">Refresh list</button>
       <button type="button" class="su-btn su-btn--danger" id="suLogoutBtn">Sign out</button>
 
@@ -77,8 +90,8 @@
           <input id="suNewUser" type="text" />
         </div>
         <div class="su-field">
-          <label for="suNewPass">Password (min 8)</label>
-          <input id="suNewPass" type="password" />
+          <label for="suNewPass">Password (min 8, optional)</label>
+          <input id="suNewPass" type="password" placeholder="Leave empty → invite link only" />
         </div>
         <div class="su-field">
           <label><input type="checkbox" id="suNewEn" checked /> Enabled</label>
@@ -92,6 +105,50 @@
         </div>
         <button type="button" class="su-btn su-btn--primary" id="suCreateBtn">Create</button>
         <p class="su-err su-hidden" id="suCreateErr"></p>
+      </div>
+    </div>
+
+    <div id="suEditBackdrop" class="su-modal-backdrop su-hidden" aria-hidden="true">
+      <div class="su-modal" role="dialog" aria-labelledby="suEditTitle">
+        <h2 class="su-modal__title" id="suEditTitle">Edit user</h2>
+        <p class="su-muted" id="suEditUsername"></p>
+        <div class="su-field">
+          <label><input type="checkbox" id="suEditEn" /> Enabled</label>
+        </div>
+        <div class="su-field">
+          <label><input type="checkbox" id="suEditSuper" /> Super administrator</label>
+        </div>
+        <div class="su-field">
+          <label for="suEditAssign">Venue assignments (one per line)</label>
+          <textarea id="suEditAssign" placeholder="retur:ADMIN"></textarea>
+        </div>
+        <div class="su-field">
+          <label for="suEditPass">New password (optional)</label>
+          <input id="suEditPass" type="password" autocomplete="new-password" placeholder="Min 8 if set" />
+        </div>
+        <div class="su-field">
+          <label for="suEditPass2">Confirm password</label>
+          <input id="suEditPass2" type="password" autocomplete="new-password" />
+        </div>
+        <p class="su-err su-hidden" id="suEditErr"></p>
+        <div class="su-modal__actions">
+          <button type="button" class="su-btn su-btn--primary" id="suEditSave">Save</button>
+          <button type="button" class="su-btn" id="suEditCancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="suLinkBackdrop" class="su-modal-backdrop su-hidden" aria-hidden="true">
+      <div class="su-modal" role="dialog" aria-labelledby="suLinkTitle">
+        <h2 class="su-modal__title" id="suLinkTitle">Password setup link</h2>
+        <p class="su-muted">Share once. Previous unused links for this user are invalidated. Scan or copy:</p>
+        <input type="text" readonly class="su-url-field" id="suLinkUrl" />
+        <div class="su-modal__actions">
+          <button type="button" class="su-btn su-btn--primary" id="suLinkCopy">Copy URL</button>
+          <button type="button" class="su-btn" id="suLinkClose">Close</button>
+        </div>
+        <canvas id="suQrCanvas" width="216" height="216" aria-label="QR code"></canvas>
+        <p class="su-muted" id="suLinkExpires"></p>
       </div>
     </div>
   </div>

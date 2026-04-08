@@ -1,20 +1,27 @@
 (function () {
   'use strict';
 
-  const TOKEN_KEY = 'menu_admin_jwt';
-  const DEFAULT_LOCAL = 'http://127.0.0.1:8080';
+  var TOKEN_KEY = 'menu_admin_jwt';
+  var DEFAULT_LOCAL = 'http://127.0.0.1:8080';
 
   function getMenuApiBase() {
-    const w = typeof window !== 'undefined' && window.__MENU_API_BASE__;
+    var w = typeof window !== 'undefined' && window.__MENU_API_BASE__;
     if (w && typeof w === 'string' && w.trim()) return w.trim().replace(/\/?$/, '');
-    const meta = document.querySelector('meta[name="menu-api-base"]');
+    var meta = document.querySelector('meta[name="menu-api-base"]');
     if (meta) {
-      const c = meta.getAttribute('content');
+      var c = meta.getAttribute('content');
       if (c && c.trim()) return c.trim().replace(/\/?$/, '');
     }
-    const h = typeof location !== 'undefined' ? location.hostname : '';
+    var h = typeof location !== 'undefined' ? location.hostname : '';
     if (h === 'localhost' || h === '127.0.0.1' || h === '') return DEFAULT_LOCAL;
     return '';
+  }
+
+  function buildPasswordSetupPageUrl(rawToken) {
+    var u = new URL(location.href);
+    var basePath = u.pathname.replace(/[^/]+$/, '');
+    var path = basePath + 'set-password.html?t=' + encodeURIComponent(rawToken);
+    return u.origin + path;
   }
 
   function getToken() {
@@ -30,96 +37,71 @@
   }
 
   function parseAssignments(text) {
-    const out = [];
+    var out = [];
     if (!text || !text.trim()) return out;
-    for (const line of text.split('\n')) {
-      const t = line.trim();
-      if (!t || t.startsWith('#')) continue;
-      const idx = t.indexOf(':');
+    var lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line || line.charAt(0) === '#') continue;
+      var idx = line.indexOf(':');
       if (idx < 1) continue;
-      const rid = t.slice(0, idx).trim();
-      const role = t.slice(idx + 1).trim().toUpperCase();
+      var rid = line.slice(0, idx).trim();
+      var role = line.slice(idx + 1).trim().toUpperCase();
       if (!rid || (role !== 'ADMIN' && role !== 'EDITOR')) continue;
-      out.push({ restaurantId: rid, role });
+      out.push({ restaurantId: rid, role: role });
     }
     return out;
   }
 
   function formatAssignments(assignments) {
     if (!assignments || !assignments.length) return '';
-    return assignments.map(a => `${a.restaurantId}:${a.role}`).join('\n');
+    return assignments.map(function (a) { return a.restaurantId + ':' + a.role; }).join('\n');
   }
 
-  async function api(path, opts = {}) {
-    const base = getMenuApiBase();
-    if (!base) throw new Error('menu-api-base not set');
-    const headers = { ...opts.headers };
-    if (opts.json !== undefined) {
-      headers['Content-Type'] = 'application/json';
-    }
-    const t = getToken();
+  function api(path, opts) {
+    opts = opts || {};
+    var base = getMenuApiBase();
+    if (!base) return Promise.reject(new Error('menu-api-base not set'));
+    var headers = {};
+    for (var k in opts.headers) headers[k] = opts.headers[k];
+    if (opts.json !== undefined) headers['Content-Type'] = 'application/json';
+    var t = getToken();
     if (t) headers['Authorization'] = 'Bearer ' + t;
-    const res = await fetch(base + path, {
-      ...opts,
-      headers,
+    return fetch(base + path, {
+      method: opts.method || 'GET',
+      headers: headers,
       body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.body
     });
-    return res;
   }
 
-  const el = id => document.getElementById(id);
-
-  async function verifySuper() {
-    const res = await api('/api/auth/me');
-    if (!res.ok) return false;
-    const me = await res.json();
-    return !!me.superAdmin;
+  function el(id) {
+    return document.getElementById(id);
   }
 
-  async function showMainIfSuper() {
-    if (!getToken()) return false;
-    if (!(await verifySuper())) {
-      clearToken();
-      return false;
-    }
-    el('suLogin').classList.add('su-hidden');
-    el('suMain').classList.remove('su-hidden');
-    await refreshList();
-    return true;
+  var editTargetUser = null;
+
+  function verifySuper() {
+    return api('/api/auth/me').then(function (res) {
+      if (!res.ok) return false;
+      return res.json().then(function (me) {
+        return !!me.superAdmin;
+      });
+    });
   }
 
-  async function refreshList() {
-    const res = await api('/api/super/users');
-    if (!res.ok) {
-      alert('Failed to load users: HTTP ' + res.status);
-      return;
-    }
-    const users = await res.json();
-    const tbody = el('suTbody');
-    tbody.innerHTML = '';
-    for (const u of users) {
-      const tr = document.createElement('tr');
-      const venues = (u.assignments || []).map(a => `${a.restaurantId}:${a.role}`).join(', ') || '—';
-      tr.innerHTML = `
-        <td>${u.id}</td>
-        <td>${escapeHtml(u.username)}</td>
-        <td>${u.enabled ? 'yes' : 'no'}</td>
-        <td>${u.superAdmin ? 'yes' : 'no'}</td>
-        <td style="max-width:220px;word-break:break-all">${escapeHtml(venues)}</td>
-        <td class="su-actions"></td>`;
-      const cell = tr.querySelector('.su-actions');
-      const editBtn = document.createElement('button');
-      editBtn.className = 'su-btn';
-      editBtn.textContent = 'Edit';
-      editBtn.addEventListener('click', () => openEdit(u));
-      const delBtn = document.createElement('button');
-      delBtn.className = 'su-btn su-btn--danger';
-      delBtn.textContent = 'Delete';
-      delBtn.addEventListener('click', () => deleteUser(u.id, u.username));
-      cell.appendChild(editBtn);
-      cell.appendChild(delBtn);
-      tbody.appendChild(tr);
-    }
+  function showMainIfSuper() {
+    if (!getToken()) return Promise.resolve(false);
+    return verifySuper().then(function (ok) {
+      if (!ok) {
+        clearToken();
+        return false;
+      }
+      el('suLogin').classList.add('su-hidden');
+      el('suMain').classList.remove('su-hidden');
+      return refreshList().then(function () {
+        return true;
+      });
+    });
   }
 
   function escapeHtml(s) {
@@ -130,133 +112,279 @@
       .replace(/"/g, '&quot;');
   }
 
-  function openEdit(u) {
-    const pwd = prompt('New password (leave empty to keep current, min 8 if set):');
-    if (pwd === null) return;
-    const en = confirm('User enabled?');
-    const sup = confirm('Super administrator?');
-    const assignText = prompt('Venue assignments (one per line, retur:ADMIN):', formatAssignments(u.assignments));
-    if (assignText === null) return;
-    const body = {
-      enabled: en,
-      superAdmin: sup,
-      assignments: parseAssignments(assignText)
-    };
-    const pwTrim = pwd.trim();
-    if (pwTrim) {
-      if (pwTrim.length < 8) {
-        alert('Password must be at least 8 characters.');
-        return;
-      }
-      body.password = pwTrim;
-    }
-    (async () => {
-      const res = await api(`/api/super/users/${u.id}`, { method: 'PUT', json: body });
+  function refreshList() {
+    return api('/api/super/users').then(function (res) {
       if (!res.ok) {
-        let msg = 'HTTP ' + res.status;
-        try {
-          const j = await res.json();
-          if (j.message) msg = j.message;
-        } catch (_) {}
-        alert(msg);
+        alert('Failed to load users: HTTP ' + res.status);
         return;
       }
-      await refreshList();
-    })();
+      return res.json().then(function (users) {
+        var tbody = el('suTbody');
+        tbody.innerHTML = '';
+        for (var i = 0; i < users.length; i++) {
+          var u = users[i];
+          var tr = document.createElement('tr');
+          var venues = (u.assignments || [])
+            .map(function (a) {
+              return a.restaurantId + ':' + a.role;
+            })
+            .join(', ') || '—';
+          tr.innerHTML =
+            '<td>' +
+            u.id +
+            '</td><td>' +
+            escapeHtml(u.username) +
+            '</td><td>' +
+            (u.enabled ? 'yes' : 'no') +
+            '</td><td>' +
+            (u.superAdmin ? 'yes' : 'no') +
+            '</td><td style="max-width:220px;word-break:break-all">' +
+            escapeHtml(venues) +
+            '</td><td class="su-actions"></td>';
+          var cell = tr.querySelector('.su-actions');
+          var editBtn = document.createElement('button');
+          editBtn.className = 'su-btn';
+          editBtn.textContent = 'Edit';
+          editBtn.addEventListener('click', openEditModal.bind(null, u));
+          var linkBtn = document.createElement('button');
+          linkBtn.className = 'su-btn';
+          linkBtn.textContent = 'Setup link';
+          linkBtn.title = 'Generate URL + QR for password set/reset';
+          linkBtn.addEventListener('click', function () {
+            generateSetupLink(u.id);
+          });
+          var delBtn = document.createElement('button');
+          delBtn.className = 'su-btn su-btn--danger';
+          delBtn.textContent = 'Delete';
+          delBtn.addEventListener('click', function () {
+            deleteUser(u.id, u.username);
+          });
+          cell.appendChild(editBtn);
+          cell.appendChild(linkBtn);
+          cell.appendChild(delBtn);
+          tbody.appendChild(tr);
+        }
+      });
+    });
   }
 
-  async function deleteUser(id, username) {
-    if (!confirm('Delete user ' + username + '?')) return;
-    const res = await api(`/api/super/users/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
-      alert('Delete failed: HTTP ' + res.status);
-      return;
+  function openEditModal(u) {
+    editTargetUser = u;
+    el('suEditUsername').textContent = 'Username: ' + u.username;
+    el('suEditEn').checked = !!u.enabled;
+    el('suEditSuper').checked = !!u.superAdmin;
+    el('suEditAssign').value = formatAssignments(u.assignments);
+    el('suEditPass').value = '';
+    el('suEditPass2').value = '';
+    el('suEditErr').classList.add('su-hidden');
+    el('suEditBackdrop').classList.remove('su-hidden');
+  }
+
+  function closeEditModal() {
+    editTargetUser = null;
+    el('suEditBackdrop').classList.add('su-hidden');
+  }
+
+  function saveEditModal() {
+    if (!editTargetUser) return;
+    var u = editTargetUser;
+    var p1 = el('suEditPass').value;
+    var p2 = el('suEditPass2').value;
+    var errEl = el('suEditErr');
+    errEl.classList.add('su-hidden');
+    if (p1 || p2) {
+      if (p1 !== p2) {
+        errEl.textContent = 'Passwords do not match.';
+        errEl.classList.remove('su-hidden');
+        return;
+      }
+      if (p1.length < 8) {
+        errEl.textContent = 'Password must be at least 8 characters.';
+        errEl.classList.remove('su-hidden');
+        return;
+      }
     }
-    await refreshList();
+    var body = {
+      enabled: el('suEditEn').checked,
+      superAdmin: el('suEditSuper').checked,
+      assignments: parseAssignments(el('suEditAssign').value)
+    };
+    var pwTrim = p1.trim();
+    if (pwTrim) body.password = pwTrim;
+    api('/api/super/users/' + u.id, { method: 'PUT', json: body }).then(function (res) {
+      if (!res.ok) {
+        var msg = 'HTTP ' + res.status;
+        return res.json().then(function (j) {
+          if (j.message) msg = j.message;
+          errEl.textContent = msg;
+          errEl.classList.remove('su-hidden');
+        }).catch(function () {
+          errEl.textContent = msg;
+          errEl.classList.remove('su-hidden');
+        });
+      }
+      closeEditModal();
+      return refreshList();
+    });
   }
 
-  el('suLoginBtn').addEventListener('click', async () => {
-    const username = el('suUser').value.trim();
-    const password = el('suPass').value;
-    const err = el('suLoginErr');
+  function generateSetupLink(userId) {
+    api('/api/super/users/' + userId + '/password-setup-token', { method: 'POST' }).then(function (res) {
+      if (!res.ok) {
+        alert('Failed to create link: HTTP ' + res.status);
+        return;
+      }
+      return res.json().then(function (data) {
+        var fullUrl = buildPasswordSetupPageUrl(data.token);
+        el('suLinkUrl').value = fullUrl;
+        var exp = data.expiresAt ? new Date(data.expiresAt) : null;
+        el('suLinkExpires').textContent = exp ? 'Expires: ' + exp.toLocaleString() : '';
+        el('suLinkBackdrop').classList.remove('su-hidden');
+        if (typeof QRious !== 'undefined') {
+          new QRious({
+            element: el('suQrCanvas'),
+            value: fullUrl,
+            size: 200,
+            background: '#ffffff',
+            foreground: '#000000'
+          });
+        }
+      });
+    });
+  }
+
+  function closeLinkModal() {
+    el('suLinkBackdrop').classList.add('su-hidden');
+  }
+
+  function deleteUser(id, username) {
+    if (!confirm('Delete user ' + username + '?')) return;
+    api('/api/super/users/' + id, { method: 'DELETE' }).then(function (res) {
+      if (!res.ok) {
+        alert('Delete failed: HTTP ' + res.status);
+        return;
+      }
+      refreshList();
+    });
+  }
+
+  el('suLinkCopy').addEventListener('click', function () {
+    var v = el('suLinkUrl').value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(v).catch(function () {
+        el('suLinkUrl').select();
+        document.execCommand('copy');
+      });
+    } else {
+      el('suLinkUrl').select();
+      document.execCommand('copy');
+    }
+  });
+
+  el('suLinkClose').addEventListener('click', closeLinkModal);
+  el('suEditCancel').addEventListener('click', closeEditModal);
+  el('suEditSave').addEventListener('click', saveEditModal);
+  el('suEditBackdrop').addEventListener('click', function (e) {
+    if (e.target === el('suEditBackdrop')) closeEditModal();
+  });
+  el('suLinkBackdrop').addEventListener('click', function (e) {
+    if (e.target === el('suLinkBackdrop')) closeLinkModal();
+  });
+
+  el('suLoginBtn').addEventListener('click', function () {
+    var username = el('suUser').value.trim();
+    var password = el('suPass').value;
+    var err = el('suLoginErr');
     err.classList.add('su-hidden');
     if (!username || !password) {
       err.textContent = 'Enter username and password.';
       err.classList.remove('su-hidden');
       return;
     }
-    const base = getMenuApiBase();
+    var base = getMenuApiBase();
     if (!base) {
       err.textContent = 'Set menu-api-base meta.';
       err.classList.remove('su-hidden');
       return;
     }
-    try {
-      const res = await fetch(base + '/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+    fetch(base + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    })
+      .then(function (res) {
+        if (!res.ok) {
+          err.textContent = 'Invalid credentials.';
+          err.classList.remove('su-hidden');
+          return null;
+        }
+        return res.json();
+      })
+      .then(function (body) {
+        if (!body) return;
+        setToken(body.accessToken);
+        if (!body.superAdmin) {
+          clearToken();
+          err.textContent = 'Not a super administrator.';
+          err.classList.remove('su-hidden');
+          return;
+        }
+        el('suPass').value = '';
+        showMainIfSuper();
+      })
+      .catch(function (e) {
+        err.textContent = e.message || 'Network error';
+        err.classList.remove('su-hidden');
       });
-      if (!res.ok) {
-        err.textContent = 'Invalid credentials.';
-        err.classList.remove('su-hidden');
-        return;
-      }
-      const body = await res.json();
-      setToken(body.accessToken);
-      if (!body.superAdmin) {
-        clearToken();
-        err.textContent = 'Not a super administrator.';
-        err.classList.remove('su-hidden');
-        return;
-      }
-      el('suPass').value = '';
-      await showMainIfSuper();
-    } catch (e) {
-      err.textContent = e.message || 'Network error';
-      err.classList.remove('su-hidden');
-    }
   });
 
-  el('suLogoutBtn').addEventListener('click', () => {
+  el('suLogoutBtn').addEventListener('click', function () {
     clearToken();
     el('suMain').classList.add('su-hidden');
     el('suLogin').classList.remove('su-hidden');
   });
 
-  el('suRefreshBtn').addEventListener('click', () => refreshList());
+  el('suRefreshBtn').addEventListener('click', function () {
+    refreshList();
+  });
 
-  el('suCreateBtn').addEventListener('click', async () => {
-    const err = el('suCreateErr');
+  el('suCreateBtn').addEventListener('click', function () {
+    var err = el('suCreateErr');
     err.classList.add('su-hidden');
-    const username = el('suNewUser').value.trim();
-    const password = el('suNewPass').value;
-    const enabled = el('suNewEn').checked;
-    const superAdmin = el('suNewSuper').checked;
-    const assignments = parseAssignments(el('suNewAssign').value);
-    if (!username || password.length < 8) {
-      err.textContent = 'Username and password (min 8) required.';
+    var username = el('suNewUser').value.trim();
+    var passwordRaw = el('suNewPass').value;
+    var enabled = el('suNewEn').checked;
+    var superAdmin = el('suNewSuper').checked;
+    var assignments = parseAssignments(el('suNewAssign').value);
+    if (!username) {
+      err.textContent = 'Username required.';
       err.classList.remove('su-hidden');
       return;
     }
-    const res = await api('/api/super/users', {
-      method: 'POST',
-      json: { username, password, enabled, superAdmin, assignments }
+    if (passwordRaw.length > 0 && passwordRaw.length < 8) {
+      err.textContent = 'Password must be at least 8 characters or leave empty for invite-only.';
+      err.classList.remove('su-hidden');
+      return;
+    }
+    var json = { username: username, enabled: enabled, superAdmin: superAdmin, assignments: assignments };
+    if (passwordRaw.length >= 8) json.password = passwordRaw;
+    api('/api/super/users', { method: 'POST', json: json }).then(function (res) {
+      if (!res.ok) {
+        var msg = 'HTTP ' + res.status;
+        return res.json().then(function (j) {
+          if (j.message) msg = j.message;
+          err.textContent = msg;
+          err.classList.remove('su-hidden');
+        }).catch(function () {
+          err.textContent = msg;
+          err.classList.remove('su-hidden');
+        });
+      }
+      el('suNewUser').value = '';
+      el('suNewPass').value = '';
+      el('suNewAssign').value = '';
+      refreshList();
     });
-    if (!res.ok) {
-      let msg = 'HTTP ' + res.status;
-      try {
-        const j = await res.json();
-        if (j.message) msg = j.message;
-      } catch (_) {}
-      err.textContent = msg;
-      err.classList.remove('su-hidden');
-      return;
-    }
-    el('suNewUser').value = '';
-    el('suNewPass').value = '';
-    el('suNewAssign').value = '';
-    await refreshList();
   });
 
   showMainIfSuper();
