@@ -1,9 +1,9 @@
 {
   "menu_api_base": "https://tebeshir.online",
-  "base_url": "http://148.230.71.137/",
-  "site_name": "e-Menu",
-  "site_name_bg": "е-Меню",
-  "organization_name": "e-Menu",
+  "base_url": "https://emenu.click/",
+  "site_name": "emenu.click",
+  "site_name_bg": "еменю",
+  "organization_name": "emenu.click",
   "default_og_locale": "bg_BG",
   "alternate_og_locale": "en_US",
   "twitter_site": "",
