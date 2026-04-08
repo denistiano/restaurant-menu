@@ -3,118 +3,192 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Telemetry · Logs</title>
+  <title>Search · Telemetry</title>
   <link rel="icon" type="image/x-icon" href="../favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="admin.css" />
   <link rel="stylesheet" href="logs.css" />
   <meta name="menu-api-base" content="https://tebeshir.online" />
 </head>
-<body>
-  <div class="logs-wrap">
-    <a class="logs-back" href="index.html">← Back to admin</a>
+<body class="spl-body">
+  <div id="logsGate" class="spl-gate">
+    <div class="spl-gate__card">
+      <p class="spl-gate__brand">telemetry<span class="spl-gate__gt">&gt;</span>search</p>
+      <h1 class="spl-gate__title">Search &amp; reporting</h1>
+      <p id="logsGateText" class="spl-gate__msg">Checking access…</p>
+      <a class="spl-btn spl-btn--ghost" href="index.html">← Admin sign-in</a>
+    </div>
+  </div>
 
-    <div id="logsGate" class="logs-gate">
-      <h1>Telemetry</h1>
-      <p id="logsGateText">Checking access…</p>
-      <a class="logs-btn logs-btn--primary" href="index.html">Open admin sign-in</a>
+  <div id="logsMain" class="spl-shell hidden">
+    <header class="spl-topbar">
+      <div class="spl-topbar__left">
+        <span class="spl-logo">telemetry<span class="spl-logo__gt">&gt;</span><span class="spl-logo__sub">enterprise</span></span>
+        <a href="index.html" class="spl-topbar__link">← Admin</a>
+      </div>
+      <div class="spl-topbar__right">
+        <button type="button" class="spl-topbar__iconbtn" id="logsExportJson" title="Export JSON">⭳ JSON</button>
+        <button type="button" class="spl-topbar__iconbtn" id="logsExportCsv" title="Export CSV">⭳ CSV</button>
+        <button type="button" class="spl-topbar__iconbtn" id="logsMetricsBtn" title="Metrics API">Metrics</button>
+      </div>
+    </header>
+
+    <nav class="spl-subnav" aria-label="Primary">
+      <span class="spl-subnav__tab spl-subnav__tab--active" data-spl-tab="search">Search</span>
+      <span class="spl-subnav__tab spl-subnav__tab--disabled">Datasets</span>
+      <span class="spl-subnav__tab spl-subnav__tab--disabled">Reports</span>
+    </nav>
+
+    <div id="logsMetricsPanel" class="spl-drawer hidden">
+      <div class="spl-drawer__head">
+        <span>GET /api/v1/metrics/by-app</span>
+        <button type="button" class="spl-drawer__close" id="logsMetricsClose" aria-label="Close">×</button>
+      </div>
+      <pre id="logsMetricsOut" class="spl-drawer__pre"></pre>
     </div>
 
-    <div id="logsMain" class="hidden">
-      <header class="logs-header">
-        <div>
-          <h1>Telemetry console</h1>
-          <p>Search events via the API using your super-admin JWT. Exports use the same filters as the list (current query).</p>
-        </div>
-        <div class="logs-header__actions">
-          <button type="button" class="logs-btn logs-btn--small" id="logsMetricsBtn">Metrics (JSON)</button>
-        </div>
-      </header>
+    <div id="logsError" class="spl-banner spl-banner--err hidden"></div>
 
-      <div id="logsMetricsPanel" class="logs-card hidden" style="margin-bottom: 20px">
-        <strong style="font-size: 13px">GET /api/v1/metrics/by-app</strong>
-        <pre id="logsMetricsOut" class="logs-metrics-pre"></pre>
+    <form id="logsFilterForm" class="spl-search-block" autocomplete="off">
+      <div class="spl-search-row">
+        <label class="spl-visually-hidden" for="splMainSearch">Search</label>
+        <div class="spl-search-input-wrap">
+          <textarea
+            id="splMainSearch"
+            class="spl-search-input"
+            rows="2"
+            spellcheck="false"
+            placeholder='Keywords and key:value filters — e.g. app:myapp type:telemetry error (space-separated keywords search inside payload JSON)'
+          ></textarea>
+        </div>
+        <div class="spl-search-controls">
+          <label class="spl-visually-hidden" for="splTimeRange">Time range</label>
+          <select id="splTimeRange" class="spl-select spl-select--time">
+            <option value="all">All time</option>
+            <option value="15m">Last 15 minutes</option>
+            <option value="60m">Last 60 minutes</option>
+            <option value="24h">Last 24 hours</option>
+            <option value="7d">Last 7 days</option>
+            <option value="custom">Custom range…</option>
+          </select>
+          <button type="submit" class="spl-btn spl-btn--search" title="Run search" aria-label="Search">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zM16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
       </div>
 
-      <div id="logsError" class="logs-err hidden"></div>
+      <div id="splCustomTime" class="spl-custom-time hidden">
+        <div class="spl-custom-time__grid">
+          <div class="spl-field spl-field--inline">
+            <label for="filterFrom">Earliest (ISO-8601)</label>
+            <input id="filterFrom" name="from" type="text" placeholder="2026-01-01T00:00:00Z" />
+          </div>
+          <div class="spl-field spl-field--inline">
+            <label for="filterTo">Latest (ISO-8601)</label>
+            <input id="filterTo" name="to" type="text" />
+          </div>
+        </div>
+      </div>
 
-      <div class="logs-layout">
-        <aside class="logs-filters">
-          <h2>Filters</h2>
-          <form id="logsFilterForm">
-            <div class="logs-field">
-              <label for="filterApp">Application</label>
-              <input id="filterApp" name="app" type="text" autocomplete="off" placeholder="app id" />
-            </div>
-            <div class="logs-field">
-              <label for="filterSession">Session ID</label>
-              <input id="filterSession" name="sessionId" type="text" autocomplete="off" />
-            </div>
-            <div class="logs-field">
-              <label for="filterUser">User ID</label>
-              <input id="filterUser" name="userId" type="text" autocomplete="off" />
-            </div>
-            <div class="logs-field">
-              <label for="filterEventType">Event type</label>
-              <input id="filterEventType" name="eventType" type="text" autocomplete="off" />
-            </div>
-            <div class="logs-field">
-              <label for="filterEventName">Event name</label>
-              <input id="filterEventName" name="eventName" type="text" autocomplete="off" />
-            </div>
-            <div class="logs-field">
-              <label for="filterFrom">From (ISO-8601)</label>
-              <input id="filterFrom" name="from" type="text" autocomplete="off" placeholder="2026-01-01T00:00:00Z" />
-            </div>
-            <div class="logs-field">
-              <label for="filterTo">To (ISO-8601)</label>
-              <input id="filterTo" name="to" type="text" autocomplete="off" />
-            </div>
-            <div class="logs-field">
-              <label for="filterPayload">Payload contains</label>
-              <input id="filterPayload" name="payloadContains" type="text" autocomplete="off" />
-            </div>
-            <div id="logsJsonRows">
-              <div class="logs-field logs-json-row">
-                <label>JSON path</label>
-                <input type="text" class="logs-json-path" placeholder="$.field" autocomplete="off" />
-                <label style="margin-top: 8px">Equals</label>
-                <input type="text" class="logs-json-val" placeholder="value" autocomplete="off" />
-              </div>
-            </div>
-            <button type="button" class="logs-btn logs-btn--small" id="logsAddJsonRow" style="margin-bottom: 12px">+ JSON filter row</button>
-            <div class="logs-field">
-              <label for="filterSize">Page size</label>
-              <input id="filterSize" name="size" type="number" min="1" max="500" value="50" />
-            </div>
-            <div class="logs-field-row">
-              <button type="submit" class="logs-btn logs-btn--primary">Apply</button>
-            </div>
-          </form>
-          <div class="logs-export-row">
-            <span style="font-size: 11px; color: var(--muted); width: 100%; margin-bottom: 4px">Export (uses filters above)</span>
-            <button type="button" class="logs-btn logs-btn--small" id="logsExportJson">JSON</button>
-            <button type="button" class="logs-btn logs-btn--small" id="logsExportCsv">CSV</button>
+      <div class="spl-search-meta">
+        <span id="splJobStats" class="spl-job-stats">0 events</span>
+        <span id="splJobTiming" class="spl-job-timing"></span>
+        <button type="button" class="spl-linkbtn" id="splToggleAdvanced" aria-expanded="false">Advanced filters</button>
+      </div>
+
+      <div id="splAdvanced" class="spl-advanced hidden">
+        <div class="spl-advanced__grid">
+          <div class="spl-field"><label for="filterApp">Application</label><input id="filterApp" name="app" type="text" /></div>
+          <div class="spl-field"><label for="filterSession">Session ID</label><input id="filterSession" name="sessionId" type="text" /></div>
+          <div class="spl-field"><label for="filterUser">User ID</label><input id="filterUser" name="userId" type="text" /></div>
+          <div class="spl-field"><label for="filterEventType">Event type</label><input id="filterEventType" name="eventType" type="text" /></div>
+          <div class="spl-field"><label for="filterEventName">Event name</label><input id="filterEventName" name="eventName" type="text" /></div>
+          <div class="spl-field"><label for="filterPayload">Payload contains (also from search bar)</label><input id="filterPayload" name="payloadContains" type="text" /></div>
+          <div class="spl-field"><label for="filterSize">Events per page</label><input id="filterSize" name="size" type="number" min="1" max="500" value="50" /></div>
+        </div>
+        <div id="logsJsonRows" class="spl-json-rows">
+          <p class="spl-advanced__hint">JSON field filters (AND)</p>
+          <div class="spl-json-row logs-json-row">
+            <input type="text" class="logs-json-path spl-mono" placeholder="$.path" />
+            <input type="text" class="logs-json-val spl-mono" placeholder="value" />
+          </div>
+        </div>
+        <button type="button" class="spl-btn spl-btn--small spl-btn--ghost" id="logsAddJsonRow">+ Add JSON filter</button>
+      </div>
+    </form>
+
+    <div class="spl-results-head">
+      <div class="spl-result-tabs" role="tablist">
+        <button type="button" class="spl-result-tabs__btn spl-result-tabs__btn--active" data-result-tab="events" role="tab" aria-selected="true">Events</button>
+        <button type="button" class="spl-result-tabs__btn" data-result-tab="stats" role="tab" aria-selected="false">Statistics</button>
+        <button type="button" class="spl-result-tabs__btn spl-result-tabs__btn--disabled" disabled>Visualization</button>
+      </div>
+      <div class="spl-timeline-head">
+        <span class="spl-timeline-label">Timeline</span>
+        <button type="button" class="spl-linkbtn spl-linkbtn--tiny" id="splTimelineZoom" title="Reset zoom">Reset</button>
+      </div>
+    </div>
+
+    <div id="splTimeline" class="spl-timeline" aria-hidden="true">
+      <div id="splTimelineBars" class="spl-timeline__bars"></div>
+      <div class="spl-timeline__axis" id="splTimelineAxis"></div>
+    </div>
+
+    <div id="logsLoading" class="spl-loading hidden">
+      <div class="admin-spinner"></div>
+      <span>Searching…</span>
+    </div>
+
+    <div id="splPanelEvents" class="spl-panel">
+      <div class="spl-main-grid">
+        <aside class="spl-fields" aria-label="Fields">
+          <div class="spl-fields__section">
+            <h3 class="spl-fields__title">Selected fields</h3>
+            <ul id="splFieldsSelected" class="spl-fields__list"></ul>
+          </div>
+          <div class="spl-fields__section">
+            <h3 class="spl-fields__title">Interesting fields</h3>
+            <p class="spl-fields__hint">From this page — click a value to filter</p>
+            <ul id="splFieldsInteresting" class="spl-fields__list"></ul>
           </div>
         </aside>
 
-        <main>
-          <div id="logsLoading" class="logs-loading hidden">
-            <div class="admin-spinner"></div>
+        <div class="spl-events-wrap">
+          <p id="logsEmpty" class="spl-empty hidden">No events match your search.</p>
+          <div class="spl-table-wrap">
+            <table class="spl-events-table" id="splEventsTable" hidden>
+              <thead>
+                <tr>
+                  <th class="spl-col-exp"></th>
+                  <th class="spl-col-time">Time</th>
+                  <th class="spl-col-raw">Event</th>
+                </tr>
+              </thead>
+              <tbody id="logsList"></tbody>
+            </table>
           </div>
-          <div id="logsStats" class="logs-stats"></div>
-          <p id="logsEmpty" class="hidden" style="color: var(--muted); padding: 24px; text-align: center">No events match.</p>
-          <ul id="logsList" class="logs-list"></ul>
-          <nav class="logs-pager">
-            <button type="button" class="logs-btn" id="logsPrev">← Newer</button>
-            <span id="logsPagerMeta"></span>
-            <button type="button" class="logs-btn" id="logsNext">Older →</button>
+          <nav class="spl-pager" aria-label="Pagination">
+            <button type="button" class="spl-btn spl-btn--small spl-btn--ghost" id="logsPrev">← Newer</button>
+            <span id="logsPagerMeta" class="spl-pager__meta"></span>
+            <button type="button" class="spl-btn spl-btn--small spl-btn--ghost" id="logsNext">Older →</button>
           </nav>
-        </main>
+        </div>
+      </div>
+    </div>
+
+    <div id="splPanelStats" class="spl-panel hidden">
+      <div class="spl-stats-table-wrap">
+        <table class="spl-stats-table">
+          <thead>
+            <tr><th>Field</th><th>Count</th><th>Distinct (this page)</th></tr>
+          </thead>
+          <tbody id="splStatsBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
+
   <script src="logs.js" defer></script>
 </body>
 </html>

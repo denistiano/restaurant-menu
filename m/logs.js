@@ -1,6 +1,5 @@
 /**
- * Telemetry logs — GET /api/v1/logs with Bearer JWT (super admin).
- * Token: sessionStorage menu_admin_jwt or localStorage menu_admin_jwt_super_mirror.
+ * Splunk-style telemetry search — GET /api/v1/logs + Bearer JWT.
  */
 (function () {
   'use strict';
@@ -8,6 +7,19 @@
   var TOKEN_KEY = 'menu_admin_jwt';
   var SUPER_MIRROR_KEY = 'menu_admin_jwt_super_mirror';
   var DEFAULT_LOCAL_API = 'http://127.0.0.1:8080';
+
+  var KEY_ALIASES = {
+    app: 'app',
+    application: 'app',
+    session: 'sessionId',
+    sessionid: 'sessionId',
+    user: 'userId',
+    userid: 'userId',
+    type: 'eventType',
+    eventtype: 'eventType',
+    name: 'eventName',
+    eventname: 'eventName'
+  };
 
   function getMenuApiBase() {
     var w = typeof window !== 'undefined' && window.__MENU_API_BASE__;
@@ -28,6 +40,99 @@
     } catch (e) {
       return '';
     }
+  }
+
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  var state = { page: 0, filters: { size: 50 }, lastMs: 0, highlightTerms: [] };
+
+  function parseSearchBar(text) {
+    var kv = {};
+    var keywords = [];
+    if (!text || !String(text).trim()) return { kv: kv, keywords: keywords };
+    var tokens = text.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+    tokens.forEach(function (tok) {
+      var t = tok.replace(/^"|"$/g, '');
+      var m = /^([\w.]+):("([^"]*)"|'([^']*)'|(\S+))$/.exec(t);
+      if (m) {
+        var key = m[1];
+        var val = m[3] != null ? m[3] : m[4] != null ? m[4] : m[5] || '';
+        kv[key] = val;
+      } else {
+        keywords.push(t);
+      }
+    });
+    return { kv: kv, keywords: keywords };
+  }
+
+  var FILTER_FIELDS = ['app', 'sessionId', 'userId', 'eventType', 'eventName'];
+
+  function mapBarToFilters(barKv, base) {
+    Object.keys(barKv).forEach(function (k) {
+      var lk = k.toLowerCase();
+      var canon = KEY_ALIASES[lk] || k;
+      if (FILTER_FIELDS.indexOf(canon) >= 0) base[canon] = barKv[k];
+    });
+  }
+
+  function applyTimeRange(base) {
+    var sel = el('splTimeRange');
+    if (!sel) return;
+    var v = sel.value;
+    if (v === 'custom') return;
+    if (v === 'all') {
+      base.from = '';
+      base.to = '';
+      return;
+    }
+    var now = Date.now();
+    var start;
+    if (v === '15m') start = now - 15 * 60 * 1000;
+    else if (v === '60m') start = now - 60 * 60 * 1000;
+    else if (v === '24h') start = now - 24 * 60 * 60 * 1000;
+    else if (v === '7d') start = now - 7 * 24 * 60 * 60 * 1000;
+    else return;
+    base.from = new Date(start).toISOString();
+    base.to = new Date(now).toISOString();
+  }
+
+  function readFiltersFromDom() {
+    function val(id) {
+      var n = el(id);
+      return n ? n.value.trim() : '';
+    }
+    var paths = [];
+    var vals = [];
+    document.querySelectorAll('.logs-json-row').forEach(function (row) {
+      var pi = row.querySelector('.logs-json-path');
+      var vi = row.querySelector('.logs-json-val');
+      paths.push(pi ? pi.value.trim() : '');
+      vals.push(vi ? vi.value.trim() : '');
+    });
+    var base = {
+      size: Math.min(500, Math.max(1, parseInt(val('filterSize'), 10) || 50)),
+      app: val('filterApp'),
+      sessionId: val('filterSession'),
+      userId: val('filterUser'),
+      eventType: val('filterEventType'),
+      eventName: val('filterEventName'),
+      from: val('filterFrom'),
+      to: val('filterTo'),
+      payloadContains: val('filterPayload'),
+      payloadJsonPaths: paths,
+      payloadJsonValues: vals
+    };
+
+    var bar = parseSearchBar(el('splMainSearch') ? el('splMainSearch').value : '');
+    mapBarToFilters(bar.kv, base);
+    var kw = bar.keywords.join(' ').trim();
+    if (kw && base.payloadContains) base.payloadContains = kw + ' ' + base.payloadContains;
+    else if (kw) base.payloadContains = kw;
+
+    applyTimeRange(base);
+    return base;
   }
 
   function parsePage(json) {
@@ -64,12 +169,6 @@
     }
     return p;
   }
-
-  function el(id) {
-    return document.getElementById(id);
-  }
-
-  var state = { page: 0, filters: { size: 50 } };
 
   function showGate(msg) {
     el('logsGate').classList.remove('hidden');
@@ -118,34 +217,6 @@
       });
   }
 
-  function readFiltersFromDom() {
-    function val(id) {
-      var n = el(id);
-      return n ? n.value.trim() : '';
-    }
-    var paths = [];
-    var vals = [];
-    document.querySelectorAll('.logs-json-row').forEach(function (row) {
-      var pi = row.querySelector('.logs-json-path');
-      var vi = row.querySelector('.logs-json-val');
-      paths.push(pi ? pi.value.trim() : '');
-      vals.push(vi ? vi.value.trim() : '');
-    });
-    return {
-      size: Math.min(500, Math.max(1, parseInt(val('filterSize'), 10) || 50)),
-      app: val('filterApp'),
-      sessionId: val('filterSession'),
-      userId: val('filterUser'),
-      eventType: val('filterEventType'),
-      eventName: val('filterEventName'),
-      from: val('filterFrom'),
-      to: val('filterTo'),
-      payloadContains: val('filterPayload'),
-      payloadJsonPaths: paths,
-      payloadJsonValues: vals
-    };
-  }
-
   function escapeHtml(s) {
     return String(s)
       .replace(/&/g, '&amp;')
@@ -154,58 +225,343 @@
       .replace(/"/g, '&quot;');
   }
 
-  function renderList(pageData) {
-    var list = el('logsList');
-    var empty = el('logsEmpty');
-    if (!list) return;
-    list.innerHTML = '';
-    if (!pageData.content.length) {
-      empty.classList.remove('hidden');
+  function highlightTerms(text, terms) {
+    var out = escapeHtml(text);
+    if (!terms || !terms.length) return out;
+    terms.forEach(function (t) {
+      if (!t || t.length < 2) return;
+      var esc = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var rx = new RegExp('(' + esc + ')', 'gi');
+      out = out.replace(rx, '<mark class="spl-highlight">$1</mark>');
+    });
+    return out;
+  }
+
+  function buildHighlightTerms() {
+    var f = state.filters || readFiltersFromDom();
+    var terms = [];
+    if (f.payloadContains) {
+      f.payloadContains.split(/\s+/).forEach(function (w) {
+        if (w.length >= 2) terms.push(w);
+      });
+    }
+    return terms.slice(0, 8);
+  }
+
+  function rawEventLine(row) {
+    var app = row.app || row.appId || '';
+    var parts = [
+      row.eventType || '',
+      row.eventName || '',
+      row.sessionId ? 'session=' + row.sessionId : '',
+      row.userId ? 'user=' + row.userId : ''
+    ].filter(Boolean);
+    var head = parts.join(' | ');
+    var payload = row.payloadJson != null ? row.payloadJson : row.payload || '{}';
+    var oneLine = payload.replace(/\s+/g, ' ').trim();
+    if (oneLine.length > 220) oneLine = oneLine.slice(0, 217) + '…';
+    return head ? head + ' — ' + oneLine : oneLine;
+  }
+
+  function parseTs(iso) {
+    if (!iso) return NaN;
+    var t = Date.parse(String(iso));
+    return isNaN(t) ? NaN : t;
+  }
+
+  function renderTimeline(content) {
+    var wrap = el('splTimelineBars');
+    var axis = el('splTimelineAxis');
+    if (!wrap || !axis) return;
+    wrap.innerHTML = '';
+    if (!content.length) {
+      el('splTimeline').setAttribute('aria-hidden', 'true');
       return;
     }
-    empty.classList.add('hidden');
-    pageData.content.forEach(function (row) {
+    el('splTimeline').setAttribute('aria-hidden', 'false');
+    var ts = content.map(function (r) {
+      return parseTs(r.timestamp || r.occurredAt);
+    }).filter(function (x) {
+      return !isNaN(x);
+    });
+    if (!ts.length) return;
+    var min = Math.min.apply(null, ts);
+    var max = Math.max.apply(null, ts);
+    if (max <= min) max = min + 1;
+    var n = Math.min(32, Math.max(12, content.length));
+    var buckets = new Array(n).fill(0);
+    ts.forEach(function (t) {
+      var i = Math.floor(((t - min) / (max - min)) * (n - 0.001));
+      if (i < 0) i = 0;
+      if (i >= n) i = n - 1;
+      buckets[i]++;
+    });
+    var mx = Math.max.apply(null, buckets);
+    buckets.forEach(function (c) {
+      var d = document.createElement('div');
+      d.className = 'spl-timeline__bar';
+      d.style.height = mx ? Math.max(4, Math.round((c / mx) * 100)) + '%' : '4px';
+      d.title = c + ' events';
+      wrap.appendChild(d);
+    });
+    axis.textContent =
+      new Date(min).toLocaleString() + ' — ' + new Date(max).toLocaleString() + ' (this page)';
+  }
+
+  function countDistribution(content, getv) {
+    var m = {};
+    content.forEach(function (row) {
+      var v = getv(row);
+      if (v == null || v === '') return;
+      m[v] = (m[v] || 0) + 1;
+    });
+    return m;
+  }
+
+  function renderFieldsSidebar(content) {
+    var sel = el('splFieldsSelected');
+    var intr = el('splFieldsInteresting');
+    if (!sel || !intr) return;
+    sel.innerHTML = '';
+    intr.innerHTML = '';
+
+    var fields = [
+      { name: '_time', label: '_time', count: content.length },
+      { name: 'app', label: 'app', count: content.filter(function (r) { return r.app || r.appId; }).length },
+      {
+        name: 'eventType',
+        label: 'eventType',
+        count: content.filter(function (r) { return r.eventType; }).length
+      },
+      {
+        name: 'eventName',
+        label: 'eventName',
+        count: content.filter(function (r) { return r.eventName; }).length
+      },
+      {
+        name: 'sessionId',
+        label: 'session',
+        count: content.filter(function (r) { return r.sessionId; }).length
+      },
+      {
+        name: 'userId',
+        label: 'user',
+        count: content.filter(function (r) { return r.userId; }).length
+      }
+    ];
+    fields.forEach(function (f) {
       var li = document.createElement('li');
-      li.className = 'logs-card';
-      var ts = row.timestamp || row.occurredAt || '';
-      var app = row.app || row.appId || '';
-      var sid = row.sessionId || '';
-      var uid = row.userId || '';
-      var payload = row.payloadJson != null ? row.payloadJson : row.payload || '{}';
+      li.className = 'spl-fields__item';
       li.innerHTML =
-        '<div class="logs-card__meta"><time>' +
-        escapeHtml(String(ts)) +
-        '</time><span class="logs-badge">' +
-        escapeHtml(String(app)) +
-        '</span><span class="logs-badge">' +
-        escapeHtml(String(row.eventType || '')) +
-        '</span></div><div class="logs-card__title">' +
-        escapeHtml(String(row.eventName || '')) +
-        '</div><div class="logs-card__chips">' +
-        (sid ? '<span>session: ' + escapeHtml(sid) + '</span>' : '') +
-        (uid ? '<span>user: ' + escapeHtml(uid) + '</span>' : '') +
-        '<span>id: ' +
-        escapeHtml(String(row.id != null ? row.id : '')) +
-        '</span></div><details class="logs-payload"><summary>Payload</summary><pre>' +
-        escapeHtml(String(payload)) +
-        '</pre></details>';
-      list.appendChild(li);
+        '<span class="spl-fields__fname">' +
+        escapeHtml(f.label) +
+        '</span> <span class="spl-fields__count">(' +
+        f.count +
+        ')</span>';
+      sel.appendChild(li);
+    });
+
+    ['app', 'eventType'].forEach(function (field) {
+      var getv =
+        field === 'app'
+          ? function (r) {
+              return r.app || r.appId;
+            }
+          : function (r) {
+              return r[field];
+            };
+      var dist = countDistribution(content, getv);
+      var entries = Object.entries(dist).sort(function (a, b) {
+        return b[1] - a[1];
+      });
+      if (!entries.length) return;
+      var li = document.createElement('li');
+      li.className = 'spl-fields__item';
+      var h = document.createElement('div');
+      h.className = 'spl-fields__fname';
+      h.textContent = field;
+      li.appendChild(h);
+      entries.slice(0, 8).forEach(function (pair) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'spl-fields__val';
+        b.textContent = pair[0] + ' (' + pair[1] + ')';
+        b.addEventListener('click', function () {
+          if (field === 'app') el('filterApp').value = pair[0];
+          else el('filterEventType').value = pair[0];
+          loadPage(0);
+        });
+        li.appendChild(b);
+      });
+      intr.appendChild(li);
+    });
+
+    var keyFreq = {};
+    content.forEach(function (row) {
+      var raw = row.payloadJson != null ? row.payloadJson : row.payload || '{}';
+      try {
+        var o = JSON.parse(raw);
+        if (o && typeof o === 'object' && !Array.isArray(o)) {
+          Object.keys(o).forEach(function (k) {
+            keyFreq[k] = (keyFreq[k] || 0) + 1;
+          });
+        }
+      } catch (e) {}
+    });
+    var topKeys = Object.entries(keyFreq)
+      .sort(function (a, b) {
+        return b[1] - a[1];
+      })
+      .slice(0, 10);
+    if (topKeys.length) {
+      var li2 = document.createElement('li');
+      li2.className = 'spl-fields__item';
+      var h2 = document.createElement('div');
+      h2.className = 'spl-fields__fname';
+      h2.textContent = 'payload keys';
+      li2.appendChild(h2);
+      topKeys.forEach(function (pair) {
+        var s = document.createElement('span');
+        s.className = 'spl-fields__val';
+        s.style.cursor = 'default';
+        s.textContent = pair[0] + ' (' + pair[1] + ')';
+        li2.appendChild(s);
+      });
+      intr.appendChild(li2);
+    }
+  }
+
+  function renderStatsTable(content) {
+    var body = el('splStatsBody');
+    if (!body) return;
+    body.innerHTML = '';
+    var rows = [
+      {
+        name: '_time',
+        nonNull: content.length,
+        distinct: new Set(content.map(function (r) { return String(r.timestamp || r.occurredAt || ''); })).size
+      },
+      {
+        name: 'app',
+        nonNull: content.filter(function (r) { return r.app || r.appId; }).length,
+        distinct: new Set(
+          content.map(function (r) {
+            return r.app || r.appId || '';
+          }).filter(Boolean)
+        ).size
+      },
+      {
+        name: 'eventType',
+        nonNull: content.filter(function (r) { return r.eventType; }).length,
+        distinct: new Set(content.map(function (r) { return r.eventType || ''; }).filter(Boolean)).size
+      },
+      {
+        name: 'eventName',
+        nonNull: content.filter(function (r) { return r.eventName; }).length,
+        distinct: new Set(content.map(function (r) { return r.eventName || ''; }).filter(Boolean)).size
+      }
+    ];
+    rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' +
+        escapeHtml(r.name) +
+        '</td><td>' +
+        r.nonNull +
+        '</td><td>' +
+        r.distinct +
+        '</td>';
+      body.appendChild(tr);
     });
   }
 
-  function updateStats(pageData) {
-    var st = el('logsStats');
-    if (!st) return;
-    st.innerHTML =
-      '<div class="logs-stat"><span>Matches</span>' +
-      pageData.totalElements +
-      '</div><div class="logs-stat"><span>Page</span>' +
-      (pageData.number + 1) +
-      ' / ' +
-      Math.max(1, pageData.totalPages) +
-      '</div><div class="logs-stat"><span>Per page</span>' +
-      pageData.size +
-      '</div>';
+  function renderList(pageData) {
+    var tbody = el('logsList');
+    var empty = el('logsEmpty');
+    var table = el('splEventsTable');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    state.highlightTerms = buildHighlightTerms();
+
+    if (!pageData.content.length) {
+      empty.classList.remove('hidden');
+      if (table) table.hidden = true;
+      renderTimeline([]);
+      renderFieldsSidebar([]);
+      return;
+    }
+    empty.classList.add('hidden');
+    if (table) table.hidden = false;
+
+    pageData.content.forEach(function (row, idx) {
+      var ts = row.timestamp || row.occurredAt || '';
+      var rawLine = rawEventLine(row);
+      var tr = document.createElement('tr');
+      tr.className = 'spl-event-row';
+      var id = 'spl-exp-' + idx;
+      tr.innerHTML =
+        '<td><button type="button" class="spl-expand" aria-expanded="false" aria-controls="' +
+        id +
+        '">▶</button></td>' +
+        '<td class="spl-time-cell">' +
+        escapeHtml(String(ts)) +
+        '</td>' +
+        '<td class="spl-raw-cell">' +
+        highlightTerms(rawLine, state.highlightTerms) +
+        '</td>';
+      var btn = tr.querySelector('.spl-expand');
+      var detail = document.createElement('tr');
+      detail.className = 'spl-event-detail hidden';
+      detail.id = id;
+      var payload = row.payloadJson != null ? row.payloadJson : row.payload || '{}';
+      detail.innerHTML =
+        '<td colspan="3"><div class="spl-detail-grid">' +
+        '<div class="spl-detail-kv"><span>id</span> ' +
+        escapeHtml(String(row.id)) +
+        '</div>' +
+        '<div class="spl-detail-kv"><span>app</span> ' +
+        escapeHtml(String(row.app || row.appId || '')) +
+        '</div>' +
+        '<div class="spl-detail-kv"><span>eventType</span> ' +
+        escapeHtml(String(row.eventType || '')) +
+        '</div>' +
+        '<div class="spl-detail-kv"><span>eventName</span> ' +
+        escapeHtml(String(row.eventName || '')) +
+        '</div>' +
+        '</div><pre class="spl-detail-pre">' +
+        highlightTerms(payload, state.highlightTerms) +
+        '</pre></td>';
+      btn.addEventListener('click', function () {
+        detail.classList.toggle('hidden');
+        var expanded = !detail.classList.contains('hidden');
+        btn.setAttribute('aria-expanded', expanded);
+        btn.textContent = expanded ? '▼' : '▶';
+      });
+      tbody.appendChild(tr);
+      tbody.appendChild(detail);
+    });
+
+    renderTimeline(pageData.content);
+    renderFieldsSidebar(pageData.content);
+    renderStatsTable(pageData.content);
+  }
+
+  function updateJobStats(pageData, elapsedMs) {
+    var st = el('splJobStats');
+    var tm = el('splJobTiming');
+    if (st) {
+      st.textContent =
+        pageData.totalElements.toLocaleString() +
+        ' event' +
+        (pageData.totalElements === 1 ? '' : 's') +
+        ' (total)';
+    }
+    if (tm) {
+      tm.textContent =
+        elapsedMs != null
+          ? 'Completed in ' + elapsedMs + ' ms · Showing ' + pageData.content.length + ' on this page'
+          : '';
+    }
   }
 
   function updatePager(pageData) {
@@ -232,6 +588,7 @@
     state.filters = readFiltersFromDom();
     state.page = pageIndex;
     var qs = buildQueryParams(pageIndex, state.filters);
+    var t0 = typeof performance !== 'undefined' ? performance.now() : 0;
     return fetch(base + '/api/v1/logs?' + qs.toString(), { headers: authHeaders() })
       .then(function (res) {
         if (res.status === 404) {
@@ -242,8 +599,11 @@
       })
       .then(function (json) {
         var pageData = parsePage(json);
+        var elapsed =
+          typeof performance !== 'undefined' ? Math.round(performance.now() - t0) : null;
+        state.lastMs = elapsed;
         renderList(pageData);
-        updateStats(pageData);
+        updateJobStats(pageData, elapsed);
         updatePager(pageData);
       })
       .catch(function (e) {
@@ -274,7 +634,6 @@
         return res.blob();
       })
       .then(function (blob) {
-        var dispo = ''; /* optional parse Content-Disposition */
         var name = kind === 'csv' ? 'logs-export.csv' : 'logs-export.json';
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -290,7 +649,9 @@
   function showMetrics() {
     var base = getMenuApiBase();
     var out = el('logsMetricsOut');
-    if (!out) return;
+    var panel = el('logsMetricsPanel');
+    if (!out || !panel) return;
+    panel.classList.remove('hidden');
     out.textContent = 'Loading…';
     fetch(base + '/api/v1/metrics/by-app', { headers: authHeaders() })
       .then(function (res) {
@@ -309,11 +670,28 @@
     var host = el('logsJsonRows');
     if (!host) return;
     var row = document.createElement('div');
-    row.className = 'logs-field logs-json-row';
+    row.className = 'spl-json-row logs-json-row';
     row.innerHTML =
-      '<label>JSON path</label><input type="text" class="logs-json-path" placeholder="$.field" />' +
-      '<label style="margin-top:8px">Equals</label><input type="text" class="logs-json-val" placeholder="value" />';
+      '<input type="text" class="logs-json-path spl-mono" placeholder="$.path" />' +
+      '<input type="text" class="logs-json-val spl-mono" placeholder="value" />';
     host.appendChild(row);
+  }
+
+  function setResultTab(name) {
+    document.querySelectorAll('[data-result-tab]').forEach(function (btn) {
+      var on = btn.getAttribute('data-result-tab') === name;
+      btn.classList.toggle('spl-result-tabs__btn--active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    el('splPanelEvents').classList.toggle('hidden', name !== 'events');
+    el('splPanelStats').classList.toggle('hidden', name !== 'stats');
+  }
+
+  function onTimeRangeChange() {
+    var custom = el('splCustomTime');
+    var sel = el('splTimeRange');
+    if (!custom || !sel) return;
+    custom.classList.toggle('hidden', sel.value !== 'custom');
   }
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -337,12 +715,35 @@
       el('logsExportCsv').addEventListener('click', function () {
         downloadExport('csv');
       });
-      el('logsMetricsBtn').addEventListener('click', function () {
-        var panel = el('logsMetricsPanel');
-        panel.classList.toggle('hidden');
-        if (!panel.classList.contains('hidden')) showMetrics();
-      });
+      el('logsMetricsBtn').addEventListener('click', showMetrics);
+      var mc = el('logsMetricsClose');
+      if (mc) mc.addEventListener('click', function () { el('logsMetricsPanel').classList.add('hidden'); });
       el('logsAddJsonRow').addEventListener('click', addJsonRow);
+
+      el('splToggleAdvanced').addEventListener('click', function () {
+        var adv = el('splAdvanced');
+        adv.classList.toggle('hidden');
+        var expanded = !adv.classList.contains('hidden');
+        el('splToggleAdvanced').setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      });
+      el('splAdvanced').classList.add('hidden');
+
+      var tr = el('splTimeRange');
+      if (tr) {
+        tr.addEventListener('change', onTimeRangeChange);
+        onTimeRangeChange();
+      }
+
+      document.querySelectorAll('[data-result-tab]').forEach(function (btn) {
+        if (btn.disabled) return;
+        btn.addEventListener('click', function () {
+          setResultTab(btn.getAttribute('data-result-tab'));
+        });
+      });
+
+      el('splTimelineZoom').addEventListener('click', function () {
+        loadPage(state.page);
+      });
 
       loadPage(0);
     });
