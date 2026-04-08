@@ -75,6 +75,8 @@
       display: 'Display',
       addCurrencies: 'Add currencies',
       categoriesToolbarHint: 'Drag ↕ to reorder. Click a category to expand.',
+      itemsSectionTitle: 'Menu items',
+      itemsSectionHint: 'Drag ⠿ on a row to reorder items.',
       addCategory: '+ Add category',
       cloudinaryUploads: 'Images (server upload)',
       mainBadge: 'MAIN',
@@ -129,6 +131,8 @@
       display: 'Показване',
       addCurrencies: 'Добави валути',
       categoriesToolbarHint: 'Плъзни ↕ за подредба. Кликни категория за разгъване.',
+      itemsSectionTitle: 'Продукти',
+      itemsSectionHint: 'Плъзни ⠿ до реда за подредба на продуктите.',
       addCategory: '+ Добави категория',
       cloudinaryUploads: 'Изображения (качване към сървъра)',
       mainBadge: 'ОСНОВНА',
@@ -1340,8 +1344,14 @@
             <span class="cat-schedule-status"></span>
           </div>
         </div>
-        <div class="items-list" id="items-${catIdx}"></div>
-        <button class="btn-add-item">${adminLang === 'bg' ? '+ Добави продукт' : '+ Add item'}</button>
+        <div class="category-items-section">
+          <div class="category-items-section__head">
+            <span class="category-items-section__title">${esc(tr('itemsSectionTitle'))}</span>
+            <span class="category-items-section__hint">${esc(tr('itemsSectionHint'))}</span>
+          </div>
+          <div class="items-list" id="items-${catIdx}"></div>
+          <button class="btn-add-item">${adminLang === 'bg' ? '+ Добави продукт' : '+ Add item'}</button>
+        </div>
       </div>
     `;
 
@@ -1490,6 +1500,104 @@
     cat.items.forEach((item, itemIdx) => {
       itemsEl.appendChild(buildItemBlock(item, itemIdx, cat, catIdx, catBlock));
     });
+    bindItemListDrag(itemsEl, cat, catIdx, catBlock);
+  }
+
+  /** Pointer drag-to-reorder within one category’s items (same pattern as categories). */
+  function bindItemListDrag(itemsEl, cat, catIdx, catBlock) {
+    if (catBlock._itemDragAbort) {
+      catBlock._itemDragAbort.abort();
+    }
+    catBlock._itemDragAbort = new AbortController();
+    const { signal } = catBlock._itemDragAbort;
+
+    let drag = null;
+
+    function onMove(e) {
+      if (!drag) return;
+      e.preventDefault();
+      const { block, placeholder, blockOffsetY } = drag;
+      block.style.top = (e.clientY - blockOffsetY) + 'px';
+
+      const siblings = [...itemsEl.querySelectorAll('.item-block:not(.item-dragging)')];
+      let insertBefore = null;
+      for (const sib of siblings) {
+        const r = sib.getBoundingClientRect();
+        if (e.clientY < r.top + r.height / 2) {
+          insertBefore = sib;
+          break;
+        }
+      }
+      if (insertBefore) {
+        if (placeholder.nextSibling !== insertBefore) itemsEl.insertBefore(placeholder, insertBefore);
+      } else if (itemsEl.lastElementChild !== placeholder) {
+        itemsEl.appendChild(placeholder);
+      }
+    }
+
+    function onUp() {
+      if (!drag) return;
+      document.removeEventListener('pointermove', onMove);
+
+      const { block, placeholder, itemIdx } = drag;
+      drag = null;
+
+      const children = [...itemsEl.children];
+      const phIdx = children.indexOf(placeholder);
+      let newItemIdx = 0;
+      for (let i = 0; i < phIdx; i++) {
+        if (children[i].classList && children[i].classList.contains('item-block')) newItemIdx++;
+      }
+
+      block.classList.remove('item-dragging');
+      block.style.cssText = '';
+      itemsEl.insertBefore(block, placeholder);
+      placeholder.remove();
+
+      if (newItemIdx !== itemIdx) {
+        const [moved] = cat.items.splice(itemIdx, 1);
+        cat.items.splice(newItemIdx, 0, moved);
+        refreshItemsList(catBlock, cat, catIdx);
+        setDirty(true);
+        adminTrack('admin_item_reorder', { catIdx, from: itemIdx, to: newItemIdx });
+      }
+    }
+
+    itemsEl.addEventListener(
+      'pointerdown',
+      e => {
+        const handle = e.target.closest('.item-block__drag');
+        if (!handle) return;
+        const block = handle.closest('.item-block');
+        if (!block || !itemsEl.contains(block)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const itemIdx = +block.dataset.itemIdx;
+        if (Number.isNaN(itemIdx)) return;
+
+        const rect = block.getBoundingClientRect();
+        const placeholder = document.createElement('div');
+        placeholder.className = 'item-drag-placeholder';
+        placeholder.style.height = rect.height + 'px';
+        block.parentNode.insertBefore(placeholder, block.nextSibling);
+
+        block.classList.add('item-dragging');
+        block.style.position = 'fixed';
+        block.style.left = rect.left + 'px';
+        block.style.top = rect.top + 'px';
+        block.style.width = rect.width + 'px';
+        block.style.zIndex = '9999';
+        block.style.pointerEvents = 'none';
+        document.body.appendChild(block);
+
+        drag = { block, placeholder, itemIdx, blockOffsetY: e.clientY - rect.top };
+
+        document.addEventListener('pointermove', onMove, { passive: false });
+        document.addEventListener('pointerup', onUp, { once: true });
+        document.addEventListener('pointercancel', onUp, { once: true });
+      },
+      { capture: true, signal, passive: false }
+    );
   }
 
   /* ── ENUM DICTIONARY HELPERS ─────────────────────────────── */
@@ -1877,6 +1985,8 @@
   function buildItemBlock(item, itemIdx, cat, catIdx, catBlock) {
     const block = document.createElement('div');
     block.className = 'item-block';
+    block.dataset.itemIdx = String(itemIdx);
+    block.dataset.catIdx = String(catIdx);
 
     const price   = typeof item.price === 'number' ? item.price.toFixed(2) : '0.00';
     const currencyCfg = normalizeCurrencyConfig(menuData.restaurant.menu.config?.currencies || {}, currentRestaurant);
@@ -1934,7 +2044,7 @@
 
     block.innerHTML = `
       <div class="item-block__header">
-        <span class="item-block__drag">⠿</span>
+        <span class="item-block__drag" title="${adminLang === 'bg' ? 'Плъзни за подредба' : 'Drag to reorder'}">⠿</span>
         <span class="item-block__name">${esc(nameTxt)}</span>
         <span class="item-block__price">${price}${esc(baseSymbol)}</span>
         <span class="item-availability${item.availability ? '' : ' unavailable'}" title="${item.availability ? 'Available' : 'Unavailable'}"></span>
@@ -2061,8 +2171,9 @@
       </div>
     `;
 
-    // Expand/collapse
-    block.querySelector('.item-block__header').addEventListener('click', () => {
+    // Expand/collapse (ignore clicks from drag handle)
+    block.querySelector('.item-block__header').addEventListener('click', e => {
+      if (e.target.closest('.item-block__drag')) return;
       block.classList.toggle('open');
     });
 
