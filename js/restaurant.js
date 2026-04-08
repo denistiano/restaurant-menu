@@ -37,8 +37,8 @@
 
   const RESTAURANT_ID  = window.RESTAURANT_ID  || 'unknown';
   const RESOURCES_BASE = window.RESOURCES_BASE || '../resources';
-  /** Shared emenu.click mark (same artwork as favicon); path from restaurant page. */
-  const SITE_BRAND_LOGO = `${RESOURCES_BASE}/logo.png`;
+  /** UI mark ≤250px: same artwork as favicon (use .ico); large hero/marketing uses resources/logo.png. */
+  const SITE_FAVICON_HREF = '../favicon.ico';
 
   /** Spring Boot default in this repo; override with meta or window.__MENU_API_BASE__. */
   const DEFAULT_LOCAL_MENU_API = 'http://127.0.0.1:8080';
@@ -1635,7 +1635,7 @@
           <a href="../" class="back-link"
              data-title-en="Back to all restaurants" data-title-bg="Към всички ресторанти"
              data-aria-en="Back to all restaurants" data-aria-bg="Към всички ресторанти">
-            <img src="${SITE_BRAND_LOGO}" alt="" class="back-link__logo" width="40" height="40" decoding="async" />
+            <img src="${SITE_FAVICON_HREF}" alt="" class="back-link__logo" width="40" height="40" decoding="async" />
           </a>
           <div style="display:flex;align-items:center;gap:12px;">
             <div class="theme-switcher" role="group" aria-label="Menu theme">
@@ -1721,7 +1721,7 @@
           <a href="../" class="rf__back"
              data-title-en="Back to all restaurants" data-title-bg="Към всички ресторанти"
              data-aria-en="Back to all restaurants" data-aria-bg="Към всички ресторанти">
-            <img src="${SITE_BRAND_LOGO}" alt="" class="rf__back-logo" width="36" height="36" decoding="async" />
+            <img src="${SITE_FAVICON_HREF}" alt="" class="rf__back-logo" width="36" height="36" decoding="async" />
           </a>
           <p class="rf__copy"
              data-en="Menus are for reference. Prices and availability may vary."
@@ -1935,7 +1935,7 @@
               or <code>window.__MENU_API_BASE__</code>.
             </p>
             <a href="../" class="menu-error-back" aria-label="Back to all restaurants" title="Back to all restaurants">
-              <img src="${SITE_BRAND_LOGO}" alt="" class="menu-error-back__logo" width="52" height="52" decoding="async" />
+              <img src="${SITE_FAVICON_HREF}" alt="" class="menu-error-back__logo" width="52" height="52" decoding="async" />
             </a>
           </div>`;
         }
@@ -2004,7 +2004,7 @@
             <p style="color:var(--color-text-muted);text-align:center">
               Could not load menu. Please try again later.</p>
             <a href="../" class="menu-error-back" aria-label="Back to all restaurants" title="Back to all restaurants">
-              <img src="${SITE_BRAND_LOGO}" alt="" class="menu-error-back__logo" width="52" height="52" decoding="async" />
+              <img src="${SITE_FAVICON_HREF}" alt="" class="menu-error-back__logo" width="52" height="52" decoding="async" />
             </a>
           </div>`;
       }

@@ -292,21 +292,6 @@ html:has(.landing-page) {
 }
 
 /* Subtle brand watermark — visible but not competing with headline */
-.l-hero__logo-motif {
-  position: absolute;
-  right: 5%;
-  bottom: 14%;
-  width: min(96px, 22vw);
-  opacity: 0.055;
-  pointer-events: none;
-  z-index: 0;
-}
-.l-hero__logo-motif img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
 .l-hero__content {
   position: relative;
   z-index: 1;
@@ -318,25 +303,92 @@ html:has(.landing-page) {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.l-hero__eyebrow {
-  display: inline-flex;
+/* Hero brand mark + symmetrical ornaments (replaces former eyebrow line) */
+.l-hero__brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(14px, 4vw, 32px);
+  margin-bottom: clamp(20px, 4vw, 28px);
+}
+.l-hero__brand-logo {
+  width: clamp(72px, 18vw, 112px);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: clamp(14px, 3vw, 20px);
+  box-shadow:
+    0 4px 28px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(196, 149, 90, 0.12);
+  filter: drop-shadow(0 0 40px rgba(196, 149, 90, 0.12));
+}
+.l-hero__ornament {
+  display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-  margin-bottom: 24px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 160px;
 }
-.l-hero__eyebrow::before,
-.l-hero__eyebrow::after {
-  content: '';
-  display: block;
-  width: 28px;
+.l-hero__ornament--lead {
+  justify-content: flex-end;
+}
+.l-hero__ornament--tail {
+  justify-content: flex-start;
+}
+.l-hero__ornament-line {
   height: 1px;
-  background: var(--color-accent);
-  opacity: 0.6;
+  border-radius: 1px;
+  min-width: 0;
+}
+/* Fade toward outer edge — lines “point” at the logo */
+.l-hero__ornament-line--fade-out {
+  flex: 1 1 auto;
+  max-width: 72px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(196, 149, 90, 0.15) 35%,
+    rgba(196, 149, 90, 0.55) 100%
+  );
+}
+.l-hero__ornament--tail .l-hero__ornament-line--fade-out {
+  background: linear-gradient(
+    90deg,
+    rgba(196, 149, 90, 0.55) 0%,
+    rgba(196, 149, 90, 0.15) 65%,
+    transparent 100%
+  );
+}
+.l-hero__ornament-line--accent {
+  width: clamp(20px, 5vw, 36px);
+  flex-shrink: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(196, 149, 90, 0.35),
+    rgba(245, 228, 184, 0.85),
+    rgba(196, 149, 90, 0.35)
+  );
+  box-shadow: 0 0 12px rgba(196, 149, 90, 0.15);
+}
+.l-hero__ornament-node {
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, #e8d5a8, var(--color-accent));
+  box-shadow: 0 0 10px rgba(196, 149, 90, 0.35);
+  border-radius: 1px;
+}
+@media (max-width: 400px) {
+  .l-hero__ornament {
+    max-width: 56px;
+    gap: 6px;
+  }
+  .l-hero__ornament-line--fade-out {
+    max-width: 40px;
+  }
 }
 
 .l-hero__title {
@@ -692,7 +744,7 @@ html:has(.landing-page) {
   content: '';
   position: absolute;
   inset: 0;
-  background: url("../resources/logo.png") no-repeat 50% 42%;
+  background: url("../favicon.ico") no-repeat 50% 42%;
   background-size: min(180px, 42vw);
   opacity: 0.04;
   pointer-events: none;
@@ -1048,6 +1100,13 @@ html:has(.landing-page) {
   }
 }
 @media (max-width: 560px) {
+  .l-nav__logo-img {
+    width: 36px;
+    height: 36px;
+  }
+  .l-nav__logo-text {
+    font-size: 16px;
+  }
   .l-grid {
     grid-template-columns: 1fr;
   }
