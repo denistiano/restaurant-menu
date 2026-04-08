@@ -37,6 +37,8 @@
 
   const RESTAURANT_ID  = window.RESTAURANT_ID  || 'unknown';
   const RESOURCES_BASE = window.RESOURCES_BASE || '../resources';
+  /** Shared emenu.click mark (same artwork as favicon); path from restaurant page. */
+  const SITE_BRAND_LOGO = `${RESOURCES_BASE}/logo.png`;
 
   /** Spring Boot default in this repo; override with meta or window.__MENU_API_BASE__. */
   const DEFAULT_LOCAL_MENU_API = 'http://127.0.0.1:8080';
@@ -687,6 +689,14 @@
       } else if (el.childElementCount === 0) {
         el.textContent = text;
       }
+    });
+    document.querySelectorAll('[data-title-en]').forEach(el => {
+      const tip = (lang === 'bg' && el.dataset.titleBg) ? el.dataset.titleBg : (el.dataset.titleEn || '');
+      if (tip) el.setAttribute('title', tip);
+    });
+    document.querySelectorAll('[data-aria-en]').forEach(el => {
+      const al = (lang === 'bg' && el.dataset.ariaBg) ? el.dataset.ariaBg : (el.dataset.ariaEn || '');
+      if (al) el.setAttribute('aria-label', al);
     });
   }
 
@@ -1622,9 +1632,10 @@
       <header class="restaurant-header">
         <div class="restaurant-header__bg" style="${bgStyle}" aria-hidden="true"></div>
         <nav class="restaurant-header__nav" aria-label="Site navigation">
-          <a href="../" class="back-link" aria-label="Back to all restaurants">
-            <span class="back-link__arrow" aria-hidden="true">&#8592;</span>
-            <span data-en="All restaurants" data-bg="Всички ресторанти">All restaurants</span>
+          <a href="../" class="back-link"
+             data-title-en="Back to all restaurants" data-title-bg="Към всички ресторанти"
+             data-aria-en="Back to all restaurants" data-aria-bg="Към всички ресторанти">
+            <img src="${SITE_BRAND_LOGO}" alt="" class="back-link__logo" width="40" height="40" decoding="async" />
           </a>
           <div style="display:flex;align-items:center;gap:12px;">
             <div class="theme-switcher" role="group" aria-label="Menu theme">
@@ -1707,9 +1718,10 @@
 
       <footer class="restaurant-footer">
         <div class="rf__inner">
-          <a href="../" class="rf__back">
-            <span aria-hidden="true">&#8592;</span>
-            <span data-en="All restaurants" data-bg="Всички ресторанти">All restaurants</span>
+          <a href="../" class="rf__back"
+             data-title-en="Back to all restaurants" data-title-bg="Към всички ресторанти"
+             data-aria-en="Back to all restaurants" data-aria-bg="Към всички ресторанти">
+            <img src="${SITE_BRAND_LOGO}" alt="" class="rf__back-logo" width="36" height="36" decoding="async" />
           </a>
           <p class="rf__copy"
              data-en="Menus are for reference. Prices and availability may vary."
@@ -1922,7 +1934,9 @@
               <code style="word-break:break-all">&lt;meta name="menu-api-base" content="https://your-api.example.com"&gt;</code>
               or <code>window.__MENU_API_BASE__</code>.
             </p>
-            <a href="../" style="color:var(--color-accent)">← Back to restaurants</a>
+            <a href="../" class="menu-error-back" aria-label="Back to all restaurants" title="Back to all restaurants">
+              <img src="${SITE_BRAND_LOGO}" alt="" class="menu-error-back__logo" width="52" height="52" decoding="async" />
+            </a>
           </div>`;
         }
         return;
@@ -1989,7 +2003,9 @@
             <div style="font-size:40px">🍽</div>
             <p style="color:var(--color-text-muted);text-align:center">
               Could not load menu. Please try again later.</p>
-            <a href="../" style="color:var(--color-accent)">← Back to restaurants</a>
+            <a href="../" class="menu-error-back" aria-label="Back to all restaurants" title="Back to all restaurants">
+              <img src="${SITE_BRAND_LOGO}" alt="" class="menu-error-back__logo" width="52" height="52" decoding="async" />
+            </a>
           </div>`;
       }
     }

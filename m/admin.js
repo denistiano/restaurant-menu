@@ -395,7 +395,12 @@
       const el = document.getElementById(id);
       if (el) el.textContent = tr(key);
     };
-    setText('authBackLink', 'backToSite');
+    const authBack = document.getElementById('authBackLink');
+    if (authBack) {
+      const tBack = tr('backToSite');
+      authBack.setAttribute('title', tBack);
+      authBack.setAttribute('aria-label', tBack);
+    }
     setText('authTitle', 'signInTitle');
     setText('authSub', 'authSub');
     setText('authSignInBtn', 'signIn');
