@@ -37,15 +37,36 @@
 
   const RESTAURANT_ID  = window.RESTAURANT_ID  || 'unknown';
   const RESOURCES_BASE = window.RESOURCES_BASE || '../resources';
-  const JSONBIN_BASE   = 'https://api.jsonbin.io/v3/b';
+
+  /** Spring Boot default in this repo; override with meta or window.__MENU_API_BASE__. */
+  const DEFAULT_LOCAL_MENU_API = 'http://127.0.0.1:8080';
+
+  /**
+   * API origin (scheme+host+port only). Static hosting (e.g. :8888) and API are different origins —
+   * do not use location.origin as the API base.
+   * On localhost / 127.0.0.1 only, defaults to DEFAULT_LOCAL_MENU_API (same machine).
+   * On deployed hosts (e.g. GitHub Pages), set meta or __MENU_API_BASE__ to your real API URL.
+   */
+  function getMenuApiBase() {
+    const w = typeof window !== 'undefined' && window.__MENU_API_BASE__;
+    if (w && typeof w === 'string' && w.trim()) return w.trim().replace(/\/?$/, '');
+    const meta = typeof document !== 'undefined' && document.querySelector('meta[name="menu-api-base"]');
+    if (meta) {
+      const c = meta.getAttribute('content');
+      if (c && c.trim()) return c.trim().replace(/\/?$/, '');
+    }
+    const h = typeof location !== 'undefined' ? location.hostname : '';
+    if (h === 'localhost' || h === '127.0.0.1' || h === '') {
+      return DEFAULT_LOCAL_MENU_API;
+    }
+    return '';
+  }
 
   // ── Cache config ─────────────────────────────────────────
   // Bump CV whenever the stored shape changes to auto-bust old entries.
-  const CACHE_VERSION  = 'v2';
+  const CACHE_VERSION  = 'v3';
   const MENU_CACHE_TTL = 60 * 60 * 1000;         // 1 h  — menu data
-  const BIN_CACHE_TTL  = 24 * 60 * 60 * 1000;    // 24 h — bin ID lookup
   const MENU_KEY       = `menu_${CACHE_VERSION}_${RESTAURANT_ID}`;
-  const BIN_KEY        = `binid_${CACHE_VERSION}_${RESTAURANT_ID}`;
 
   // ── Generic cache helpers ─────────────────────────────────
   /**
@@ -68,16 +89,18 @@
         sessionStorage.removeItem(key);
         return null;                                      // expired
       }
-      return { value: entry.v, age_ms: age };
+      return { value: entry.v, age_ms: age, rev: entry.rev };
     } catch {
       return null;
     }
   }
 
-  /** Write a value to sessionStorage with a timestamp. Silent on quota errors. */
-  function cacheSet(key, value) {
+  /** Write a value to sessionStorage with a timestamp. Optional `rev` = server menu revision. */
+  function cacheSet(key, value, rev) {
     try {
-      sessionStorage.setItem(key, JSON.stringify({ v: value, ts: Date.now() }));
+      const o = { v: value, ts: Date.now() };
+      if (rev !== undefined && rev !== null) o.rev = rev;
+      sessionStorage.setItem(key, JSON.stringify(o));
     } catch { /* quota exceeded — degrade gracefully */ }
   }
 
@@ -1746,6 +1769,36 @@
     });
   }
 
+  /* ── Live updates: compare server revision to cached menu ─── */
+  let revisionPollTimer = null;
+  function startMenuRevisionPolling() {
+    if (revisionPollTimer) clearInterval(revisionPollTimer);
+    revisionPollTimer = setInterval(checkMenuRevision, 25000);
+  }
+  async function checkMenuRevision() {
+    if (document.visibilityState === 'hidden') return;
+    try {
+      const apiBase = getMenuApiBase();
+      if (!apiBase) return;
+      const r = await fetch(`${apiBase}/api/public/menu/${encodeURIComponent(RESTAURANT_ID)}/revision`);
+      if (!r.ok) return;
+      const j = await r.json();
+      const serverRev = typeof j.revision === 'number' ? j.revision : 0;
+      const live = cacheGet(MENU_KEY, MENU_CACHE_TTL);
+      const stale = cacheGet(MENU_KEY, Infinity, { stale: true });
+      const cached = live || stale;
+      const cachedRev = cached && typeof cached.rev === 'number' ? cached.rev : null;
+      if (cachedRev === null) return;
+      if (serverRev > cachedRev) {
+        cacheBust(MENU_KEY);
+        location.reload();
+      }
+    } catch (_) { /* ignore */ }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkMenuRevision();
+  });
+
   /* ============================================================
      FETCH & INIT
      ============================================================ */
@@ -1768,50 +1821,42 @@
         } catch (_) { /* ignore */ }
       }
       buildPage(data.restaurant);
+      startMenuRevisionPolling();
       return;
     }
     console.debug(`[menu] cache MISS for "${RESTAURANT_ID}" — fetching…`);
 
     try {
-      // ── Layer 2: resolve bin ID (cached 24 h) ──────────────
-      let binId = window.MENU_BIN_ID || null;
-
-      if (!binId) {
-        const binCached = cacheGet(BIN_KEY, BIN_CACHE_TTL);
-        if (binCached) {
-          binId = binCached.value;
-          console.debug(`[menu] bin ID from cache: ${binId}`);
-        } else {
-          try {
-            const idxRes = await fetch(`${RESOURCES_BASE}/restaurants.json`);
-            if (idxRes.ok) {
-              const data = await idxRes.json();
-              const list = data.restaurants || (Array.isArray(data) ? data : []);
-              quantityMetrics = data.quantity_metrics || [];
-              const entry = list.find(r => r.id === RESTAURANT_ID);
-              if (entry && entry.menu_bin_id && entry.menu_bin_id !== 'PASTE_BIN_ID_HERE') {
-                restaurantMeta = entry;
-                binId = entry.menu_bin_id;
-                cacheSet(BIN_KEY, binId);               // cache bin ID for 24 h
-                console.debug(`[menu] bin ID fetched & cached: ${binId}`);
-              }
-            }
-          } catch (_) { /* fall through to local file */ }
-        }
-      }
-
-      // ── Layer 3: fetch live menu data ──────────────────────
-      let rawData;
-      if (!binId) {
-        throw new Error(
-          'No menu_bin_id for this restaurant. Add it in resources/restaurants.json (source of truth).'
+      const apiBase = getMenuApiBase();
+      if (!apiBase) {
+        console.error(
+          '[menu] Missing API base. Set menu_api_base in seo-config.json (production), or ' +
+            '<meta name="menu-api-base" content="https://your-api.example.com">, or window.__MENU_API_BASE__.'
         );
+        const root = document.getElementById('restaurant-root');
+        if (root) {
+          root.innerHTML = `
+          <div style="min-height:100vh;display:flex;flex-direction:column;
+               align-items:center;justify-content:center;gap:16px;padding:40px;max-width:36rem;">
+            <div style="font-size:40px">⚙</div>
+            <p style="color:var(--color-text-muted);text-align:center;line-height:1.5">
+              Menu API URL is not configured for this host (not localhost). Set
+              <code style="color:var(--color-accent)">menu_api_base</code> in
+              <code>seo-config.json</code> and regenerate pages, or add
+              <code style="word-break:break-all">&lt;meta name="menu-api-base" content="https://your-api.example.com"&gt;</code>
+              or <code>window.__MENU_API_BASE__</code>.
+            </p>
+            <a href="../" style="color:var(--color-accent)">← Back to restaurants</a>
+          </div>`;
+        }
+        return;
       }
-      const res = await fetch(`${JSONBIN_BASE}/${binId}/latest`);
-      if (!res.ok) throw new Error(`Jsonbin HTTP ${res.status}`);
+      const res = await fetch(`${apiBase}/api/public/menu/${encodeURIComponent(RESTAURANT_ID)}`);
+      if (!res.ok) throw new Error(`Menu API HTTP ${res.status}`);
       const wrapper = await res.json();
-      rawData = wrapper.record;
-      if (!rawData) throw new Error('Jsonbin returned empty record');
+      const rawData = wrapper.record;
+      const serverRev = typeof wrapper.revision === 'number' ? wrapper.revision : 0;
+      if (!rawData) throw new Error('API returned empty record');
 
       if (!restaurantMeta) {
         try {
@@ -1825,12 +1870,13 @@
         } catch (_) { /* optional metadata */ }
       }
 
-      cacheSet(MENU_KEY, rawData);                       // store with 1 h TTL
-      console.debug(`[menu] fetched & cached for 1 h`);
+      cacheSet(MENU_KEY, rawData, serverRev);
+      console.debug(`[menu] fetched & cached for 1 h (revision ${serverRev})`);
 
       data = rawData;
       if (!currentLang) currentLang = data.restaurant.default_language || 'en';
       buildPage(data.restaurant);
+      startMenuRevisionPolling();
 
     } catch (err) {
       // ── Layer 4: network failed — serve stale cache ────────

@@ -107,6 +107,12 @@ def main() -> int:
     twitter_site = (seo.get("twitter_site") or "").strip()
     gsv = (seo.get("google_site_verification") or "").strip()
     theme_color = (seo.get("theme_color") or "#0c0c14").strip()
+    menu_api_base = str(seo.get("menu_api_base") or "").strip()
+    menu_api_meta_block = ""
+    if menu_api_base:
+        menu_api_meta_block = (
+            f'  <meta name="menu-api-base" content="{html_lib.escape(menu_api_base)}" />\n'
+        )
 
     for r in restaurants:
         rid = r.get("id")
@@ -288,7 +294,8 @@ def main() -> int:
             )
 
         head_extra = (
-            canonical_block
+            menu_api_meta_block
+            + canonical_block
             + meta_robots
             + kw_block
             + gsv_block

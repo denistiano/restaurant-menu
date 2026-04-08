@@ -6,16 +6,48 @@
   'use strict';
 
   /* ── CONFIG ─────────────────────────────────────────────── */
-  const JSONBIN_BASE    = 'https://api.jsonbin.io/v3/b';
-  const SESSION_KEY_KEY = 'admin_master_key';
-  const ADMIN_LANG_KEY  = 'preferredLang';
-  let adminLang         = localStorage.getItem(ADMIN_LANG_KEY) || 'bg';
+  const SESSION_TOKEN_KEY = 'menu_admin_jwt';
+  const ADMIN_LANG_KEY    = 'preferredLang';
+  let adminLang           = localStorage.getItem(ADMIN_LANG_KEY) || 'bg';
+
+  const DEFAULT_LOCAL_MENU_API = 'http://127.0.0.1:8080';
+
+  /** Same rules as restaurant.js: meta / __MENU_API_BASE__, else localhost → default API origin. */
+  function getMenuApiBase() {
+    const w = typeof window !== 'undefined' && window.__MENU_API_BASE__;
+    if (w && typeof w === 'string' && w.trim()) return w.trim().replace(/\/?$/, '');
+    const meta = typeof document !== 'undefined' && document.querySelector('meta[name="menu-api-base"]');
+    if (meta) {
+      const c = meta.getAttribute('content');
+      if (c && c.trim()) return c.trim().replace(/\/?$/, '');
+    }
+    const h = typeof location !== 'undefined' ? location.hostname : '';
+    if (h === 'localhost' || h === '127.0.0.1' || h === '') {
+      return DEFAULT_LOCAL_MENU_API;
+    }
+    return '';
+  }
+  function getAuthToken() {
+    return sessionStorage.getItem(SESSION_TOKEN_KEY) || '';
+  }
+  function setAuthToken(token) {
+    if (token) sessionStorage.setItem(SESSION_TOKEN_KEY, token);
+  }
+  function clearAuthToken() {
+    try { sessionStorage.removeItem(SESSION_TOKEN_KEY); } catch (_) {}
+  }
+  function authJsonHeaders() {
+    const h = { 'Content-Type': 'application/json' };
+    const t = getAuthToken();
+    if (t) h['Authorization'] = 'Bearer ' + t;
+    return h;
+  }
 
   const I18N = {
     en: {
       backToSite: '← Back to site',
       selectRestaurant: 'Select a restaurant',
-      authSub: 'Enter one admin password, validate credentials, then choose a restaurant.',
+      authSub: 'Sign in with your backend username and password, then choose a restaurant.',
       restaurant: 'Restaurant',
       openEditor: 'Open editor',
       incorrectPassword: 'Incorrect admin password',
@@ -37,7 +69,7 @@
       addCurrencies: 'Add currencies',
       categoriesToolbarHint: 'Drag ↕ to reorder. Click a category to expand.',
       addCategory: '+ Add category',
-      cloudinaryUploads: 'Cloudinary — Image uploads',
+      cloudinaryUploads: 'Images (server upload)',
       mainBadge: 'MAIN',
       nameEnglish: 'Name (English)',
       nameBulgarian: 'Name (Bulgarian)',
@@ -61,7 +93,7 @@
     bg: {
       backToSite: '← Назад към сайта',
       selectRestaurant: 'Избери ресторант',
-      authSub: 'Въведи една админ парола, валидирай достъпа и избери ресторант.',
+      authSub: 'Влез с потребителско име и парола от сървъра, след това избери ресторант.',
       restaurant: 'Ресторант',
       openEditor: 'Отвори редактора',
       incorrectPassword: 'Невалидна админ парола',
@@ -83,7 +115,7 @@
       addCurrencies: 'Добави валути',
       categoriesToolbarHint: 'Плъзни ↕ за подредба. Кликни категория за разгъване.',
       addCategory: '+ Добави категория',
-      cloudinaryUploads: 'Cloudinary — Качване на изображения',
+      cloudinaryUploads: 'Изображения (качване към сървъра)',
       mainBadge: 'ОСНОВНА',
       nameEnglish: 'Име (Английски)',
       nameBulgarian: 'Име (Български)',
@@ -107,13 +139,6 @@
   };
   const tr = (k) => (I18N[adminLang] && I18N[adminLang][k]) || I18N.en[k] || k;
   const isBgFirst = () => adminLang === 'bg';
-
-  function getMasterKey() {
-    return sessionStorage.getItem(SESSION_KEY_KEY) || '';
-  }
-  function setMasterKey(val) {
-    if (val) sessionStorage.setItem(SESSION_KEY_KEY, val);
-  }
 
   const DEFAULT_CURRENCY_SUPPORT = [
     { code: 'EUR', label: 'Euro (€)', symbol: '€' },
@@ -147,47 +172,15 @@
     return support.find(c => c.code === code) || { code, label: code, symbol: code };
   }
 
-  /* ── CLOUDINARY CONFIG ──────────────────────────────────── */
-  const CLD_CLOUD_KEY  = 'cld_cloud_name';
-  const CLD_KEY_KEY    = 'cld_api_key';
-  const CLD_SECRET_KEY = 'cld_api_secret';
-
-  function getCldConfig() {
-    return {
-      cloudName: sessionStorage.getItem(CLD_CLOUD_KEY)  || '',
-      apiKey:    sessionStorage.getItem(CLD_KEY_KEY)    || '',
-      apiSecret: sessionStorage.getItem(CLD_SECRET_KEY) || ''
-    };
-  }
-  function saveCldConfig(cloudName, apiKey, apiSecret) {
-    if (cloudName !== undefined) sessionStorage.setItem(CLD_CLOUD_KEY,  cloudName);
-    if (apiKey    !== undefined) sessionStorage.setItem(CLD_KEY_KEY,    apiKey);
-    if (apiSecret !== undefined) sessionStorage.setItem(CLD_SECRET_KEY, apiSecret);
-  }
-
-  /* ── CLOUDINARY UPLOAD ──────────────────────────────────── */
+  /* ── IMAGE UPLOAD (backend → Cloudinary) ───────────────── */
   const CLD_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
-  async function computeSha256Hex(str) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
   /**
-   * Upload a File to Cloudinary using SHA-256 signed uploads.
-   * @param {File}     file
-   * @param {string}   folder   e.g. "restaurant_menu/tavernaki"
-   * @param {Function} onProgress  called with 0-100 percent
-   * @returns {Promise<string>}  secure_url
+   * Upload image via backend (Bearer JWT). Server signs Cloudinary request.
    */
-  async function uploadToCloudinary(file, folder, onProgress) {
-    const { cloudName, apiKey, apiSecret } = getCldConfig();
-
-    if (!cloudName || !apiKey || !apiSecret) {
-      throw new Error(
-        'Cloudinary credentials missing.\n' +
-        'Open the "Cloudinary — Image uploads" section on the login screen and fill in Cloud Name, API Key, and API Secret.'
-      );
+  async function uploadImageToServer(file, folder, onProgress) {
+    if (!getAuthToken()) {
+      throw new Error('Not signed in. Open the editor again from the login screen.');
     }
     if (file.size > CLD_MAX_BYTES) {
       throw new Error(`Image too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`);
@@ -195,47 +188,45 @@
     if (!file.type.startsWith('image/')) {
       throw new Error('Only image files (JPEG, PNG, WebP, GIF…) are allowed.');
     }
-
-    const timestamp = Math.floor(Date.now() / 1000);
-    // Params to sign: alphabetically sorted, excluding file/cloud_name/resource_type/api_key
-    const signParams = { folder, timestamp };
-    const sigString  = Object.keys(signParams).sort()
-      .map(k => `${k}=${signParams[k]}`).join('&') + apiSecret;
-    const signature  = await computeSha256Hex(sigString);
-
-    const form = new FormData();
-    form.append('file',                file);
-    form.append('api_key',             apiKey);
-    form.append('timestamp',           timestamp);
-    form.append('folder',              folder);
-    form.append('signature',           signature);
-    form.append('signature_algorithm', 'sha256');
-
+    const base = getMenuApiBase();
+    if (!base) {
+      throw new Error('Menu API base not set. Add <meta name="menu-api-base" content="http://127.0.0.1:8080"> or window.__MENU_API_BASE__.');
+    }
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('folder', folder);
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`);
-
+      xhr.open('POST', `${base}/api/admin/upload/image`);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + getAuthToken());
       if (onProgress) {
         xhr.upload.addEventListener('progress', e => {
           if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100));
         });
       }
-
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(JSON.parse(xhr.responseText).secure_url);
-        } else {
           try {
-            const err = JSON.parse(xhr.responseText);
-            reject(new Error(err.error?.message || `Cloudinary error (HTTP ${xhr.status})`));
-          } catch {
-            reject(new Error(`Upload failed (HTTP ${xhr.status})`));
-          }
+            const j = JSON.parse(xhr.responseText);
+            if (j.secureUrl) {
+              resolve(j.secureUrl);
+              return;
+            }
+          } catch (_) {}
+          reject(new Error('Upload succeeded but response was unexpected.'));
+        } else {
+          let msg = `HTTP ${xhr.status}`;
+          try {
+            const j = JSON.parse(xhr.responseText);
+            if (j.message) msg = j.message;
+            if (j.error) msg = typeof j.error === 'string' ? j.error : msg;
+          } catch (_) {}
+          reject(new Error(msg));
         }
       };
-      xhr.onerror   = () => reject(new Error('Network error during upload.'));
-      xhr.onabort   = () => reject(new Error('Upload cancelled.'));
-      xhr.send(form);
+      xhr.onerror = () => reject(new Error('Network error during upload.'));
+      xhr.onabort = () => reject(new Error('Upload cancelled.'));
+      xhr.send(fd);
     });
   }
 
@@ -267,7 +258,7 @@
         </div>`;
 
       try {
-        const url = await uploadToCloudinary(file, folder, pct => {
+        const url = await uploadImageToServer(file, folder, pct => {
           const bar   = previewEl.querySelector('.upload-progress__bar');
           const label = previewEl.querySelector('.upload-progress__label');
           if (bar)   bar.style.width     = pct + '%';
@@ -317,8 +308,7 @@
   let adminEditDebounce = null;
 
   /* ── DOM REFS ───────────────────────────────────────────── */
-  const masterKeyInput  = document.getElementById('masterKeyInput');
-  const masterKeyToggle = document.getElementById('masterKeyToggle');
+  const usernameInput  = document.getElementById('usernameInput');
   const sharedPasswordInput  = document.getElementById('sharedPasswordInput');
   const sharedPasswordToggle = document.getElementById('sharedPasswordToggle');
   const authScreen   = document.getElementById('authScreen');
@@ -383,8 +373,6 @@
     setText('restaurantSelectLabel', 'restaurant');
     setText('authLoginBtn', 'openEditor');
     setText('authError', 'incorrectPassword');
-    setText('cloudinarySummary', 'cloudinaryUploads');
-
     // section headings
     const nameTitle = document.getElementById('infoSectionNameTitle'); if (nameTitle) nameTitle.textContent = adminLang === 'bg' ? 'Имена' : 'Name';
     const descTitle = document.getElementById('infoSectionDescTitle'); if (descTitle) descTitle.textContent = adminLang === 'bg' ? 'Слоган / Описание' : 'Tagline / Description';
@@ -425,22 +413,6 @@
     setRowLabel('infoNameBgRow', tr('nameBulgarian'));
     setRowLabel('infoDescEnRow', tr('descEnglish'));
     setRowLabel('infoDescBgRow', tr('descBulgarian'));
-  }
-
-  /* ── PASSWORD HASHING ───────────────────────────────────── */
-  async function sha256Hex(text) {
-    const encoded = new TextEncoder().encode(text);
-    const buf = await crypto.subtle.digest('SHA-256', encoded);
-    return Array.from(new Uint8Array(buf))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  // Current scheme: sha256(password). Legacy fallback: sha256(restaurantId:password).
-  async function hashPassword(password) {
-    return sha256Hex(password);
-  }
-  async function hashPasswordLegacy(restaurantId, password) {
-    return sha256Hex(`${restaurantId}:${password}`);
   }
 
   /* ── TOAST ──────────────────────────────────────────────── */
@@ -498,13 +470,10 @@
     restaurantSelect.innerHTML = '';
 
     const opts = restaurants
-      .map(r => {
-        const hasBin = r.menu_bin_id && r.menu_bin_id !== 'PASTE_BIN_ID_HERE';
-        const status = hasBin ? 'Connected' : 'No bin ID';
-        const suffix = hasBin ? '' : ' (inactive)';
-        const label = `${r.name.en || r.id} — ${status}${suffix}`;
-        return { value: r.id, label };
-      })
+      .map(r => ({
+        value: r.id,
+        label: `${r.name.en || r.id}`
+      }))
       .filter(x => x.value);
 
     opts.forEach(o => {
@@ -644,12 +613,7 @@
     });
   }
 
-  /* ── MASTER KEY TOGGLE ───────────────────────────────────── */
-  masterKeyToggle.addEventListener('click', () => {
-    const isHidden = masterKeyInput.type === 'password';
-    masterKeyInput.type  = isHidden ? 'text' : 'password';
-    masterKeyToggle.title = isHidden ? 'Hide key' : 'Show key';
-  });
+  /* ── LOGIN FIELD TOGGLES ─────────────────────────────────── */
   sharedPasswordToggle?.addEventListener('click', () => {
     const isHidden = sharedPasswordInput.type === 'password';
     sharedPasswordInput.type  = isHidden ? 'text' : 'password';
@@ -660,217 +624,122 @@
       if (authLoginBtn) authLoginBtn.click();
     }
   });
-
-  // Pre-fill from sessionStorage if available
-  const savedKey = getMasterKey();
-  if (savedKey) masterKeyInput.value = savedKey;
-
-  /* ── CLOUDINARY FIELD WIRING ─────────────────────────────── */
-  const cldCloudNameEl  = document.getElementById('cldCloudName');
-  const cldApiKeyEl     = document.getElementById('cldApiKey');
-  const cldApiSecretEl  = document.getElementById('cldApiSecret');
-  const cldSecretToggle = document.getElementById('cldApiSecretToggle');
-
-  // Pre-fill from sessionStorage
-  const { cloudName: savedCloud, apiKey: savedCldKey, apiSecret: savedCldSecret } = getCldConfig();
-  if (savedCloud)     cldCloudNameEl.value  = savedCloud;
-  if (savedCldKey)    cldApiKeyEl.value     = savedCldKey;
-  if (savedCldSecret) cldApiSecretEl.value  = savedCldSecret;
-
-  // Save to sessionStorage on change
-  cldCloudNameEl.addEventListener('input',  () => saveCldConfig(cldCloudNameEl.value.trim(),  undefined, undefined));
-  cldApiKeyEl.addEventListener('input',     () => saveCldConfig(undefined, cldApiKeyEl.value.trim(),    undefined));
-  cldApiSecretEl.addEventListener('input',  () => saveCldConfig(undefined, undefined, cldApiSecretEl.value.trim()));
-
-  // Toggle visibility of API secret
-  if (cldSecretToggle) {
-    cldSecretToggle.addEventListener('click', () => {
-      const isHidden = cldApiSecretEl.type === 'password';
-      cldApiSecretEl.type    = isHidden ? 'text' : 'password';
-      cldSecretToggle.title  = isHidden ? 'Hide secret' : 'Show secret';
-    });
-  }
-
-  // Auto-open the Cloudinary section if credentials are already saved
-  const cldSection = document.getElementById('cldSection');
-  if (savedCloud || savedCldKey) {
-    cldSection?.setAttribute('open', '');
-  }
-
-  async function sanityCheckJsonbin(restaurantEntry, masterKey) {
-    const hasBin = restaurantEntry.menu_bin_id && restaurantEntry.menu_bin_id !== 'PASTE_BIN_ID_HERE';
-    if (!hasBin) return { ok: false, message: 'No menu_bin_id configured for this restaurant.' };
-
-    const res = await fetch(`${JSONBIN_BASE}/${restaurantEntry.menu_bin_id}/latest`, {
-      headers: { 'X-Master-Key': masterKey }
-    });
-    if (!res.ok) {
-      let msg = `JsonBin HTTP ${res.status}`;
-      try {
-        const body = await res.json();
-        if (body && body.message) msg = body.message;
-      } catch (_) {}
-      return { ok: false, message: `JsonBin validation failed: ${msg}` };
+  usernameInput?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (authLoginBtn) authLoginBtn.click();
     }
-    const wrapper = await res.json();
-    const rid = wrapper?.record?.restaurant?.id;
-    if (rid && rid !== restaurantEntry.id) {
-      return { ok: false, message: `Bin mismatch: expected "${restaurantEntry.id}", got "${rid}".` };
-    }
-    return { ok: true };
-  }
+  });
 
-  async function sanityCheckCloudinaryIfConfigured() {
-    const { cloudName, apiKey, apiSecret } = getCldConfig();
-    const any = !!(cloudName || apiKey || apiSecret);
-    if (!any) return { ok: true };
-    if (!cloudName || !apiKey || !apiSecret) {
-      return { ok: false, message: 'Cloudinary check failed: fill Cloud Name, API Key and API Secret.' };
-    }
-
-    const timestamp = Math.floor(Date.now() / 1000);
-    const folder = 'restaurant_menu/_sanity_checks';
-    const signParams = { folder, timestamp };
-    const sigString  = Object.keys(signParams).sort()
-      .map(k => `${k}=${signParams[k]}`).join('&') + apiSecret;
-    const signature = await computeSha256Hex(sigString);
-
-    // Use a real tiny PNG blob (more mobile-browser compatible than data URI).
-    const pngBytes = Uint8Array.from([
-      137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,4,0,0,0,181,28,12,2,
-      0,0,0,11,73,68,65,84,120,218,99,252,255,31,0,3,3,2,0,238,111,90,125,0,0,0,0,73,69,78,68,174,66,96,130
-    ]);
-    const tinyPng = new Blob([pngBytes], { type: 'image/png' });
-
-    const form = new FormData();
-    form.append('file', tinyPng, 'sanity.png');
-    form.append('api_key', apiKey);
-    form.append('timestamp', String(timestamp));
-    form.append('folder', folder);
-    form.append('signature_algorithm', 'sha256');
-    form.append('signature', signature);
-
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`, {
-        method: 'POST',
-        body: form
-      });
-      if (!res.ok) {
-        let msg = `Cloudinary HTTP ${res.status}`;
-        let body = null;
-        try { body = await res.json(); } catch (_) {}
-        msg = body?.error?.message || msg;
-
-        // Hard-fail only on explicit credential/signature issues.
-        const lower = String(msg).toLowerCase();
-        const authError =
-          lower.includes('api key') ||
-          lower.includes('signature') ||
-          lower.includes('invalid') ||
-          lower.includes('unauthorized') ||
-          lower.includes('authentication');
-        if (authError) {
-          return { ok: false, message: `Cloudinary validation failed: ${msg}` };
-        }
-        // Non-auth HTTP errors can be transient on mobile networks; don't block login.
-        return { ok: true, warning: `Cloudinary check skipped: ${msg}` };
-      }
-      return { ok: true };
-    } catch (err) {
-      // Mobile browsers/networks can throw opaque fetch errors.
-      // Allow login and let actual upload flow validate when used.
-      return { ok: true, warning: `Cloudinary check skipped (${err?.message || 'network issue'})` };
-    }
-  }
-
-  /* ── AUTHENTICATE ────────────────────────────────────────── */
+  /* ── AUTHENTICATE (JWT via backend) ──────────────────────── */
   async function attemptAuth(restaurantEntry, triggerBtn) {
-    const pw  = sharedPasswordInput.value.trim();
-    const key = masterKeyInput.value.trim();
+    const username = usernameInput.value.trim();
+    const pw = sharedPasswordInput.value.trim();
 
-    if (!key) {
-      masterKeyInput.focus();
-      masterKeyInput.classList.add('field-error');
-      setTimeout(() => masterKeyInput.classList.remove('field-error'), 1200);
-      showToast('Please enter your jsonbin.io master key first.', 'error');
+    if (!username) {
+      usernameInput.focus();
+      usernameInput.classList.add('field-error');
+      setTimeout(() => usernameInput.classList.remove('field-error'), 1200);
+      showToast(adminLang === 'bg' ? 'Въведи потребителско име.' : 'Please enter your username.', 'error');
       return;
     }
     if (!pw) { sharedPasswordInput.focus(); return; }
 
+    const base = getMenuApiBase();
+    if (!base) {
+      showToast(
+        adminLang === 'bg'
+          ? 'Задай URL на API: meta menu-api-base или window.__MENU_API_BASE__ (портът на статичния сървър не е API).'
+          : 'Set the Menu API URL: <meta name="menu-api-base"> or window.__MENU_API_BASE__ (static file port is not the API).',
+        'error'
+      );
+      return;
+    }
+
     if (authErrorEl) authErrorEl.style.display = 'none';
     if (triggerBtn) triggerBtn.disabled = true;
 
-    const hash = await hashPassword(pw);
-    const legacy = await hashPasswordLegacy(restaurantEntry.id, pw);
-    if (hash !== restaurantEntry.password_hash && legacy !== restaurantEntry.password_hash) {
+    let loginRes;
+    try {
+      loginRes = await fetch(`${base}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password: pw })
+      });
+    } catch (err) {
+      showToast((adminLang === 'bg' ? 'Мрежова грешка: ' : 'Network error: ') + (err.message || ''), 'error');
+      if (triggerBtn) triggerBtn.disabled = false;
+      return;
+    }
+
+    if (!loginRes.ok) {
+      clearAuthToken();
       adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40) });
       if (authErrorEl) {
         authErrorEl.style.display = 'block';
         authErrorEl.textContent = adminLang === 'bg'
-          ? 'Невалидна админ парола (няма достъп до този ресторант).'
-          : 'Incorrect admin password (not authorized for this restaurant).';
+          ? 'Невалидно потребителско име или парола.'
+          : 'Invalid username or password.';
       }
       sharedPasswordInput.focus();
       if (triggerBtn) triggerBtn.disabled = false;
       return;
     }
 
-    const jsonbinCheck = await sanityCheckJsonbin(restaurantEntry, key);
-    if (!jsonbinCheck.ok) {
-      adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40), reason: 'jsonbin_sanity' });
-      showToast(jsonbinCheck.message, 'error');
+    const body = await loginRes.json();
+    const token = body.accessToken;
+    const allowed = Array.isArray(body.restaurants) ? body.restaurants : [];
+    if (!token) {
+      showToast('Login response missing token.', 'error');
+      if (triggerBtn) triggerBtn.disabled = false;
+      return;
+    }
+    if (!allowed.includes(restaurantEntry.id)) {
+      clearAuthToken();
+      adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40), reason: 'no_restaurant_scope' });
       if (authErrorEl) {
         authErrorEl.style.display = 'block';
-        authErrorEl.textContent = jsonbinCheck.message;
+        authErrorEl.textContent = adminLang === 'bg'
+          ? 'Нямате достъп до този ресторант (провери assignments на сървъра).'
+          : 'You do not have access to this restaurant (check server assignments).';
       }
       if (triggerBtn) triggerBtn.disabled = false;
       return;
     }
 
-    const cloudinaryCheck = await sanityCheckCloudinaryIfConfigured();
-    if (!cloudinaryCheck.ok) {
-      adminTrack('admin_auth_fail', { restaurant_id: String(restaurantEntry.id).slice(0, 40), reason: 'cloudinary_sanity' });
-      showToast(cloudinaryCheck.message, 'error');
-      if (authErrorEl) {
-        authErrorEl.style.display = 'block';
-        authErrorEl.textContent = cloudinaryCheck.message;
-      }
-      if (triggerBtn) triggerBtn.disabled = false;
-      return;
-    }
-    if (cloudinaryCheck.warning) {
-      showToast(cloudinaryCheck.warning, 'info');
-    }
-
-    // Correct + sanity checks passed
+    setAuthToken(token);
     adminTrack('admin_auth_ok', { restaurant_id: String(restaurantEntry.id).slice(0, 40) });
-    setMasterKey(key);
     currentRestaurant = restaurantEntry;
     await loadAndOpenEditor();
     if (triggerBtn) triggerBtn.disabled = false;
   }
 
-  /* ── LOAD MENU FROM JSONBIN ──────────────────────────────── */
+  /* ── LOAD MENU FROM BACKEND (JPA) ───────────────────────── */
   async function loadAndOpenEditor() {
     saveBtn.disabled = true;
     const r = currentRestaurant;
-    const hasBin = r.menu_bin_id && r.menu_bin_id !== 'PASTE_BIN_ID_HERE';
+    const base = getMenuApiBase();
+    if (!base) {
+      showToast('Menu API base not configured (meta menu-api-base or __MENU_API_BASE__).', 'error');
+      saveBtn.disabled = false;
+      return;
+    }
 
     try {
-      if (!hasBin) {
+      const res = await fetch(`${base}/api/public/menu/${encodeURIComponent(r.id)}`);
+      if (res.status === 404) {
         showToast(
-          'No menu_bin_id for this restaurant. Set menu_bin_id in resources/restaurants.json, then reload.',
+          adminLang === 'bg'
+            ? 'Няма публикувано меню в базата. Запази първо от админ или импортирай.'
+            : 'No menu in database yet. Save once from admin or import data.',
           'error'
         );
         saveBtn.disabled = false;
         return;
       }
-      const res = await fetch(`${JSONBIN_BASE}/${r.menu_bin_id}/latest`, {
-        headers: { 'X-Master-Key': getMasterKey() }
-      });
-      if (!res.ok) throw new Error(`Jsonbin HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const wrapper = await res.json();
       menuData = wrapper.record;
+      if (!menuData || !menuData.restaurant) throw new Error('Empty menu payload');
       openEditor();
     } catch (err) {
       adminTrack('admin_menu_load_fail', {
@@ -2138,7 +2007,7 @@
     // Categories and items are already mutated in-place
   }
 
-  /* ── SAVE TO JSONBIN ─────────────────────────────────────── */
+  /* ── SAVE TO BACKEND (JPA) ───────────────────────────────── */
   saveBtn.addEventListener('click', async () => {
     collectFormData();
     saveBtn.disabled = true;
@@ -2146,35 +2015,35 @@
     adminTrack('admin_save_attempt', {});
 
     const r = currentRestaurant;
-    const hasBin = r.menu_bin_id && r.menu_bin_id !== 'PASTE_BIN_ID_HERE';
-
-    if (!hasBin) {
-      adminTrack('admin_save_blocked', { reason: 'no_bin' });
-      showToast('No bin ID configured — cannot save to cloud.', 'error');
+    if (!getAuthToken()) {
+      adminTrack('admin_save_blocked', { reason: 'no_token' });
+      showToast(adminLang === 'bg' ? 'Няма сесия — влез отново.' : 'Not signed in — open the login screen again.', 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = tr('save');
+      return;
+    }
+    if (!getMenuApiBase()) {
+      showToast('Menu API base not configured.', 'error');
       saveBtn.disabled = false;
       saveBtn.textContent = tr('save');
       return;
     }
 
     try {
-      const res = await fetch(`${JSONBIN_BASE}/${r.menu_bin_id}`, {
+      const res = await fetch(`${getMenuApiBase()}/api/admin/menu/${encodeURIComponent(r.id)}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': getMasterKey()
-        },
+        headers: authJsonHeaders(),
         body: JSON.stringify(menuData)
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || `HTTP ${res.status}`);
+        throw new Error(err.message || err.error || `HTTP ${res.status}`);
       }
 
-      // Bust sessionStorage cache for this tab (restaurant.js uses sessionStorage)
-      const cacheVersion = 'v2';
+      const cacheVersion = 'v3';
       try { sessionStorage.removeItem(`menu_${cacheVersion}_${r.id}`); } catch (_) {}
-      try { sessionStorage.removeItem(`binid_${cacheVersion}_${r.id}`); } catch (_) {}
+      try { sessionStorage.removeItem(`menu_rev_${cacheVersion}_${r.id}`); } catch (_) {}
 
       setDirty(false);
       adminTrack('admin_save_success', {});

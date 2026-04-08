@@ -31,7 +31,7 @@
  * before they appear in standard reports and Explorations.
  *
  * Secondary sink — custom ingest (no GA4 limits on param count / string length):
- *   POST → INGEST_URL_FULL (148.230.71.137:47892 /api/v1/events)
+ *   POST → {apiOrigin}/api/v1/events (apiOrigin from __MENU_API_BASE__ or meta; on localhost defaults to http://127.0.0.1:8080)
  *   Body includes:
  *     • restaurantId (nullable) — resolved id for filtering/search (params > window.RESTAURANT_ID > path)
  *     • restaurantScope — landing | menu | admin
@@ -245,12 +245,25 @@ function withStoryContext(params = {}) {
 
 /** Session id for custom ingest API (guide: sessionStorage "sid") */
 const INGEST_SESSION_KEY = 'sid';
-/**
- * Exact URL you will see in DevTools → Network (POST, host 148.230.71.137, port 47892).
- * Filter: type "148.230" or "47892" in the Network search box.
- */
-const INGEST_URL_FULL = 'https://tebeshir.online/api/v1/events';
 const INGEST_MAX_PAYLOAD_CHARS = 120000;
+
+const DEFAULT_LOCAL_MENU_API = 'http://127.0.0.1:8080';
+
+/** Same base resolution as menu fetches: __MENU_API_BASE__, meta menu-api-base, or localhost default. */
+function resolveAnalyticsApiOrigin() {
+  const w = typeof window !== 'undefined' && window.__MENU_API_BASE__;
+  if (w && typeof w === 'string' && w.trim()) return w.trim().replace(/\/?$/, '');
+  const meta = typeof document !== 'undefined' && document.querySelector('meta[name="menu-api-base"]');
+  if (meta) {
+    const c = meta.getAttribute('content');
+    if (c && c.trim()) return c.trim().replace(/\/?$/, '');
+  }
+  const h = typeof location !== 'undefined' ? location.hostname : '';
+  if (h === 'localhost' || h === '127.0.0.1' || h === '') {
+    return DEFAULT_LOCAL_MENU_API;
+  }
+  return '';
+}
 const GA_MEASUREMENT_ID = 'G-FKQNB5Y1DP';
 
 function getIngestEndpoint() {
@@ -259,7 +272,8 @@ function getIngestEndpoint() {
     const u = custom.trim();
     return u.includes('/api/') ? u : u.replace(/\/?$/, '') + '/api/v1/events';
   }
-  return INGEST_URL_FULL;
+  const base = resolveAnalyticsApiOrigin();
+  return base ? base + '/api/v1/events' : '';
 }
 
 Object.defineProperty(window, '__MENU_ANALYTICS_INGEST_URL', {
@@ -344,14 +358,16 @@ function runIngestHttp(eventName, mergedParams) {
     return;
   }
   const url = getIngestEndpoint();
+  if (!url || !String(url).trim()) {
+    return;
+  }
   if (!ingestNetworkHintLogged) {
     ingestNetworkHintLogged = true;
     console.info(
-      '%c[analytics.menu] Network tab: look for POST to %c148.230.71.137:47892',
+      '%c[analytics] Ingest POST',
       'color:#0a0;font-weight:bold',
-      'color:#06c;font-weight:bold',
-      '\n → Full URL:', url,
-      '\n (also: window.__MENU_ANALYTICS_INGEST_URL)'
+      '\n → URL:', url,
+      '\n Override: window.__ANALYTICS_INGEST_URL__ or window.__MENU_API_BASE__ / meta menu-api-base'
     );
   }
   if (typeof location !== 'undefined' && location.protocol === 'https:' && String(url).startsWith('http:') && ingestHttpWarnCount < INGEST_HTTP_WARN_CAP) {

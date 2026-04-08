@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://denistiano.github.io/restaurant_menu/sitemap.xml
+Sitemap: http://148.230.71.137/sitemap.xml

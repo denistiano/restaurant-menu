@@ -1,5 +1,6 @@
 {
-  "base_url": "https://denistiano.github.io/restaurant_menu/",
+  "menu_api_base": "https://tebeshir.online",
+  "base_url": "http://148.230.71.137/",
   "site_name": "e-Menu",
   "site_name_bg": "е-Меню",
   "organization_name": "e-Menu",
