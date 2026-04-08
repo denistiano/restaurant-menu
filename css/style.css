@@ -312,12 +312,12 @@ html:has(.landing-page) {
   margin-bottom: clamp(20px, 4vw, 28px);
 }
 .l-hero__brand-logo {
-  width: clamp(72px, 18vw, 112px);
+  width: min(250px, calc(100vw - 120px));
   height: auto;
   aspect-ratio: 1;
   object-fit: contain;
   flex-shrink: 0;
-  border-radius: clamp(14px, 3vw, 20px);
+  border-radius: clamp(18px, 5vw, 28px);
   box-shadow:
     0 4px 28px rgba(0, 0, 0, 0.35),
     0 0 0 1px rgba(196, 149, 90, 0.12);
