@@ -53,13 +53,11 @@
       authSub:
         'Use your server username and password. Venues linked to your account appear only after you sign in.',
       signIn: 'Sign in',
-      chooseWorkspaceHint:
-        'Open a workspace below. Labels are neutral (not public restaurant names).',
+      chooseWorkspaceHint: 'Open a workspace below — names match your published menu titles.',
       superOnlyHint: 'No venues are linked to this account. You can still open Operations to manage users.',
       operationsLink: 'Operations',
       logsDashboardLink: 'Telemetry logs',
       signOut: 'Sign out',
-      workspacePrefix: 'Workspace',
       openEditor: 'Open editor',
       incorrectPassword: 'Incorrect admin password',
       editorRestaurantTab: 'Restaurant',
@@ -110,13 +108,12 @@
         'Потребителско име и парола от сървъра. Обектите, към които имаш достъп, се показват едва след вход.',
       signIn: 'Вход',
       chooseWorkspaceHint:
-        'Избери работно място по-долу. Етикетите са неутрални (не са публични имена на ресторанти).',
+        'Избери обект по-долу — имената са от публикуваното меню (EN/BG според езика на панела).',
       superOnlyHint:
         'Няма свързани обекти. Можеш да отвориш Operations за управление на потребители.',
       operationsLink: 'Операции',
       logsDashboardLink: 'Телеметрия (логове)',
       signOut: 'Изход',
-      workspacePrefix: 'Профил',
       openEditor: 'Отвори редактора',
       incorrectPassword: 'Невалидна админ парола',
       editorRestaurantTab: 'Ресторант',
@@ -314,6 +311,8 @@
   let currentRestaurant = null;   // minimal { id } then full from API menu payload
   let sessionSuperAdmin = false;
   let scopedRestaurantIds = [];
+  /** Map restaurantId → { restaurantId, nameEn, nameBg } from login /api/auth/me */
+  let scopedRestaurantSummaries = new Map();
   let activeWorkspaceId = null;
   let menuData        = null;     // the full { restaurant: {...} } object
   let isDirty         = false;
@@ -393,6 +392,9 @@
 
     if (rerender && menuData && !editorScreen.classList.contains('hidden')) {
       renderCategories(menuData.restaurant.menu.categories);
+    }
+    if (rerender && scopedRestaurantIds.length > 1) {
+      refreshWorkspaceTabLabels();
     }
   }
 
@@ -504,19 +506,51 @@
     }
   }
 
-  function workspaceLabelAt(index) {
-    const p = tr('workspacePrefix');
-    return `${p} ${index + 1}`;
+  function applyRestaurantSummariesFromApi(summaries) {
+    scopedRestaurantSummaries = new Map();
+    if (!Array.isArray(summaries)) return;
+    summaries.forEach(s => {
+      if (s && s.restaurantId) scopedRestaurantSummaries.set(String(s.restaurantId), s);
+    });
+  }
+
+  /** Tab label: localized menu name, or venue id if no title in DB. */
+  function workspaceDisplayNameForId(rid) {
+    const s = scopedRestaurantSummaries.get(rid);
+    if (!s) return rid;
+    const en = (s.nameEn || '').trim();
+    const bg = (s.nameBg || '').trim();
+    if (adminLang === 'bg') {
+      if (bg) return bg;
+      if (en) return en;
+    } else {
+      if (en) return en;
+      if (bg) return bg;
+    }
+    return rid;
+  }
+
+  function refreshWorkspaceTabLabels() {
+    if (venueTabStrip) {
+      venueTabStrip.classList.toggle('hidden', scopedRestaurantIds.length === 0);
+      if (scopedRestaurantIds.length) {
+        renderVenueTabs(venueTabStrip, activeWorkspaceId, async r => {
+          await openEditorForRestaurantId(r);
+        });
+      }
+    }
+    renderEditorVenueStrip();
   }
 
   function renderVenueTabs(container, activeId, onPick) {
     if (!container) return;
     container.innerHTML = '';
-    scopedRestaurantIds.forEach((rid, i) => {
+    scopedRestaurantIds.forEach(rid => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'venue-tab' + (rid === activeId ? ' venue-tab--active' : '');
-      btn.textContent = workspaceLabelAt(i);
+      btn.textContent = workspaceDisplayNameForId(rid);
+      btn.title = rid;
       btn.setAttribute('aria-selected', rid === activeId ? 'true' : 'false');
       btn.addEventListener('click', () => onPick(rid));
       container.appendChild(btn);
@@ -588,6 +622,7 @@
     clearAuthToken();
     sessionSuperAdmin = false;
     scopedRestaurantIds = [];
+    scopedRestaurantSummaries = new Map();
     activeWorkspaceId = null;
     menuData = null;
     currentRestaurant = null;
@@ -614,6 +649,7 @@
       }
       const me = await res.json();
       scopedRestaurantIds = Array.isArray(me.restaurants) ? me.restaurants : [];
+      applyRestaurantSummariesFromApi(me.restaurantSummaries);
       sessionSuperAdmin = !!me.superAdmin;
       try {
         if (sessionSuperAdmin && t) localStorage.setItem(SUPER_JWT_MIRROR_KEY, t);
@@ -838,6 +874,7 @@
 
     sessionSuperAdmin = !!body.superAdmin;
     scopedRestaurantIds = allowed;
+    applyRestaurantSummariesFromApi(body.restaurantSummaries);
     setAuthToken(token);
     try {
       if (body.superAdmin) localStorage.setItem(SUPER_JWT_MIRROR_KEY, token);
