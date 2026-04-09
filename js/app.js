@@ -8,7 +8,7 @@
    ├─────────────────────┼───────────────────────────────────────────────────┤
    │ landing_view        │ language, referrer_host                           │
    │ restaurant_select   │ restaurant_id, restaurant_name, position          │
-   │ cta_click           │ cta_type (hero|nav|contact_phone|contact_email)   │
+   │ cta_click           │ cta_type (hero|contact_phone|contact_email)       │
    │ scroll_depth        │ percent (25|50|75|90)                             │
    │ language_change     │ from_lang, to_lang, page:"landing"                │
    │ page_exit           │ duration_sec, max_scroll_pct, page:"landing"      │
@@ -65,14 +65,10 @@
 
   /** Bind CTA and contact links. */
   function initCTATracking() {
-    /* Hero and nav "Get yours / Искам е-меню" buttons */
+    /* Hero CTAs (menus + Get yours) */
     document.querySelectorAll('.l-hero__cta').forEach(el => {
       el.addEventListener('click', () =>
         window.trackEvent?.('cta_click', { cta_type: 'hero', page: 'landing' }));
-    });
-    document.querySelectorAll('.l-nav__cta-link').forEach(el => {
-      el.addEventListener('click', () =>
-        window.trackEvent?.('cta_click', { cta_type: 'nav', page: 'landing' }));
     });
     document.querySelectorAll('[data-scroll-target="restaurants"]').forEach(el => {
       el.addEventListener('click', e => {

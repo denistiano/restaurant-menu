@@ -179,8 +179,8 @@ html:has(.landing-page) {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 200;
-  padding: 0 24px;
-  height: 64px;
+  padding: 0 18px;
+  height: 52px;
   display: flex;
   align-items: center;
   transition: background 0.4s ease, backdrop-filter 0.4s ease, border-color 0.4s ease;
@@ -198,27 +198,27 @@ html:has(.landing-page) {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
 }
 .l-nav__logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   text-decoration: none;
-  margin-right: auto;
+  min-width: 0;
 }
 .l-nav__logo-img {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: 8px;
   flex-shrink: 0;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
 .l-nav__logo-text {
   font-family: var(--font-serif);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #fff;
   letter-spacing: 0.04em;
@@ -229,14 +229,15 @@ html:has(.landing-page) {
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: var(--radius-pill);
-  padding: 5px 16px;
+  padding: 4px 12px;
   color: rgba(255,255,255,0.85);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
   font-family: var(--font-sans);
+  flex-shrink: 0;
 }
 .l-lang-toggle:hover {
   background: rgba(255,255,255,0.14);
@@ -245,57 +246,13 @@ html:has(.landing-page) {
 
 @media (max-width: 720px) {
   .l-nav {
-    height: auto;
-    min-height: 56px;
-    padding: 10px 14px 12px;
-  }
-  .l-nav__inner {
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 10px;
-    row-gap: 10px;
-  }
-  /* DOM is logo → CTAs → lang; pull lang beside logo on row 1 */
-  .l-nav__logo {
-    order: 1;
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: calc(100% - 100px);
-    margin-right: 0;
+    padding: 0 14px;
   }
   .l-nav__logo-text {
-    font-size: clamp(14px, 4.2vw, 17px);
-    letter-spacing: 0.03em;
-  }
-  .l-lang-toggle {
-    order: 2;
-    flex: 0 0 auto;
-    margin-left: auto;
-    padding: 6px 14px;
-    font-size: 11px;
-  }
-  .l-nav__cta-link--secondary {
-    order: 3;
-    flex: 1 1 calc(50% - 5px);
-    min-width: 0;
-    text-align: center;
-    font-size: 12px;
-    padding: 9px 10px;
-    line-height: 1.25;
-    white-space: normal;
-  }
-  .l-nav__inner > .l-nav__cta-link:not(.l-nav__cta-link--secondary) {
-    order: 4;
-    flex: 1 1 calc(50% - 5px);
-    min-width: 0;
-    text-align: center;
-    font-size: 12px;
-    padding: 9px 10px;
-    line-height: 1.25;
-    white-space: normal;
+    font-size: clamp(14px, 4vw, 16px);
   }
   .l-hero {
-    padding-top: 100px;
+    padding-top: 72px;
   }
 }
 
@@ -309,7 +266,7 @@ html:has(.landing-page) {
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  padding: 80px 24px 100px;
+  padding: 68px 24px 100px;
 }
 
 .l-hero__bg {
@@ -469,33 +426,71 @@ html:has(.landing-page) {
   font-size: clamp(15px, 2vw, 17px);
   color: rgba(240, 236, 228, 0.55);
   max-width: 480px;
-  margin: 0 auto 40px;
+  margin: 0 auto 28px;
   line-height: 1.7;
   font-weight: 300;
+}
+
+.l-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
 }
 
 .l-hero__cta {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   background: var(--color-accent);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  padding: 14px 32px;
+  padding: 12px 26px;
   border-radius: var(--radius-pill);
   text-decoration: none;
-  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s, border-color 0.2s, color 0.2s;
   box-shadow: 0 4px 22px rgba(196,149,90,0.28);
+  border: 1.5px solid transparent;
+}
+.l-hero__cta--secondary {
+  background: transparent;
+  color: rgba(240, 236, 228, 0.92);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: none;
 }
 .l-hero__cta:hover {
-  background: #d4a868;
   transform: translateY(-2px);
+}
+.l-hero__cta:not(.l-hero__cta--secondary):hover {
+  background: #d4a868;
   box-shadow: 0 10px 36px rgba(196,149,90,0.5), 0 0 0 3px rgba(196,149,90,0.18);
+}
+.l-hero__cta--secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.38);
+  color: #fff;
+  box-shadow: none;
 }
 .l-hero__cta svg { flex-shrink: 0; transition: transform 0.2s; }
 .l-hero__cta:hover svg { transform: translateX(3px); }
+
+@media (max-width: 420px) {
+  .l-hero__ctas {
+    flex-direction: column;
+    max-width: 280px;
+  }
+  .l-hero__cta,
+  .l-hero__cta--secondary {
+    width: 100%;
+  }
+}
 
 .l-hero__scroll-hint {
   position: absolute;
@@ -551,31 +546,6 @@ html:has(.landing-page) {
   background: var(--color-accent);
   margin: 0 auto;
   border-radius: 2px;
-}
-
-/* ── Nav CTA link ─────────────────────────────────────────── */
-.l-nav__cta-link {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-accent);
-  text-decoration: none;
-  padding: 7px 16px;
-  border: 1.5px solid rgba(196,149,90,0.35);
-  border-radius: var(--radius-pill);
-  transition: background 0.2s, border-color 0.2s;
-  white-space: nowrap;
-}
-.l-nav__cta-link:hover {
-  background: rgba(196,149,90,0.1);
-  border-color: var(--color-accent);
-}
-.l-nav__cta-link--secondary {
-  color: rgba(240,236,228,0.9);
-  border-color: rgba(255,255,255,0.2);
-}
-.l-nav__cta-link--secondary:hover {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.35);
 }
 
 /* ── Shared section header ────────────────────────────────── */
@@ -1095,11 +1065,11 @@ html:has(.landing-page) {
 }
 @media (max-width: 560px) {
   .l-nav__logo-img {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
   }
   .l-nav__logo-text {
-    font-size: 16px;
+    font-size: 15px;
   }
   .l-grid {
     grid-template-columns: 1fr;
@@ -1121,7 +1091,7 @@ html:has(.landing-page) {
     opacity: 1;
     transform: none;
   }
-  .l-hero { padding: 80px 20px 80px; }
+  .l-hero { padding: 64px 20px 80px; }
   .l-listing__inner { padding: 60px 20px 80px; }
 }
 
