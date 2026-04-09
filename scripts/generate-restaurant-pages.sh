@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Generate one folder per restaurant id from resources/restaurants.json:
+# Generate from resources/restaurants.json + resources/seo-config.json:
 #   <repo-root>/<id>/index.html
-# Run before local preview or rely on GitHub Actions before Pages deploy.
+#   sitemap.xml (homepage + one URL per restaurant id)
+#   robots.txt (Sitemap: line)
+# Run locally before commit, or rely on GitHub Actions (pages.yml) before Pages deploy.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

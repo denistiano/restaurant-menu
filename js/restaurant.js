@@ -67,7 +67,7 @@
   // ── Cache config ─────────────────────────────────────────
   // Bump CV whenever the stored shape changes to auto-bust old entries.
   const CACHE_VERSION  = 'v3';
-  const MENU_CACHE_TTL = 60 * 60 * 1000;         // 1 h  — menu data
+  const MENU_CACHE_TTL = 5 * 60 * 1000;          // 5 min — menu JSON in sessionStorage
   const MENU_KEY       = `menu_${CACHE_VERSION}_${RESTAURANT_ID}`;
 
   // ── Generic cache helpers ─────────────────────────────────
@@ -1890,7 +1890,7 @@
      FETCH & INIT
      ============================================================ */
   async function init() {
-    // ── Layer 1: fresh sessionStorage cache (< 1 h) ──────────
+    // ── Layer 1: fresh sessionStorage cache (MENU_CACHE_TTL) ─
     const menuCached = cacheGet(MENU_KEY, MENU_CACHE_TTL);
     if (menuCached) {
       console.debug(`[menu] cache HIT for "${RESTAURANT_ID}" (age ${Math.round(menuCached.age_ms / 60000)} min)`);
@@ -1962,7 +1962,7 @@
 
       normalizeRecordQuantityForPublic(rawData);
       cacheSet(MENU_KEY, rawData, serverRev);
-      console.debug(`[menu] fetched & cached for 1 h (revision ${serverRev})`);
+      console.debug(`[menu] fetched & cached (${Math.round(MENU_CACHE_TTL / 60000)} min TTL, revision ${serverRev})`);
 
       data = rawData;
       if (!currentLang) currentLang = data.restaurant.default_language || 'en';

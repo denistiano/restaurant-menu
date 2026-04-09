@@ -49,7 +49,8 @@ jobs:
               print("Keeping committed base_url:", cfg.get("base_url"))
           PY
 
-      - name: Generate restaurant pages, sitemap, robots.txt
+      # generate_pages.py: /<id>/index.html from resources/restaurants.json + sitemap.xml + robots.txt (URLs from seo-config base_url).
+      - name: Generate restaurant pages and sitemap (from restaurants.json)
         run: bash scripts/generate-restaurant-pages.sh
 
       - uses: actions/upload-pages-artifact@v3
