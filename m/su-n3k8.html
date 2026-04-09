@@ -68,6 +68,32 @@
     .su-modal__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     #suQrCanvas { display: block; margin: 12px auto; border-radius: 8px; background: #fff; padding: 8px; }
     .su-url-field { width: 100%; font-size: 12px; padding: 8px; word-break: break-all; font-family: ui-monospace, monospace; }
+    .su-table-venues {
+      max-width: 300px;
+      vertical-align: top;
+    }
+    .su-table-venues--empty { color: var(--muted); font-size: 12px; }
+    .su-table-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      padding: 2px 8px;
+      margin: 2px 4px 2px 0;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      font-size: 11px;
+      line-height: 1.35;
+      max-width: 100%;
+    }
+    .su-table-pill__name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; max-width: 140px; white-space: nowrap; }
+    .su-table-pill__role {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: ui-monospace, monospace;
+      flex-shrink: 0;
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" crossorigin="anonymous"></script>
 </head>

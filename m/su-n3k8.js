@@ -256,10 +256,14 @@
       el('suMain').classList.remove('su-hidden');
       var logsA = el('suLogsLink');
       if (logsA) logsA.href = 'logs.html';
-      return Promise.all([refreshList(), loadVenueCatalog()]).then(function () {
-        renderVenueAssignmentUI('suNew');
-        return true;
-      });
+      return loadVenueCatalog()
+        .then(function () {
+          return refreshList();
+        })
+        .then(function () {
+          renderVenueAssignmentUI('suNew');
+          return true;
+        });
     });
   }
 
@@ -269,6 +273,31 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function fillVenuesTableCell(td, assignments) {
+    td.className = 'su-table-venues';
+    td.textContent = '';
+    if (!assignments || !assignments.length) {
+      td.classList.add('su-table-venues--empty');
+      td.textContent = '—';
+      return;
+    }
+    assignments.forEach(function (a) {
+      var pill = document.createElement('span');
+      pill.className = 'su-table-pill';
+      pill.title = a.restaurantId + ' · ' + String(a.role || 'ADMIN').toUpperCase();
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'su-table-pill__name';
+      var v = findVenue(a.restaurantId);
+      nameSpan.textContent = venueLabel(v, a.restaurantId);
+      var roleSpan = document.createElement('span');
+      roleSpan.className = 'su-table-pill__role';
+      roleSpan.textContent = String(a.role || 'ADMIN').toUpperCase();
+      pill.appendChild(nameSpan);
+      pill.appendChild(roleSpan);
+      td.appendChild(pill);
+    });
   }
 
   function refreshList() {
@@ -283,11 +312,6 @@
         /* forEach + .bind: a `for` loop with `var u` made every row's Setup link / Delete target the last user. */
         users.forEach(function (u) {
           var tr = document.createElement('tr');
-          var venues = (u.assignments || [])
-            .map(function (a) {
-              return a.restaurantId + ':' + a.role;
-            })
-            .join(', ') || '—';
           tr.innerHTML =
             '<td>' +
             u.id +
@@ -297,9 +321,8 @@
             (u.enabled ? 'yes' : 'no') +
             '</td><td>' +
             (u.superAdmin ? 'yes' : 'no') +
-            '</td><td style="max-width:220px;word-break:break-all">' +
-            escapeHtml(venues) +
-            '</td><td class="su-actions"></td>';
+            '</td><td></td><td class="su-actions"></td>';
+          fillVenuesTableCell(tr.cells[4], u.assignments);
           var cell = tr.querySelector('.su-actions');
           var editBtn = document.createElement('button');
           editBtn.className = 'su-btn';
@@ -511,12 +534,16 @@
   });
 
   el('suRefreshBtn').addEventListener('click', function () {
-    Promise.all([refreshList(), loadVenueCatalog()]).then(function () {
-      renderVenueAssignmentUI('suNew');
-      if (editTargetUser && !el('suEditBackdrop').classList.contains('su-hidden')) {
-        renderVenueAssignmentUI('suEdit');
-      }
-    });
+    loadVenueCatalog()
+      .then(function () {
+        return refreshList();
+      })
+      .then(function () {
+        renderVenueAssignmentUI('suNew');
+        if (editTargetUser && !el('suEditBackdrop').classList.contains('su-hidden')) {
+          renderVenueAssignmentUI('suEdit');
+        }
+      });
   });
 
   el('suCreateBtn').addEventListener('click', function () {
