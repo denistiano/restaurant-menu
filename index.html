@@ -11,6 +11,7 @@
   <meta property="og:description" content="Кратък линк и QR — менюто ти в телефона на госта. Двуезично, винаги актуално." />
   <meta property="og:type" content="website" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preload" as="image" href="resources/logo.webp" type="image/webp" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -25,15 +26,13 @@
         <img src="favicon.ico" alt="" class="l-nav__logo-img" width="44" height="44" decoding="async" />
         <span class="l-nav__logo-text">emenu.click</span>
       </a>
-      <div class="l-nav__actions">
-        <a href="#restaurants" class="l-nav__cta-link l-nav__cta-link--secondary" data-scroll-target="restaurants"
-           data-en="Our menus" data-bg="Нашите менюта">Нашите менюта</a>
-        <a href="#contact" class="l-nav__cta-link"
-           data-en="Get yours" data-bg="Искам е-меню">Искам е-меню</a>
-        <button class="l-lang-toggle" id="langToggle" aria-label="Toggle language">
-          <span class="l-lang-toggle__label">EN</span>
-        </button>
-      </div>
+      <a href="#restaurants" class="l-nav__cta-link l-nav__cta-link--secondary" data-scroll-target="restaurants"
+         data-en="Our menus" data-bg="Нашите менюта">Нашите менюта</a>
+      <a href="#contact" class="l-nav__cta-link"
+         data-en="Get yours" data-bg="Искам е-меню">Искам е-меню</a>
+      <button type="button" class="l-lang-toggle" id="langToggle" aria-label="Toggle language">
+        <span class="l-lang-toggle__label">EN</span>
+      </button>
     </div>
   </nav>
 
@@ -59,7 +58,10 @@
           <span class="l-hero__ornament-node"></span>
           <span class="l-hero__ornament-line l-hero__ornament-line--accent"></span>
         </div>
-        <img class="l-hero__brand-logo" src="resources/logo.png" alt="emenu.click" width="250" height="250" decoding="async" />
+        <picture>
+          <source srcset="resources/logo.webp" type="image/webp" />
+          <img class="l-hero__brand-logo" src="resources/logo.png" alt="emenu.click" width="250" height="250" decoding="async" fetchpriority="high" loading="eager" />
+        </picture>
         <div class="l-hero__ornament l-hero__ornament--tail" aria-hidden="true">
           <span class="l-hero__ornament-line l-hero__ornament-line--accent"></span>
           <span class="l-hero__ornament-node"></span>
@@ -88,7 +90,7 @@
            data-bg="Защо emenu.click?">Защо emenu.click?</p>
         <h2 class="l-section-header__title"
             data-en="Everything your restaurant needs"
-            data-bg="Всичко, което ресторантът ти трябва">Всичко, което ресторантът ти трябва</h2>
+            data-bg="Всичко, което ресторантът ти трябва">Всичко, от което ресторантът ти има нужда</h2>
       </header>
       <div class="l-features__grid">
 
@@ -221,11 +223,7 @@
         <div class="l-listing__rule" aria-hidden="true"></div>
       </header>
 
-      <div class="l-grid" id="restaurantGrid">
-        <div class="l-loading" id="loadingSpinner">
-          <div class="l-spinner"></div>
-        </div>
-      </div>
+      <div class="l-grid" id="restaurantGrid" aria-busy="true"></div>
     </div>
   </section>
 

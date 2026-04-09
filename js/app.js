@@ -166,7 +166,6 @@
       card.dataset.descEn = r.description.en || '';
       card.dataset.descBg = r.description.bg || r.description.en || '';
       card.setAttribute('aria-label', r.name[currentLang] || r.name.en);
-      card.style.transitionDelay = `${index * 80}ms`;
 
       card.addEventListener('click', () => {
         try {
@@ -208,7 +207,6 @@
         img.onload    = () => {
           const placeholder = card.querySelector('.l-card__img-placeholder');
           if (placeholder) placeholder.replaceWith(img);
-          requestAnimationFrame(() => img.classList.add('l-card__img--loaded'));
         };
         img.onerror   = () => { /* keep skeleton */ };
         img.src        = imgSrc;
@@ -216,40 +214,13 @@
     });
 
     applyLang(currentLang);
-    observeCards();
   }
 
-  /* ============================================================
-     INTERSECTION OBSERVER — entrance animations
-     ============================================================ */
-  function observe(selector, threshold) {
-    const els = document.querySelectorAll(selector);
-    if (!els.length) return;
-    if (!('IntersectionObserver' in window)) {
-      els.forEach(el => el.classList.add('visible'));
-      return;
-    }
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          io.unobserve(entry.target);
-        }
-      });
-    }, { threshold });
-    els.forEach(el => io.observe(el));
-  }
-
-  function observeCards()    { observe('.l-card',                                     0.08); }
-
-  function observeSections() {
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      document.querySelectorAll('.l-feature-card, .l-step, .l-cta-block__inner').forEach(el => {
-        el.classList.add('visible');
-      });
-      return;
-    }
-    observe('.l-feature-card, .l-step, .l-cta-block__inner', 0.1);
+  /** Show all landing reveal targets immediately (no scroll-based hiding). */
+  function revealLandingStaticSections() {
+    document.querySelectorAll('.l-feature-card, .l-step, .l-cta-block__inner').forEach(el => {
+      el.classList.add('visible');
+    });
   }
 
   /* ============================================================
@@ -319,27 +290,25 @@
 
     applyLang(currentLang);
 
-    /* CRITICAL: do NOT await JSON before scroll/section observers.
-       Feature cards, steps and CTA start at opacity:0 until .visible — if fetch
-       is slow or hangs, the page looked "empty" below the hero. */
-    observeSections();
+    revealLandingStaticSections();
 
-    const spinner = document.getElementById('loadingSpinner');
+    const grid = document.getElementById('restaurantGrid');
 
     try {
       const data = await fetchRestaurantsJson();
       const restaurants = data.restaurants || (Array.isArray(data) ? data : []);
-      if (spinner) spinner.remove();
       renderRestaurants(restaurants);
+      if (grid) grid.removeAttribute('aria-busy');
     } catch (err) {
-      if (spinner) {
-        spinner.innerHTML = `<p style="color:rgba(255,255,255,0.4)">Could not load restaurants.</p>`;
+      if (grid) {
+        grid.innerHTML =
+          '<p style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.45);padding:48px 16px">Could not load restaurants.</p>';
+        grid.removeAttribute('aria-busy');
       }
       console.error('Failed to load restaurants.json:', err);
     }
 
-    /* Fire landing_view after a short delay so trackEvent is most likely ready */
-    setTimeout(() => {
+    queueMicrotask(() => {
       let referrerHost = 'direct';
       try {
         if (document.referrer) referrerHost = new URL(document.referrer).hostname;
@@ -348,7 +317,7 @@
         language:      currentLang,
         referrer_host: referrerHost
       });
-    }, 200);
+    });
   }
 
   document.addEventListener('DOMContentLoaded', init);
