@@ -36,6 +36,34 @@
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
       max-width: 520px; width: 100%; max-height: 90vh; overflow: auto; padding: 20px;
     }
+    .su-modal--wide { max-width: 560px; }
+    .su-venue-search {
+      width: 100%; max-width: 100%; padding: 10px 12px; margin-bottom: 10px;
+      border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); font-size: 13px;
+    }
+    .su-venue-chosen { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 0; }
+    .su-venue-chip {
+      display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 6px 10px; border-radius: var(--radius-pill); border: 1px solid var(--border);
+      background: var(--accent-dim); font-size: 12px; max-width: 100%;
+    }
+    .su-venue-chip select { font-size: 12px; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); }
+    .su-venue-chip__remove {
+      border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px;
+    }
+    .su-venue-chip__remove:hover { color: var(--danger); }
+    .su-venue-pick {
+      max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--surface-2);
+    }
+    .su-venue-row {
+      display: block; width: 100%; text-align: left; padding: 10px 12px; border: none; border-bottom: 1px solid var(--border);
+      background: transparent; font-size: 13px; cursor: pointer; color: var(--text);
+    }
+    .su-venue-row:last-child { border-bottom: none; }
+    .su-venue-row:hover { background: var(--surface); }
+    .su-venue-row__id { font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .su-venue-empty { padding: 12px; font-size: 12px; color: var(--muted); }
     .su-modal__title { font-family: var(--font-serif); font-size: 1.15rem; margin-bottom: 12px; }
     .su-modal__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     #suQrCanvas { display: block; margin: 12px auto; border-radius: 8px; background: #fff; padding: 8px; }
@@ -66,7 +94,7 @@
 
     <div id="suMain" class="su-hidden">
       <h1 class="su-h1">Users</h1>
-      <p class="su-muted">Create and edit API accounts. Assign venues as <code>restaurantId:ADMIN</code> or <code>restaurantId:EDITOR</code> (one per line). Use <strong>Setup link</strong> for a QR + URL so staff can set their password without you knowing it.</p>
+      <p class="su-muted">Create and edit API accounts. Pick venues from the list (search, click to add; set role per venue). Use <strong>Setup link</strong> for a QR + URL so staff can set their password without you knowing it.</p>
       <button type="button" class="su-btn" id="suRefreshBtn">Refresh list</button>
       <a class="su-btn" id="suLogsLink" href="logs.html">Telemetry logs</a>
       <button type="button" class="su-btn su-btn--danger" id="suLogoutBtn">Sign out</button>
@@ -104,8 +132,10 @@
           <label><input type="checkbox" id="suNewSuper" /> Super administrator</label>
         </div>
         <div class="su-field">
-          <label for="suNewAssign">Venue assignments</label>
-          <textarea id="suNewAssign" placeholder="retur:ADMIN"></textarea>
+          <label for="suNewVenueSearch">Venue access</label>
+          <input type="search" id="suNewVenueSearch" class="su-venue-search" placeholder="Search by name or venue id…" autocomplete="off" />
+          <div id="suNewVenueChosen" class="su-venue-chosen" aria-live="polite"></div>
+          <div id="suNewVenuePick" class="su-venue-pick"></div>
         </div>
         <button type="button" class="su-btn su-btn--primary" id="suCreateBtn">Create</button>
         <p class="su-err su-hidden" id="suCreateErr"></p>
@@ -113,7 +143,7 @@
     </div>
 
     <div id="suEditBackdrop" class="su-modal-backdrop su-hidden" aria-hidden="true">
-      <div class="su-modal" role="dialog" aria-labelledby="suEditTitle">
+      <div class="su-modal su-modal--wide" role="dialog" aria-labelledby="suEditTitle">
         <h2 class="su-modal__title" id="suEditTitle">Edit user</h2>
         <p class="su-muted" id="suEditUsername"></p>
         <div class="su-field">
@@ -123,8 +153,10 @@
           <label><input type="checkbox" id="suEditSuper" /> Super administrator</label>
         </div>
         <div class="su-field">
-          <label for="suEditAssign">Venue assignments (one per line)</label>
-          <textarea id="suEditAssign" placeholder="retur:ADMIN"></textarea>
+          <label for="suEditVenueSearch">Venue access</label>
+          <input type="search" id="suEditVenueSearch" class="su-venue-search" placeholder="Search by name or venue id…" autocomplete="off" />
+          <div id="suEditVenueChosen" class="su-venue-chosen" aria-live="polite"></div>
+          <div id="suEditVenuePick" class="su-venue-pick"></div>
         </div>
         <div class="su-field">
           <label for="suEditPass">New password (optional)</label>

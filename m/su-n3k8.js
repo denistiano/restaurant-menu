@@ -45,26 +45,171 @@
     } catch (_) {}
   }
 
-  function parseAssignments(text) {
+  var venueCatalog = [];
+  var editAssignmentList = [];
+  var newUserAssignmentList = [];
+
+  function formatApiError(j, status) {
+    if (!j || typeof j !== 'object') return 'HTTP ' + status;
+    if (typeof j.detail === 'string' && j.detail) return j.detail;
+    if (typeof j.message === 'string' && j.message) return j.message;
+    if (Array.isArray(j.errors)) {
+      var parts = j.errors.map(function (e) {
+        if (typeof e === 'string') return e;
+        if (e && e.defaultMessage) return e.defaultMessage;
+        if (e && (e.field || e.property) && e.message) return (e.field || e.property) + ': ' + e.message;
+        return e && e.message ? String(e.message) : JSON.stringify(e);
+      });
+      if (parts.length) return parts.join('; ');
+    }
+    if (Array.isArray(j.violations)) {
+      var v = j.violations.map(function (x) {
+        return (x.field || x.path || '') + ': ' + (x.message || '');
+      });
+      if (v.length) return v.join('; ');
+    }
+    return 'HTTP ' + status;
+  }
+
+  function loadVenueCatalog() {
+    return api('/api/super/venues')
+      .then(function (res) {
+        if (!res.ok) {
+          venueCatalog = [];
+          return;
+        }
+        return res.json().then(function (list) {
+          venueCatalog = Array.isArray(list) ? list : [];
+        });
+      })
+      .catch(function () {
+        venueCatalog = [];
+      });
+  }
+
+  function findVenue(restaurantId) {
+    for (var i = 0; i < venueCatalog.length; i++) {
+      if (venueCatalog[i].restaurantId === restaurantId) return venueCatalog[i];
+    }
+    return null;
+  }
+
+  function venueLabel(v, restaurantId) {
+    if (v) {
+      var en = (v.nameEn || '').trim();
+      var bg = (v.nameBg || '').trim();
+      if (en && bg) return en + ' · ' + bg;
+      if (en || bg) return en || bg;
+    }
+    return restaurantId;
+  }
+
+  function assignmentListForPrefix(prefix) {
+    return prefix === 'suEdit' ? editAssignmentList : newUserAssignmentList;
+  }
+
+  function normalizeRole(r) {
+    var u = String(r || 'ADMIN').toUpperCase();
+    return u === 'EDITOR' ? 'EDITOR' : 'ADMIN';
+  }
+
+  function assignmentsPayloadFromList(list) {
     var out = [];
-    if (!text || !text.trim()) return out;
-    var lines = text.split('\n');
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i].trim();
-      if (!line || line.charAt(0) === '#') continue;
-      var idx = line.indexOf(':');
-      if (idx < 1) continue;
-      var rid = line.slice(0, idx).trim();
-      var role = line.slice(idx + 1).trim().toUpperCase();
-      if (!rid || (role !== 'ADMIN' && role !== 'EDITOR')) continue;
-      out.push({ restaurantId: rid, role: role });
+    var seen = {};
+    for (var i = 0; i < list.length; i++) {
+      var rid = String(list[i].restaurantId || '').trim();
+      if (!rid || seen[rid]) continue;
+      seen[rid] = true;
+      out.push({ restaurantId: rid, role: normalizeRole(list[i].role) });
     }
     return out;
   }
 
-  function formatAssignments(assignments) {
-    if (!assignments || !assignments.length) return '';
-    return assignments.map(function (a) { return a.restaurantId + ':' + a.role; }).join('\n');
+  function renderVenueAssignmentUI(prefix) {
+    var list = assignmentListForPrefix(prefix);
+    var searchEl = el(prefix === 'suEdit' ? 'suEditVenueSearch' : 'suNewVenueSearch');
+    var chosenEl = el(prefix === 'suEdit' ? 'suEditVenueChosen' : 'suNewVenueChosen');
+    var pickEl = el(prefix === 'suEdit' ? 'suEditVenuePick' : 'suNewVenuePick');
+    if (!chosenEl || !pickEl) return;
+    var q = (searchEl && searchEl.value ? searchEl.value : '').trim().toLowerCase();
+
+    chosenEl.innerHTML = '';
+    if (!list.length) {
+      var empty = document.createElement('p');
+      empty.className = 'su-venue-empty';
+      empty.textContent = 'No venues assigned — add from the list below.';
+      chosenEl.appendChild(empty);
+    } else {
+      list.forEach(function (ass, idx) {
+        var v = findVenue(ass.restaurantId);
+        var chip = document.createElement('div');
+        chip.className = 'su-venue-chip';
+        var lab = document.createElement('span');
+        lab.textContent = venueLabel(v, ass.restaurantId);
+        chip.appendChild(lab);
+        var sel = document.createElement('select');
+        sel.setAttribute('aria-label', 'Role for ' + ass.restaurantId);
+        ;['ADMIN', 'EDITOR'].forEach(function (role) {
+          var opt = document.createElement('option');
+          opt.value = role;
+          opt.textContent = role;
+          if (normalizeRole(ass.role) === role) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        sel.addEventListener('change', function () {
+          list[idx].role = sel.value;
+        });
+        chip.appendChild(sel);
+        var rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'su-venue-chip__remove';
+        rm.setAttribute('aria-label', 'Remove ' + ass.restaurantId);
+        rm.textContent = '×';
+        rm.addEventListener('click', function () {
+          list.splice(idx, 1);
+          renderVenueAssignmentUI(prefix);
+        });
+        chip.appendChild(rm);
+        chosenEl.appendChild(chip);
+      });
+    }
+
+    pickEl.innerHTML = '';
+    var added = 0;
+    for (var j = 0; j < venueCatalog.length; j++) {
+      var rowVenue = venueCatalog[j];
+      var rid = rowVenue.restaurantId;
+      var taken = list.some(function (a) { return a.restaurantId === rid; });
+      if (taken) continue;
+      var label = venueLabel(rowVenue, rid).toLowerCase();
+      if (q && label.indexOf(q) < 0 && String(rid).toLowerCase().indexOf(q) < 0) continue;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'su-venue-row';
+      var title = document.createElement('span');
+      title.textContent = venueLabel(rowVenue, rid);
+      btn.appendChild(title);
+      var sub = document.createElement('div');
+      sub.className = 'su-venue-row__id';
+      sub.textContent = rid;
+      btn.appendChild(sub);
+      (function (id) {
+        btn.addEventListener('click', function () {
+          list.push({ restaurantId: id, role: 'ADMIN' });
+          renderVenueAssignmentUI(prefix);
+        });
+      })(rid);
+      pickEl.appendChild(btn);
+      added++;
+    }
+    if (!added) {
+      var em = document.createElement('div');
+      em.className = 'su-venue-empty';
+      em.textContent = venueCatalog.length
+        ? 'No matching venues (or all already assigned).'
+        : 'No venues in menu database yet — publish a menu first.';
+      pickEl.appendChild(em);
+    }
   }
 
   function api(path, opts) {
@@ -111,7 +256,8 @@
       el('suMain').classList.remove('su-hidden');
       var logsA = el('suLogsLink');
       if (logsA) logsA.href = 'logs.html';
-      return refreshList().then(function () {
+      return Promise.all([refreshList(), loadVenueCatalog()]).then(function () {
+        renderVenueAssignmentUI('suNew');
         return true;
       });
     });
@@ -182,7 +328,11 @@
     el('suEditUsername').textContent = 'Username: ' + u.username;
     el('suEditEn').checked = !!u.enabled;
     el('suEditSuper').checked = !!u.superAdmin;
-    el('suEditAssign').value = formatAssignments(u.assignments);
+    editAssignmentList = (u.assignments || []).map(function (a) {
+      return { restaurantId: a.restaurantId, role: normalizeRole(a.role) };
+    });
+    if (el('suEditVenueSearch')) el('suEditVenueSearch').value = '';
+    renderVenueAssignmentUI('suEdit');
     el('suEditPass').value = '';
     el('suEditPass2').value = '';
     el('suEditErr').classList.add('su-hidden');
@@ -216,19 +366,17 @@
     var body = {
       enabled: el('suEditEn').checked,
       superAdmin: el('suEditSuper').checked,
-      assignments: parseAssignments(el('suEditAssign').value)
+      assignments: assignmentsPayloadFromList(editAssignmentList)
     };
     var pwTrim = p1.trim();
     if (pwTrim) body.password = pwTrim;
     api('/api/super/users/' + u.id, { method: 'PUT', json: body }).then(function (res) {
       if (!res.ok) {
-        var msg = 'HTTP ' + res.status;
         return res.json().then(function (j) {
-          if (j.message) msg = j.message;
-          errEl.textContent = msg;
+          errEl.textContent = formatApiError(j, res.status);
           errEl.classList.remove('su-hidden');
         }).catch(function () {
-          errEl.textContent = msg;
+          errEl.textContent = 'HTTP ' + res.status;
           errEl.classList.remove('su-hidden');
         });
       }
@@ -363,7 +511,12 @@
   });
 
   el('suRefreshBtn').addEventListener('click', function () {
-    refreshList();
+    Promise.all([refreshList(), loadVenueCatalog()]).then(function () {
+      renderVenueAssignmentUI('suNew');
+      if (editTargetUser && !el('suEditBackdrop').classList.contains('su-hidden')) {
+        renderVenueAssignmentUI('suEdit');
+      }
+    });
   });
 
   el('suCreateBtn').addEventListener('click', function () {
@@ -373,7 +526,7 @@
     var passwordRaw = el('suNewPass').value;
     var enabled = el('suNewEn').checked;
     var superAdmin = el('suNewSuper').checked;
-    var assignments = parseAssignments(el('suNewAssign').value);
+    var assignments = assignmentsPayloadFromList(newUserAssignmentList);
     if (!username) {
       err.textContent = 'Username required.';
       err.classList.remove('su-hidden');
@@ -388,22 +541,33 @@
     if (passwordRaw.length >= 8) json.password = passwordRaw;
     api('/api/super/users', { method: 'POST', json: json }).then(function (res) {
       if (!res.ok) {
-        var msg = 'HTTP ' + res.status;
         return res.json().then(function (j) {
-          if (j.message) msg = j.message;
-          err.textContent = msg;
+          err.textContent = formatApiError(j, res.status);
           err.classList.remove('su-hidden');
         }).catch(function () {
-          err.textContent = msg;
+          err.textContent = 'HTTP ' + res.status;
           err.classList.remove('su-hidden');
         });
       }
       el('suNewUser').value = '';
       el('suNewPass').value = '';
-      el('suNewAssign').value = '';
+      newUserAssignmentList = [];
+      if (el('suNewVenueSearch')) el('suNewVenueSearch').value = '';
+      renderVenueAssignmentUI('suNew');
       refreshList();
     });
   });
+
+  if (el('suEditVenueSearch')) {
+    el('suEditVenueSearch').addEventListener('input', function () {
+      renderVenueAssignmentUI('suEdit');
+    });
+  }
+  if (el('suNewVenueSearch')) {
+    el('suNewVenueSearch').addEventListener('input', function () {
+      renderVenueAssignmentUI('suNew');
+    });
+  }
 
   showMainIfSuper();
 })();
