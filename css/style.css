@@ -28,6 +28,8 @@
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
 
   --font-serif: 'Playfair Display', Georgia, serif;
+  /* Landing & Cyrillic-friendly display (headlines); restaurant pages still use --font-serif where kept */
+  --font-display: 'Manrope', 'Inter', system-ui, sans-serif;
   --font-sans: 'Inter', system-ui, sans-serif;
 
   --transition: 0.2s ease;
@@ -217,11 +219,11 @@ html:has(.landing-page) {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
 .l-nav__logo-text {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 700;
   color: #fff;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 .l-lang-toggle {
   display: flex;
@@ -320,11 +322,9 @@ html:has(.landing-page) {
   aspect-ratio: 1;
   object-fit: contain;
   flex-shrink: 0;
-  border-radius: clamp(18px, 5vw, 28px);
-  box-shadow:
-    0 4px 28px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(196, 149, 90, 0.12);
-  filter: drop-shadow(0 0 40px rgba(196, 149, 90, 0.12));
+  border-radius: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.45));
 }
 .l-hero__ornament {
   display: flex;
@@ -403,18 +403,21 @@ html:has(.landing-page) {
 }
 .l-hero__title-line {
   display: block;
-  font-family: var(--font-serif);
-  font-size: clamp(52px, 10vw, 96px);
-  font-weight: 700;
-  line-height: 1.0;
+  font-family: var(--font-display);
+  font-size: clamp(44px, 9vw, 88px);
+  font-weight: 800;
+  line-height: 1.05;
   color: #fff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   font-style: normal;
 }
 .l-hero__title-line--italic {
-  font-style: italic;
-  font-weight: 400;
-  font-size: clamp(44px, 8.5vw, 82px);
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 700;
+  font-size: clamp(38px, 7.5vw, 76px);
+  letter-spacing: -0.025em;
+  line-height: 1.08;
   background: linear-gradient(90deg, #c4955a 0%, #f5e4b8 45%, #c4955a 90%);
   background-size: 100% auto;
   -webkit-background-clip: text;
@@ -528,12 +531,12 @@ html:has(.landing-page) {
   margin-bottom: 60px;
 }
 .l-listing__heading {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(28px, 4vw, 42px);
   font-weight: 700;
   color: #fff;
   margin-bottom: 12px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 .l-listing__sub {
   font-size: 15px;
@@ -562,12 +565,12 @@ html:has(.landing-page) {
   margin-bottom: 12px;
 }
 .l-section-header__title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(26px, 4vw, 40px);
   font-weight: 700;
   color: #f0ece4;
   letter-spacing: -0.02em;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 /* ============================================================
@@ -616,12 +619,12 @@ html:has(.landing-page) {
   height: 100%;
 }
 .l-feature-card__title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
   color: #f0ece4;
   margin-bottom: 10px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 .l-feature-card__desc {
   font-size: 14px;
@@ -669,9 +672,9 @@ html:has(.landing-page) {
   transform: none;
 }
 .l-step__num {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 40px;
-  font-weight: 700;
+  font-weight: 800;
   color: transparent;
   -webkit-text-stroke: 1.5px rgba(196,149,90,0.5);
   line-height: 1;
@@ -754,13 +757,13 @@ html:has(.landing-page) {
 }
 
 .l-cta-block__title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(28px, 5vw, 48px);
   font-weight: 700;
   color: #f0ece4;
   margin-bottom: 16px;
   letter-spacing: -0.02em;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 .l-cta-block__sub {
   font-size: 16px;
@@ -918,13 +921,13 @@ html:has(.landing-page) {
   margin-bottom: 10px;
 }
 .l-card__name {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(20px, 2.5vw, 28px);
   font-weight: 700;
   line-height: 1.2;
   color: #fff;
   margin-bottom: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 .l-card--featured .l-card__name {
   font-size: clamp(26px, 3.5vw, 40px);
