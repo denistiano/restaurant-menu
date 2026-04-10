@@ -24,7 +24,7 @@
    │                          │ item_price, category_id, category_name_en/bg   │
    │ theme_change             │ from_theme, to_theme                           │
    │ language_change          │ from_lang, to_lang                             │
-   │ contact_click            │ contact_type (phone|email)                     │
+   │ contact_click            │ contact_type (phone|whatsapp|email)            │
    │ menu_exit                │ duration_sec, interaction_count, item_view_count,│
    │                          │ filter snapshot fields (category_id, counts, …)  │
    └──────────────────────────┴────────────────────────────────────────────────┘
@@ -39,6 +39,9 @@
   const RESOURCES_BASE = window.RESOURCES_BASE || '../resources';
   /** UI mark ≤250px: same artwork as favicon (use .ico); large hero/marketing uses resources/logo.png. */
   const SITE_FAVICON_HREF = '../favicon.ico';
+  const SITE_BRAND = (typeof window !== 'undefined' && window.__SEO__ && window.__SEO__.siteName)
+    ? String(window.__SEO__.siteName)
+    : 'emenu.click';
 
   /** Spring Boot default in this repo; override with meta or window.__MENU_API_BASE__. */
   const DEFAULT_LOCAL_MENU_API = 'http://127.0.0.1:8080';
@@ -705,8 +708,80 @@
     const name = t(restaurant.name);
     const desc = t(restaurant.description).trim();
     const menuWord = currentLang === 'bg' ? 'Меню' : 'Menu';
-    if (desc) return `${name} - ${desc} - ${menuWord}`;
-    return `${name} - ${menuWord}`;
+    let base = desc ? `${name} - ${desc} - ${menuWord}` : `${name} - ${menuWord}`;
+    const seo = window.__SEO__;
+    if (seo) {
+      const suf = ((currentLang === 'bg' ? seo.titleSuffixBg : seo.titleSuffixEn) || '').trim();
+      if (suf && !base.endsWith(suf)) base = `${base} | ${suf}`;
+    }
+    return base;
+  }
+
+  /** Readable phone for footer (BG mobile: +359 XX XXX XXX). */
+  function formatPhoneDisplay(raw) {
+    const s = String(raw || '').trim();
+    const d = s.replace(/\D/g, '');
+    if (d.length >= 12 && d.startsWith('359')) {
+      return `+${d.slice(0, 3)} ${d.slice(3, 5)} ${d.slice(5, 8)} ${d.slice(8, 12)}`;
+    }
+    return s;
+  }
+
+  function setWhatsappPrefill(anchor) {
+    if (!anchor || !anchor.dataset.waBase) return;
+    const base = anchor.dataset.waBase;
+    const msg = currentLang === 'bg' ? (anchor.dataset.msgBg || '') : (anchor.dataset.msgEn || '');
+    const sep = base.includes('?') ? '&' : '?';
+    anchor.href = msg ? base + sep + 'text=' + encodeURIComponent(msg) : base;
+  }
+
+  function injectRestaurantFooterContact(mount) {
+    if (!mount) return;
+    const seo = window.__SEO__;
+    const phone = seo && seo.contactPhone ? String(seo.contactPhone).trim() : '';
+    const waUrl = seo && seo.whatsappUrl ? String(seo.whatsappUrl).trim() : '';
+    const loc = seo && seo.contactEmailLocal ? String(seo.contactEmailLocal).trim() : '';
+    const dom = seo && seo.contactEmailDomain ? String(seo.contactEmailDomain).trim() : '';
+    mount.innerHTML = '';
+    if (phone) {
+      const a = document.createElement('a');
+      a.href = 'tel:' + phone.replace(/\s/g, '');
+      a.className = 'rf__link';
+      a.textContent = formatPhoneDisplay(phone);
+      mount.appendChild(a);
+    }
+    if (waUrl) {
+      const a = document.createElement('a');
+      a.className = 'rf__link rf__link--whatsapp';
+      a.rel = 'noopener noreferrer';
+      a.target = '_blank';
+      a.dataset.waBase = waUrl;
+      a.dataset.msgEn = 'Hi — a question about emenu.click or this menu.';
+      a.dataset.msgBg = 'Здравейте — въпрос относно emenu.click или това меню.';
+      a.dataset.en = 'WhatsApp';
+      a.dataset.bg = 'WhatsApp';
+      a.textContent = 'WhatsApp';
+      setWhatsappPrefill(a);
+      mount.appendChild(a);
+    }
+    if (loc && dom) {
+      const a = document.createElement('a');
+      a.className = 'rf__link';
+      a.href = 'mailto:' + loc + '@' + dom;
+      a.dataset.en = 'Email';
+      a.dataset.bg = 'Имейл';
+      a.textContent = currentLang === 'bg' ? 'Имейл' : 'Email';
+      mount.appendChild(a);
+    }
+  }
+
+  /** Bilingual alt for venue logo/cover (no dependency on currentLang ordering at first paint). */
+  function restaurantNameAltText(restaurant) {
+    const n = restaurant && restaurant.name ? restaurant.name : {};
+    const en = (n.en || '').trim();
+    const bg = (n.bg || '').trim();
+    if (en && bg && bg !== en) return `${en} · ${bg}`;
+    return en || bg || '';
   }
 
   /**
@@ -759,6 +834,11 @@
     if (ogImg) {
       setProp('og:image', ogImg);
       setName('twitter:image', ogImg);
+      const imgAlt = t(restaurant.name);
+      if (imgAlt) {
+        setProp('og:image:alt', imgAlt);
+        setName('twitter:image:alt', imgAlt);
+      }
     }
 
     const logoRaw = restaurant.logo || restaurant.image;
@@ -800,6 +880,7 @@
 
     if (!initialized) {
       updateTranslatables(lang);
+      document.querySelectorAll('.restaurant-footer [data-wa-base]').forEach(setWhatsappPrefill);
       return;
     }
 
@@ -821,6 +902,7 @@
     setTimeout(() => {
       updateTranslatables(lang);
       updatePageTitle();
+      document.querySelectorAll('.restaurant-footer [data-wa-base]').forEach(setWhatsappPrefill);
       if (data) renderAdvancedFilters(data.restaurant.menu.categories);
       if (currentModalItem) populateModal(currentModalItem);
       [content, filters, header].forEach(el => {
@@ -1465,7 +1547,7 @@
 
     // Non-blocking lazy image load — skeleton shown until image arrives
     if (imgSrc) {
-      lazyLoadImage(el.querySelector('.menu-item__img-wrap'), imgSrc, nameEn);
+      lazyLoadImage(el.querySelector('.menu-item__img-wrap'), imgSrc, t(item.name));
     }
 
     el.addEventListener('click', () => openItemModal(item));
@@ -1635,7 +1717,7 @@
           <a href="../" class="back-link"
              data-title-en="Back to all restaurants" data-title-bg="Към всички ресторанти"
              data-aria-en="Back to all restaurants" data-aria-bg="Към всички ресторанти">
-            <img src="${SITE_FAVICON_HREF}" alt="" class="back-link__logo" width="40" height="40" decoding="async" />
+            <img src="${SITE_FAVICON_HREF}" alt="${esc(SITE_BRAND)}" class="back-link__logo" width="40" height="40" decoding="async" />
           </a>
           <div style="display:flex;align-items:center;gap:12px;">
             <div class="theme-switcher" role="group" aria-label="Menu theme">
@@ -1648,7 +1730,7 @@
           </div>
         </nav>
         <div class="restaurant-header__content">
-          ${logoSrc ? `<img src="${logoSrc}" alt="${esc(restaurant.name.en||'')}" class="restaurant-header__cover-thumb" onerror="this.style.display='none'" />` : ''}
+          ${logoSrc ? `<img src="${logoSrc}" alt="${esc(restaurantNameAltText(restaurant))}" class="restaurant-header__cover-thumb" onerror="this.style.display='none'" />` : ''}
           <h1 class="restaurant-header__name" id="restaurantName"></h1>
           <p class="restaurant-header__tagline" id="restaurantTagline"></p>
         </div>
@@ -1721,22 +1803,21 @@
           <a href="../" class="rf__back"
              data-title-en="Back to all restaurants" data-title-bg="Към всички ресторанти"
              data-aria-en="Back to all restaurants" data-aria-bg="Към всички ресторанти">
-            <img src="${SITE_FAVICON_HREF}" alt="" class="rf__back-logo" width="36" height="36" decoding="async" />
+            <img src="${SITE_FAVICON_HREF}" alt="${esc(SITE_BRAND)}" class="rf__back-logo" width="36" height="36" decoding="async" />
           </a>
           <p class="rf__copy"
              data-en="Menus are for reference. Prices and availability may vary."
              data-bg="Менютата са за справка. Цените и наличността може да варират.">
             Menus are for reference. Prices and availability may vary.
           </p>
-          <div class="rf__contact">
-            <a href="tel:+359898513566" class="rf__link">+359 898 513 566</a>
-            <a href="mailto:denistiano@gmail.com" class="rf__link">denistiano@gmail.com</a>
-          </div>
+          <div class="rf__contact" id="rfContactMount"></div>
         </div>
       </footer>
     `;
 
     ensureModal();
+
+    injectRestaurantFooterContact(document.getElementById('rfContactMount'));
 
     /* Bind events */
     document.getElementById('langToggle')
@@ -1835,9 +1916,11 @@
     /* Bind footer contact links */
     document.querySelectorAll('.restaurant-footer .rf__link').forEach(link => {
       link.addEventListener('click', () => {
-        trackRestaurantEvent('contact_click', {
-          contact_type:  link.href.startsWith('tel:') ? 'phone' : 'email'
-        });
+        const href = link.getAttribute('href') || '';
+        const contactType = href.startsWith('tel:')
+          ? 'phone'
+          : (href.includes('wa.me') ? 'whatsapp' : 'email');
+        trackRestaurantEvent('contact_click', { contact_type: contactType });
       });
     });
 
@@ -1935,7 +2018,7 @@
               or <code>window.__MENU_API_BASE__</code>.
             </p>
             <a href="../" class="menu-error-back" aria-label="Back to all restaurants" title="Back to all restaurants">
-              <img src="${SITE_FAVICON_HREF}" alt="" class="menu-error-back__logo" width="52" height="52" decoding="async" />
+              <img src="${SITE_FAVICON_HREF}" alt="${esc(SITE_BRAND)}" class="menu-error-back__logo" width="52" height="52" decoding="async" />
             </a>
           </div>`;
         }
@@ -2004,7 +2087,7 @@
             <p style="color:var(--color-text-muted);text-align:center">
               Could not load menu. Please try again later.</p>
             <a href="../" class="menu-error-back" aria-label="Back to all restaurants" title="Back to all restaurants">
-              <img src="${SITE_FAVICON_HREF}" alt="" class="menu-error-back__logo" width="52" height="52" decoding="async" />
+              <img src="${SITE_FAVICON_HREF}" alt="${esc(SITE_BRAND)}" class="menu-error-back__logo" width="52" height="52" decoding="async" />
             </a>
           </div>`;
       }

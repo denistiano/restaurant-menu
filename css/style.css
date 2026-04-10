@@ -797,6 +797,10 @@ html:has(.landing-page) {
   border-color: rgba(196,149,90,0.4);
   color: var(--color-accent);
 }
+.l-cta-block__link--whatsapp:hover {
+  border-color: rgba(37, 211, 102, 0.45);
+  color: #7fe8b3;
+}
 .l-cta-block__link-icon {
   width: 20px;
   height: 20px;
@@ -1037,6 +1041,7 @@ html:has(.landing-page) {
   letter-spacing: 0.01em;
 }
 .l-footer__link:hover { color: var(--color-accent); }
+.l-footer__link--whatsapp:hover { color: #7fe8b3; }
 @media (max-width: 680px) {
   .l-footer__inner {
     grid-template-columns: 1fr;
@@ -2408,6 +2413,7 @@ body[data-theme="modern"] .empty-state { color: rgba(240,236,228,0.35); }
   letter-spacing: 0.01em;
 }
 .restaurant-footer .rf__link:hover { color: var(--color-accent); }
+.restaurant-footer .rf__link--whatsapp:hover { color: #7fe8b3; }
 @media (max-width: 560px) {
   .restaurant-footer .rf__inner {
     grid-template-columns: 1fr;

@@ -43,6 +43,53 @@ def strip_html_for_meta(s: str, max_len: int = 160) -> str:
     return s[: max_len - 1].rsplit(" ", 1)[0] + "…"
 
 
+def split_email_local_domain(raw: str | None) -> tuple[str, str]:
+    s = (raw or "").strip()
+    if "@" in s:
+        loc, dom = s.split("@", 1)
+        return loc.strip(), dom.strip()
+    return "", ""
+
+
+def digits_only_phone(s: str | None) -> str:
+    return re.sub(r"\D", "", s or "")
+
+
+def whatsapp_me_url(digits: str) -> str | None:
+    """https://wa.me/<e164 without +> — same number as contact_phone."""
+    d = (digits or "").strip()
+    if len(d) < 10:
+        return None
+    return f"https://wa.me/{d}"
+
+
+def build_postal_address_object(
+    src: Any,
+) -> dict[str, Any] | None:
+    """Schema.org PostalAddress; omit empty string values."""
+    if not isinstance(src, dict):
+        return None
+    out: dict[str, Any] = {"@type": "PostalAddress"}
+    for key in ("streetAddress", "addressLocality", "addressRegion", "postalCode", "addressCountry"):
+        v = src.get(key)
+        if v is None:
+            continue
+        s = str(v).strip()
+        if s:
+            out[key] = s
+    return out if len(out) > 1 else None
+
+
+def resolve_restaurant_postal_address(
+    restaurant: dict[str, Any], seo: dict[str, Any]
+) -> dict[str, Any] | None:
+    for key in ("postal_address", "address"):
+        node = build_postal_address_object(restaurant.get(key))
+        if node:
+            return node
+    return build_postal_address_object(seo.get("postal_address"))
+
+
 def resolve_asset_href(restaurant_id: str, value: str | None) -> str | None:
     """Href from restaurant page (in /<id>/index.html): ../resources/... or absolute URL."""
     if not value or not str(value).strip():
@@ -104,10 +151,17 @@ def main() -> int:
     org_name = (seo.get("organization_name") or site_name).strip()
     og_locale = (seo.get("default_og_locale") or "bg_BG").strip()
     og_locale_alt = (seo.get("alternate_og_locale") or "en_US").strip()
-    twitter_site = (seo.get("twitter_site") or "").strip()
     gsv = (seo.get("google_site_verification") or "").strip()
     theme_color = (seo.get("theme_color") or "#0c0c14").strip()
     menu_api_base = str(seo.get("menu_api_base") or "").strip()
+    title_suffix_bg = (seo.get("title_suffix_bg") or "").strip()
+    title_suffix_en = (seo.get("title_suffix_en") or "").strip()
+    contact_phone = (seo.get("contact_phone") or "").strip()
+    contact_email_raw = (seo.get("contact_email") or "").strip()
+    email_local, email_domain = split_email_local_domain(contact_email_raw)
+    contact_digits = digits_only_phone(contact_phone)
+    whatsapp_url = whatsapp_me_url(contact_digits) or ""
+    org_same_as_list: list[str] = [whatsapp_url] if whatsapp_url else []
     menu_api_meta_block = ""
     if menu_api_base:
         menu_api_meta_block = (
@@ -138,6 +192,9 @@ def main() -> int:
             page_title = f"{title_primary} - {desc_primary} - {menu_suffix}"
         else:
             page_title = f"{title_primary} - {menu_suffix}"
+        title_suffix_row = title_suffix_bg if default_lang == "bg" else title_suffix_en
+        if title_suffix_row and not page_title.endswith(title_suffix_row):
+            page_title = f"{page_title} | {title_suffix_row}"
 
         image_href = resolve_asset_href(rid, r.get("image"))
         logo_raw = r.get("logo")
@@ -154,7 +211,14 @@ def main() -> int:
         same_as = r.get("same_as")
         same_as_list: list[str] = []
         if isinstance(same_as, list):
-            same_as_list = [str(x).strip() for x in same_as if str(x).strip()]
+            for x in same_as:
+                u = str(x).strip()
+                if not u:
+                    continue
+                low = u.lower()
+                if low.startswith("https://wa.me/") or low.startswith("http://wa.me/"):
+                    if u not in same_as_list:
+                        same_as_list.append(u)
 
         def absolute_og_image(raw: str | None) -> str | None:
             if not raw or not str(raw).strip():
@@ -170,29 +234,62 @@ def main() -> int:
 
         og_image = absolute_og_image(r.get("image"))
 
-        # JSON-LD
+        # JSON-LD (@graph: Organization, WebSite, WebPage, Restaurant, BreadcrumbList)
         ld_nodes: list[dict[str, Any]] = []
         if base_url and canonical:
+            base_root = base_url.rstrip("/")
+            org_id = base_root + "/#organization"
+            website_id = base_root + "/#website"
+            org_logo_url = base_root + "/resources/logo.png"
+
+            org_ld: dict[str, Any] = {
+                "@type": "Organization",
+                "@id": org_id,
+                "name": org_name,
+                "url": base_root + "/",
+                "logo": org_logo_url,
+            }
+            if org_same_as_list:
+                org_ld["sameAs"] = org_same_as_list
+            org_addr = resolve_restaurant_postal_address(r, seo)
+            if org_addr:
+                org_ld["address"] = org_addr
+            if contact_phone:
+                cp: dict[str, Any] = {
+                    "@type": "ContactPoint",
+                    "telephone": contact_phone,
+                    "contactType": "customer service",
+                    "areaServed": "BG",
+                    "availableLanguage": ["bg", "en"],
+                }
+                if whatsapp_url:
+                    cp["url"] = whatsapp_url
+                org_ld["contactPoint"] = [cp]
+
+            ld_nodes.append(org_ld)
             ld_nodes.append(
                 {
                     "@type": "WebSite",
-                    "@id": base_url + "/#website",
+                    "@id": website_id,
                     "name": site_name,
-                    "url": base_url + "/",
-                    "publisher": {"@type": "Organization", "name": org_name},
+                    "url": base_root + "/",
+                    "publisher": {"@id": org_id},
                 }
             )
-            ld_nodes.append(
-                {
-                    "@type": "WebPage",
-                    "@id": canonical + "#webpage",
-                    "url": canonical,
-                    "name": title_en,
-                    "description": desc_en or desc_bg,
-                    "inLanguage": ["en", "bg"],
-                    "isPartOf": {"@id": base_url + "/#website"},
-                }
-            )
+            web_page: dict[str, Any] = {
+                "@type": "WebPage",
+                "@id": canonical + "#webpage",
+                "url": canonical,
+                "name": title_primary,
+                "description": desc_en or desc_bg,
+                "inLanguage": ["en", "bg"],
+                "isPartOf": {"@id": website_id},
+            }
+            if title_en and title_en != title_primary:
+                web_page["alternateName"] = title_en
+            elif title_bg and title_bg != title_primary:
+                web_page["alternateName"] = title_bg
+            ld_nodes.append(web_page)
             rest_ld: dict[str, Any] = {
                 "@type": "Restaurant",
                 "@id": canonical + "#restaurant",
@@ -212,6 +309,12 @@ def main() -> int:
             rest_ld["hasMenu"] = {"@type": "Menu", "name": "Menu", "url": canonical}
             if same_as_list:
                 rest_ld["sameAs"] = same_as_list
+            venue_phone = str(r.get("telephone") or "").strip() or contact_phone
+            if venue_phone:
+                rest_ld["telephone"] = venue_phone
+            venue_addr = resolve_restaurant_postal_address(r, seo)
+            if venue_addr:
+                rest_ld["address"] = venue_addr
             ld_nodes.append(rest_ld)
             ld_nodes.append(
                 {
@@ -221,7 +324,7 @@ def main() -> int:
                             "@type": "ListItem",
                             "position": 1,
                             "name": site_name,
-                            "item": base_url + "/",
+                            "item": base_root + "/",
                         },
                         {
                             "@type": "ListItem",
@@ -280,12 +383,11 @@ def main() -> int:
 
         tw_block = """  <meta name="twitter:card" content="summary_large_image" />
 """
-        if twitter_site:
-            tw_block += f'  <meta name="twitter:site" content="{html_lib.escape(twitter_site)}" />\n'
         tw_block += f'  <meta name="twitter:title" content="{html_lib.escape(page_title)}" />\n'
         tw_block += f'  <meta name="twitter:description" content="{html_lib.escape(desc_primary)}" />\n'
         if og_image and str(og_image).startswith("http"):
             tw_block += f'  <meta name="twitter:image" content="{html_lib.escape(str(og_image))}" />\n'
+            tw_block += '  <meta name="twitter:image:alt" content="' + html_lib.escape(title_primary) + '" />\n'
 
         jsonld_block = ""
         if ld_nodes:
@@ -335,11 +437,16 @@ def main() -> int:
       canonicalPath: {json.dumps("/" + rid + "/")},
       defaultOgLocale: {json.dumps(og_locale)},
       alternateOgLocale: {json.dumps(og_locale_alt)},
-      twitterSite: {json.dumps(twitter_site)},
+      whatsappUrl: {json.dumps(whatsapp_url)},
       titleEn: {json.dumps(title_en)},
       titleBg: {json.dumps(title_bg)},
       descEn: {json.dumps(desc_en)},
-      descBg: {json.dumps(desc_bg)}
+      descBg: {json.dumps(desc_bg)},
+      titleSuffixBg: {json.dumps(title_suffix_bg)},
+      titleSuffixEn: {json.dumps(title_suffix_en)},
+      contactPhone: {json.dumps(contact_phone)},
+      contactEmailLocal: {json.dumps(email_local)},
+      contactEmailDomain: {json.dumps(email_domain)}
     }};
   </script>
   <script type="module" src="../js/analytics.js"></script>

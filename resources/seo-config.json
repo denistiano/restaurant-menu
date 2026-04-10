@@ -6,9 +6,21 @@
   "organization_name": "emenu.click",
   "default_og_locale": "bg_BG",
   "alternate_og_locale": "en_US",
-  "twitter_site": "",
   "google_site_verification": "",
   "theme_color": "#0c0c14",
   "contact_phone": "+359898513566",
-  "contact_email": "denistiano@gmail.com"
+  "contact_email": "denistiano@gmail.com",
+  "title_suffix_bg": "emenu.click — дигитално меню и QR код на масата",
+  "title_suffix_en": "emenu.click — digital menu & QR table codes",
+  "landing_title": "emenu.click — Дигитално меню за ресторанти в Пловдив и България | QR меню",
+  "landing_description": "Кратък линк на emenu.click и QR на масата — пълно двуезично меню за ресторанти в Пловдив и цяла България. Актуализации за минути, без приложение и без остарели разпечатки.",
+  "landing_keywords": "дигитално меню, QR меню, ресторант Пловдив, електронно меню, emenu, двуезично меню, online menu Bulgaria",
+  "landing_og_image": "https://emenu.click/resources/logo.webp",
+  "postal_address": {
+    "streetAddress": "",
+    "addressLocality": "Plovdiv",
+    "addressRegion": "",
+    "postalCode": "",
+    "addressCountry": "BG"
+  }
 }

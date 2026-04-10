@@ -8,7 +8,7 @@
    ├─────────────────────┼───────────────────────────────────────────────────┤
    │ landing_view        │ language, referrer_host                           │
    │ restaurant_select   │ restaurant_id, restaurant_name, position          │
-   │ cta_click           │ cta_type (hero|contact_phone|contact_email)       │
+   │ cta_click           │ cta_type (hero|contact_phone|contact_whatsapp|contact_email) │
    │ scroll_depth        │ percent (25|50|75|90)                             │
    │ language_change     │ from_lang, to_lang, page:"landing"                │
    │ page_exit           │ duration_sec, max_scroll_pct, page:"landing"      │
@@ -91,6 +91,21 @@
       el.addEventListener('click', () =>
         window.trackEvent?.('cta_click', { cta_type: 'contact_email', page: 'landing' }));
     });
+    document.querySelectorAll('a.js-wa-contact').forEach(el => {
+      el.addEventListener('click', () =>
+        window.trackEvent?.('cta_click', { cta_type: 'contact_whatsapp', page: 'landing' }));
+    });
+  }
+
+  /** Append ?text= to wa.me links from data-msg-* (language-aware). */
+  function applyWhatsappPrefill() {
+    document.querySelectorAll('a.js-wa-contact').forEach(a => {
+      const base = (a.getAttribute('data-wa-base') || '').trim() || (a.href.split('?')[0] || '').trim();
+      if (!base.startsWith('http')) return;
+      const msg = currentLang === 'bg' ? (a.dataset.msgBg || '') : (a.dataset.msgEn || '');
+      const sep = base.includes('?') ? '&' : '?';
+      a.href = msg ? `${base}${sep}text=${encodeURIComponent(msg)}` : base;
+    });
   }
 
   /* ── Restaurant card image: local path or absolute URL ───── */
@@ -136,6 +151,8 @@
         to_lang:   lang
       });
     }
+
+    applyWhatsappPrefill();
   }
 
   /* ============================================================
@@ -199,7 +216,10 @@
       if (imgSrc) {
         const img    = new Image();
         img.className = 'l-card__img';
-        img.alt       = escapeHtml(r.name.en);
+        const altBits = [r.name && r.name.en, r.name && r.name.bg]
+          .map(x => String(x || '').trim())
+          .filter(Boolean);
+        img.alt = escapeHtml([...new Set(altBits)].join(' · '));
         img.onload    = () => {
           const placeholder = card.querySelector('.l-card__img-placeholder');
           if (placeholder) placeholder.replaceWith(img);
