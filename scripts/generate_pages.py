@@ -2,6 +2,10 @@
 """
 Generate per-restaurant index.html (SEO + icons), sitemap.xml, robots.txt.
 Reads resources/restaurants.json and resources/seo-config.json.
+
+Also injects a static <nav> of /{slug}/ links into the root index.html between
+<!--GENERATED_RESTAURANT_INDEX_START--> and <!--GENERATED_RESTAURANT_INDEX_END-->
+so crawlers that do not run JavaScript still discover menu URLs (cards are JS-only).
 """
 from __future__ import annotations
 
@@ -88,6 +92,75 @@ def resolve_restaurant_postal_address(
         if node:
             return node
     return build_postal_address_object(seo.get("postal_address"))
+
+
+def build_landing_restaurant_index_html(restaurants: list[dict[str, Any]]) -> str:
+    """Static <nav> with <a href=\"{slug}/\"> for non-JS crawlers and SEO tools."""
+    lines: list[str] = [
+        '      <nav class="l-restaurant-index" id="publishedMenuIndex" aria-label="Published menu pages">',
+        '        <h3 class="l-restaurant-index__title"',
+        '            data-en="All menu pages"',
+        '            data-bg="Всички страници с менюта">Всички страници с менюта</h3>',
+        '        <p class="l-restaurant-index__hint"',
+        '           data-en="Direct links to each restaurant menu. The cards above load in your browser; this list is in the HTML for crawlers."',
+        '           data-bg="Директни линкове към всяко меню. Картите по-горе се зареждат в браузъра; този списък е в HTML за търсачки.">',
+        "          Директни линкове към всяко меню. Картите по-горе се зареждат в браузъра; този списък е в HTML за търсачки.</p>",
+        '        <ul class="l-restaurant-index__list">',
+    ]
+    for r in restaurants:
+        rid = r.get("id")
+        if not isinstance(rid, str) or not rid.strip():
+            continue
+        name = r.get("name") or {}
+        en = (name.get("en") or rid).strip()
+        bg = (name.get("bg") or en).strip()
+        default_lang = (r.get("default_language") or "bg").strip().lower()
+        if default_lang not in ("en", "bg"):
+            default_lang = "bg"
+        default_label = bg if default_lang == "bg" else en
+        href = f"{quote(rid)}/"
+        a_en = html_lib.escape(en, quote=True)
+        a_bg = html_lib.escape(bg, quote=True)
+        lines.append('          <li class="l-restaurant-index__item">')
+        lines.append(
+            '            <a class="l-restaurant-index__link" href="'
+            + html_lib.escape(href, quote=True)
+            + '"><span data-en="'
+            + a_en
+            + '" data-bg="'
+            + a_bg
+            + '">'
+            + html_lib.escape(default_label)
+            + "</span></a>"
+        )
+        lines.append("          </li>")
+    lines.extend(["        </ul>", "      </nav>"])
+    return "\n".join(lines)
+
+
+def patch_landing_restaurant_index(root: pathlib.Path, restaurants: list[dict[str, Any]]) -> None:
+    path = root / "index.html"
+    if not path.is_file():
+        return
+    start_m = "<!--GENERATED_RESTAURANT_INDEX_START-->"
+    end_m = "<!--GENERATED_RESTAURANT_INDEX_END-->"
+    text = path.read_text(encoding="utf-8")
+    if start_m not in text or end_m not in text:
+        print(
+            "note: index.html missing GENERATED_RESTAURANT_INDEX markers; skipping landing nav patch",
+            file=sys.stderr,
+        )
+        return
+    nav_html = build_landing_restaurant_index_html(restaurants)
+    indent = "      "
+    replacement = indent + start_m + "\n" + nav_html + "\n" + indent + end_m
+    pattern = re.escape(indent + start_m) + r"[\s\S]*?" + re.escape(indent + end_m)
+    new_text, n = re.subn(pattern, replacement, text, count=1)
+    if n != 1:
+        print("warning: could not patch landing restaurant index in index.html", file=sys.stderr)
+        return
+    path.write_text(new_text, encoding="utf-8")
+    print(f"patched {path} (static restaurant index for crawlers)")
 
 
 def resolve_asset_href(restaurant_id: str, value: str | None) -> str | None:
@@ -501,6 +574,8 @@ def main() -> int:
             "note: resources/seo-config.json has empty base_url — skipping sitemap.xml and robots.txt (set base_url for full SEO URLs)",
             file=sys.stderr,
         )
+
+    patch_landing_restaurant_index(root, restaurants)
 
     return 0
 

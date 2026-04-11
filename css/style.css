@@ -551,6 +551,55 @@ html:has(.landing-page) {
   border-radius: 2px;
 }
 
+/* Static /{slug}/ links for crawlers (cards above are JS-rendered) */
+.l-restaurant-index {
+  margin-top: 48px;
+  padding-top: 36px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+.l-restaurant-index__title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: rgba(240, 236, 228, 0.85);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+.l-restaurant-index__hint {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.32);
+  margin-bottom: 20px;
+  font-weight: 300;
+}
+.l-restaurant-index__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 14px;
+}
+.l-restaurant-index__item {
+  margin: 0;
+}
+.l-restaurant-index__link {
+  font-size: 14px;
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(196, 149, 90, 0.35);
+  transition: color 0.2s, border-color 0.2s;
+}
+.l-restaurant-index__link:hover {
+  color: #e8d4b0;
+  border-bottom-color: rgba(232, 212, 176, 0.55);
+}
+
 /* ── Shared section header ────────────────────────────────── */
 .l-section-header {
   text-align: center;

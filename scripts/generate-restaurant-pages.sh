@@ -3,6 +3,7 @@
 #   <repo-root>/<id>/index.html
 #   sitemap.xml (homepage + one URL per restaurant id)
 #   robots.txt (Sitemap: line)
+#   Patches root index.html between GENERATED_RESTAURANT_INDEX markers (static /slug/ links for crawlers)
 # Run locally before commit, or rely on GitHub Actions (pages.yml) before Pages deploy.
 set -euo pipefail
 
