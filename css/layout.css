@@ -807,3 +807,335 @@
   from { opacity: 0; transform: translateX(-50%) translateY(16px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+
+/* ================================================================
+   GRID CONTROLS (v2) — fields, action pills, zone input
+   ================================================================ */
+.lf-grid-controls__fields {
+  display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+}
+.lf-grid-controls__actions {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+.lf-tpl-wrap { position: relative; }
+.lf-tpl-drop {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 200;
+  background: #101020;
+  border: 1px solid rgba(196,149,90,0.25);
+  border-radius: 10px;
+  overflow: hidden;
+  min-width: 130px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+.lf-tpl-opt {
+  display: block; width: 100%; padding: 10px 16px; border: none;
+  background: transparent; text-align: left;
+  font: 500 13px var(--font-sans, 'Inter', system-ui, sans-serif);
+  color: rgba(240,236,228,0.7); cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: background 0.15s, color 0.15s;
+}
+.lf-tpl-opt:last-child { border-bottom: none; }
+.lf-tpl-opt:hover { background: rgba(196,149,90,0.1); color: var(--accent, #c4955a); }
+
+.lf-ctrl-pill {
+  padding: 7px 14px; border-radius: 999px;
+  border: 1.5px solid rgba(196,149,90,0.35);
+  background: rgba(196,149,90,0.08);
+  font: 500 12px var(--font-sans, 'Inter', system-ui, sans-serif);
+  color: rgba(196,149,90,0.8); cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.lf-ctrl-pill:hover { background: rgba(196,149,90,0.18); border-color: var(--accent,#c4955a); color: var(--accent,#c4955a); }
+.lf-ctrl-pill--ghost { border-color: rgba(255,255,255,0.12); background: transparent; color: rgba(240,236,228,0.4); }
+.lf-ctrl-pill--ghost:hover { border-color: rgba(255,255,255,0.25); color: rgba(240,236,228,0.7); background: rgba(255,255,255,0.04); }
+
+.lf-zone-input {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px 14px;
+  background: rgba(196,149,90,0.06); border: 1px solid rgba(196,149,90,0.2);
+  border-radius: 10px; margin-top: 4px;
+}
+.lf-zone-input__text {
+  flex: 1; min-width: 140px; padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 7px;
+  background: rgba(255,255,255,0.05); color: #f0ece4;
+  font: 400 13px var(--font-sans, 'Inter', system-ui, sans-serif);
+}
+.lf-zone-input__text:focus { outline: none; border-color: rgba(196,149,90,0.5); }
+.lf-zone-input__confirm {
+  padding: 7px 12px; border-radius: 7px;
+  border: 1.5px solid rgba(196,149,90,0.4); background: rgba(196,149,90,0.1);
+  color: var(--accent,#c4955a); font: 500 12px var(--font-sans,'Inter',system-ui,sans-serif);
+  cursor: pointer; transition: background 0.15s;
+}
+.lf-zone-input__confirm:hover { background: rgba(196,149,90,0.2); }
+.lf-zone-input__cancel {
+  width: 28px; height: 28px; border-radius: 7px; border: none;
+  background: rgba(255,255,255,0.05); color: rgba(240,236,228,0.4);
+  font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.lf-zone-input__cancel:hover { background: rgba(224,92,92,0.12); color: #e05c5c; }
+
+.lf-grid-hint {
+  font: 400 11px var(--font-sans,'Inter',system-ui,sans-serif);
+  color: rgba(240,236,228,0.3); font-style: italic; margin: 4px 0 0 0; line-height: 1.4;
+}
+
+/* ================================================================
+   CANVAS WRAPPER (v2) — overflow:hidden container with zoom/pan
+   ================================================================ */
+.lf-canvas-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--lf-canvas-bg, #07070f);
+  height: min(65vh, 520px);
+  margin-top: 10px;
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.lf-canvas-wrapper.lf-canvas-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 7000;
+  height: 100dvh;
+  border-radius: 0;
+  border: none;
+}
+.lf-canvas-wrapper.lf-zone-mode { cursor: crosshair; }
+
+.lf-canvas-transform {
+  position: absolute;
+  top: 0; left: 0;
+  transform-origin: 0 0;
+  /* transform applied by JS */
+}
+
+.lf-canvas { display: grid; gap: 3px; padding: 10px; width: fit-content; }
+
+/* ── Canvas HUD overlay ── */
+.lf-canvas-hud {
+  position: absolute; bottom: 10px; right: 10px; z-index: 10;
+  display: flex; align-items: center; gap: 6px;
+  pointer-events: auto;
+}
+.lf-zoom-pct {
+  font: 600 11px var(--font-sans,'Inter',system-ui,sans-serif);
+  color: rgba(240,236,228,0.35);
+  background: rgba(0,0,0,0.35); padding: 2px 7px; border-radius: 99px;
+}
+.lf-hud-btn {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(10,10,20,0.7); backdrop-filter: blur(4px);
+  color: rgba(240,236,228,0.55); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.lf-hud-btn:hover { background: rgba(196,149,90,0.15); border-color: rgba(196,149,90,0.4); color: var(--accent,#c4955a); }
+
+/* ── Zones overlay ── */
+.lf-zones-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.lf-zones-overlay .lf-zone-chip { pointer-events: auto; }
+
+.lf-zone-chip {
+  position: absolute;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px 3px 10px;
+  border-radius: 99px;
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(4px);
+  white-space: nowrap; z-index: 2;
+}
+.lf-zone-chip__text {
+  font: 600 10px var(--font-sans,'Inter',system-ui,sans-serif);
+  color: rgba(240,236,228,0.85); text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.lf-zone-chip__del {
+  width: 16px; height: 16px; border-radius: 50%; border: none;
+  background: rgba(255,255,255,0.12); color: rgba(240,236,228,0.6);
+  font-size: 11px; cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.lf-zone-chip__del:hover { background: rgba(224,92,92,0.4); color: #fff; }
+
+/* ── Cell states: move mode ── */
+.lf-cell.is-moving {
+  opacity: 0.5;
+  transform: scale(0.88);
+  border-style: dashed !important;
+  border-color: rgba(196,149,90,0.5) !important;
+  transition: opacity 0.1s, transform 0.1s;
+}
+.lf-cell.is-move-target {
+  background: rgba(196,149,90,0.2) !important;
+  border-color: rgba(196,149,90,0.8) !important;
+  border-style: dashed !important;
+  box-shadow: 0 0 0 2px rgba(196,149,90,0.3) !important;
+}
+
+/* ================================================================
+   COMBO PICKER SHEET (admin dark theme)
+   ================================================================ */
+.lf-combo-overlay {
+  position: fixed; inset: 0; z-index: 8000;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
+  opacity: 0; transition: opacity 0.25s ease;
+}
+.lf-combo-overlay.is-open { opacity: 1; }
+
+.lf-combo-sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 8001;
+  background: #0d0d1a;
+  border: 1px solid rgba(196,149,90,0.2);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -12px 60px rgba(0,0,0,0.7);
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+  max-height: 88dvh; overflow-y: auto;
+}
+.lf-combo-sheet.is-open { transform: translateY(0); }
+
+@media (min-width: 600px) {
+  .lf-combo-sheet {
+    left: 50%; right: auto; width: 540px;
+    transform: translateX(-50%) translateY(100%);
+    border-radius: 16px; bottom: 20px;
+  }
+  .lf-combo-sheet.is-open { transform: translateX(-50%) translateY(0); }
+}
+
+.lf-combo-sheet__handle {
+  width: 40px; height: 4px; background: rgba(255,255,255,0.12);
+  border-radius: 2px; margin: 12px auto 0;
+}
+.lf-combo-sheet__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.lf-combo-sheet__title {
+  font: 600 15px var(--font-sans,'Inter',system-ui,sans-serif);
+  color: rgba(240,236,228,0.85);
+}
+.lf-combo-sheet__close {
+  width: 30px; height: 30px; border-radius: 8px; border: none;
+  background: rgba(255,255,255,0.07); color: rgba(240,236,228,0.5);
+  font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.lf-combo-sheet__close:hover { background: rgba(255,255,255,0.12); color: #f0ece4; }
+
+.lf-combo-sheet__body { padding: 16px 16px 0; }
+
+/* Combo card grid */
+.lf-combo-grid { display: flex; flex-direction: column; gap: 12px; }
+
+.lf-combo-section { display: flex; flex-direction: column; gap: 8px; }
+.lf-combo-section__label {
+  font: 600 10px var(--font-sans,'Inter',system-ui,sans-serif);
+  color: rgba(196,149,90,0.55); text-transform: uppercase; letter-spacing: .08em;
+  padding-left: 2px;
+}
+.lf-combo-section__row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+
+.lf-combo-card {
+  position: relative;
+  width: 90px; height: 90px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding-bottom: 6px;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  /* Table SVG colors for admin dark theme */
+  --tf: rgba(196,149,90,0.18);
+  --ts: rgba(196,149,90,0.55);
+  --cf: rgba(196,149,90,0.38);
+  --cs: rgba(196,149,90,0.6);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.lf-combo-card:active { transform: scale(0.92); }
+.lf-combo-card:hover {
+  border-color: rgba(196,149,90,0.45);
+  background: rgba(196,149,90,0.07);
+  --tf: rgba(196,149,90,0.28);
+  --ts: #c4955a;
+  --cf: rgba(196,149,90,0.5);
+  --cs: #c4955a;
+}
+.lf-combo-card.is-current {
+  border-color: var(--accent,#c4955a);
+  background: rgba(196,149,90,0.14);
+  box-shadow: 0 0 0 2px rgba(196,149,90,0.2);
+  --tf: rgba(196,149,90,0.42);
+  --ts: #e8b86d;
+  --cf: rgba(232,184,109,0.6);
+  --cs: #e8b86d;
+}
+.lf-combo-card__num {
+  font: 700 13px var(--font-sans,'Inter',system-ui,sans-serif);
+  color: rgba(196,149,90,0.7); line-height: 1; z-index: 2; position: relative;
+}
+.lf-combo-card.is-current .lf-combo-card__num { color: #e8b86d; }
+
+/* Extras row (rotation + name) */
+.lf-combo-extras {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 16px; padding: 14px 0 2px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.lf-combo-extras__row { display: flex; align-items: center; gap: 12px; }
+.lf-combo-extras__label {
+  font: 500 12px var(--font-sans,'Inter',system-ui,sans-serif);
+  color: rgba(240,236,228,0.4); min-width: 64px;
+}
+
+.lf-combo-rot { display: flex; gap: 6px; flex: 1; }
+.lf-combo-rot-btn {
+  flex: 1; padding: 6px 0; border-radius: 7px;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  font: 500 12px var(--font-sans,'Inter',system-ui,sans-serif);
+  color: rgba(240,236,228,0.45); cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.lf-combo-rot-btn:hover { border-color: rgba(196,149,90,0.4); color: var(--accent,#c4955a); }
+.lf-combo-rot-btn.is-active { border-color: var(--accent,#c4955a); background: rgba(196,149,90,0.15); color: var(--accent,#c4955a); }
+
+.lf-combo-label-in {
+  flex: 1; padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 7px;
+  background: rgba(255,255,255,0.05); color: #f0ece4;
+  font: 400 13px var(--font-sans,'Inter',system-ui,sans-serif);
+}
+.lf-combo-label-in:focus { outline: none; border-color: rgba(196,149,90,0.5); }
+
+.lf-combo-sheet__footer {
+  padding: 14px 16px 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 12px;
+}
+.lf-combo-del {
+  width: 100%; padding: 10px; border-radius: 9px;
+  border: 1.5px solid rgba(224,92,92,0.25);
+  background: rgba(224,92,92,0.07);
+  color: rgba(224,92,92,0.7);
+  font: 500 13px var(--font-sans,'Inter',system-ui,sans-serif);
+  cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.lf-combo-del:hover { background: rgba(224,92,92,0.15); border-color: rgba(224,92,92,0.5); color: #e05c5c; }
