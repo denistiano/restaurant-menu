@@ -15,6 +15,10 @@ resources/api-key.txt
 /monkey-house-plovdiv
 /oasis
 
+# Languages
+/bg/
+/en/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -2,6 +2,11 @@
 
 > emenu.click hosts bilingual (Bulgarian / English) digital restaurant menus. Each venue has a short URL and optional QR codes; menus load from a separate API and can be updated without republishing static files.
 
+## Competitive context (high level)
+
+- Global “digital menu / QR menu” leaders (e.g. Menyo, Menumigo, FlipMenu, Toast/Square ecosystems, My Menu) often rank well because they combine: **many indexed pages** (blog, comparisons, tools), **commercial landing pages** per feature, **reviews & trust** (G2, testimonials), **ordering/POS** (different business model), and **heavy marketing spend** — not all tactics apply to a focused QR-menu publisher in Bulgaria.
+- emenu.click is closer to a **regional product-led** site: strong technical base (HTML menus, schema, sitemap, static internal links to `/slug/`), less emphasis on commissions, ordering, or global blog volume.
+
 ## Site
 
 - https://emenu.click/ — Product overview, contact, and links to live example menus.

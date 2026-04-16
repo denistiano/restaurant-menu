@@ -600,6 +600,48 @@ html:has(.landing-page) {
   border-bottom-color: rgba(232, 212, 176, 0.55);
 }
 
+/* FAQ — crawlable Q&A (supports FAQPage in JSON-LD) */
+.l-faq {
+  background: #0a0a12;
+  padding: 72px 24px 88px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.l-faq__inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.l-faq__header {
+  margin-bottom: 40px;
+}
+.l-faq__list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.l-faq__q {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f0ece4;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+.l-faq__a {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(240, 236, 228, 0.55);
+  font-weight: 300;
+}
+.l-faq__more {
+  margin: 36px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.32);
+  line-height: 1.55;
+  text-align: center;
+}
+
 /* ── Shared section header ────────────────────────────────── */
 .l-section-header {
   text-align: center;
@@ -1091,6 +1133,76 @@ html:has(.landing-page) {
 }
 .l-footer__link:hover { color: var(--color-accent); }
 .l-footer__link--whatsapp:hover { color: #7fe8b3; }
+.l-footer__legal {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.32);
+}
+.l-footer__legal-link {
+  color: rgba(240, 236, 228, 0.45);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.l-footer__legal-link:hover {
+  color: var(--color-accent);
+}
+.l-footer__legal-sep {
+  color: rgba(255, 255, 255, 0.2);
+  user-select: none;
+}
+.cookie-notice {
+  position: fixed;
+  z-index: 10050;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0));
+  padding-left: max(16px, env(safe-area-inset-left, 0));
+  padding-right: max(16px, env(safe-area-inset-right, 0));
+  background: rgba(8, 8, 16, 0.94);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(240, 236, 228, 0.78);
+}
+.cookie-notice__text {
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+}
+.cookie-notice__link {
+  color: var(--color-accent-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.cookie-notice__link:hover {
+  color: var(--color-accent);
+}
+.cookie-notice__ok {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  transition: background 0.2s ease;
+}
+.cookie-notice__ok:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+body.landing-page:has(.cookie-notice) {
+  padding-bottom: 52px;
+}
 @media (max-width: 680px) {
   .l-footer__inner {
     grid-template-columns: 1fr;
@@ -1099,6 +1211,50 @@ html:has(.landing-page) {
   }
   .l-footer__contact { align-items: center; }
   .l-footer__copy    { display: none; }
+}
+
+/* --- Legal / articles (minimal static pages) --- */
+body.legal-page {
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  padding: 28px 20px 48px;
+}
+.legal-back {
+  display: inline-block;
+  font-size: 14px;
+  margin-bottom: 24px;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.legal-back:hover {
+  text-decoration: underline;
+}
+.legal-article {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.legal-article h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  margin-bottom: 1rem;
+  color: var(--color-navy);
+}
+.legal-p {
+  margin-bottom: 1rem;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+}
+.legal-ul {
+  margin-top: 0.5rem;
+}
+.legal-ul li {
+  margin-bottom: 0.5rem;
+}
+.legal-ul a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* --- SITE FOOTER (restaurant page) --- */

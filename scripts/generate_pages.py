@@ -535,7 +535,17 @@ def main() -> int:
 
     # --- sitemap.xml & robots.txt ---
     if base_url:
-        urls: list[tuple[str, str]] = [(base_url + "/", "1.0", "weekly")]
+        urls: list[tuple[str, str]] = [
+            (base_url + "/", "1.0", "weekly"),
+            (absolute_url(base_url, "bg/"), "0.95", "weekly"),
+            (absolute_url(base_url, "en/"), "0.95", "weekly"),
+            (absolute_url(base_url, "privacy/"), "0.25", "yearly"),
+            (absolute_url(base_url, "terms/"), "0.25", "yearly"),
+            (absolute_url(base_url, "about/"), "0.35", "monthly"),
+            (absolute_url(base_url, "articles/"), "0.45", "monthly"),
+            (absolute_url(base_url, "articles/html-menu-seo/"), "0.35", "monthly"),
+            (absolute_url(base_url, "articles/guest-friendly-qr-menus/"), "0.35", "monthly"),
+        ]
         for r in restaurants:
             rid = r.get("id")
             if isinstance(rid, str) and rid:

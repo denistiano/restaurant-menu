@@ -27,7 +27,13 @@
 
   /* ── Language state ──────────────────────────────────────── */
   const DEFAULT_LANG = 'bg';
-  let currentLang = localStorage.getItem('preferredLang') || DEFAULT_LANG;
+  const COOKIE_NOTICE_KEY = 'emenuCookieNoticeV1';
+  const forcedLandingLocale =
+    window.__LANDING_LOCALE__ === 'en' || window.__LANDING_LOCALE__ === 'bg'
+      ? window.__LANDING_LOCALE__
+      : null;
+  let currentLang =
+    forcedLandingLocale || localStorage.getItem('preferredLang') || DEFAULT_LANG;
 
   /* ============================================================
      ANALYTICS HELPERS
@@ -261,6 +267,24 @@
       .replace(/"/g, '&quot;');
   }
 
+  function initCookieNotice() {
+    const bar = document.getElementById('cookieNotice');
+    const okBtn = document.getElementById('cookieNoticeOk');
+    if (!bar || !okBtn) return;
+    try {
+      if (localStorage.getItem(COOKIE_NOTICE_KEY) === '1') {
+        bar.remove();
+        return;
+      }
+    } catch (_) { /* ignore */ }
+    okBtn.addEventListener('click', () => {
+      try {
+        localStorage.setItem(COOKIE_NOTICE_KEY, '1');
+      } catch (_) { /* ignore */ }
+      bar.remove();
+    });
+  }
+
   /* ============================================================
      FETCH & INIT
      ============================================================ */
@@ -285,6 +309,12 @@
   }
 
   async function init() {
+    if (forcedLandingLocale) {
+      try {
+        localStorage.setItem('preferredLang', forcedLandingLocale);
+      } catch (_) { /* ignore */ }
+    }
+    initCookieNotice();
     initScrollNav();
     initScrollDepth();
     initCTATracking();
@@ -300,6 +330,12 @@
     if (langBtn) {
       langBtn.addEventListener('click', () => {
         const newLang = currentLang === 'en' ? 'bg' : 'en';
+        if (document.body.classList.contains('landing-page')) {
+          const u = new URL(window.location.href);
+          u.pathname = `/${newLang}/`;
+          window.location.href = u.href;
+          return;
+        }
         applyLang(newLang, true);
       });
     }

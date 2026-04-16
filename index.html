@@ -30,7 +30,20 @@
    "address":{"@type":"PostalAddress","addressLocality":"Plovdiv","addressCountry":"BG"},
    "contactPoint":[{"@type":"ContactPoint","telephone":"+359898513566","contactType":"customer service","areaServed":"BG","availableLanguage":["bg","en"],"url":"https://wa.me/359898513566"}]},
   {"@type":"WebSite","@id":"https://emenu.click/#website","name":"emenu.click","url":"https://emenu.click/","publisher":{"@id":"https://emenu.click/#organization"},
-   "description":"Дигитално QR меню за ресторанти — двуезично, актуално, без приложение."}
+   "description":"Дигитално QR меню за ресторанти — двуезично, актуално, без приложение."},
+  {"@type":"WebApplication","@id":"https://emenu.click/#webapp","name":"emenu.click","url":"https://emenu.click/","applicationCategory":"BusinessApplication","operatingSystem":"Web browser","browserRequirements":"Requires JavaScript. Requires HTML5.",
+   "description":"Платформа за публикуване на двуезични дигитални менюта за ресторанти в България — с QR код или кратък линк, без приложение за гостите.",
+   "publisher":{"@id":"https://emenu.click/#organization"},
+   "featureList":["Кратък адрес emenu.click за всяко заведение","QR код на масата — гостът отваря пълното меню в телефона","Български и английски на една страница","Актуализация на ястия и цени от уеб админ","Теми за изглед на менюто (класик / модерен)"]}
+]}
+  </script>
+  <script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"Какво е emenu.click?","acceptedAnswer":{"@type":"Answer","text":"emenu.click е услуга за ресторанти в България: всяко заведение получава собствена уеб страница с меню, отваряна през QR код на масата или през кратък линк. Гостите не инсталират приложение — менюто се зарежда в браузъра на телефона."}},
+  {"@type":"Question","name":"Трябва ли на гостите да инсталират приложение?","acceptedAnswer":{"@type":"Answer","text":"Не. Менюто е обикновена уеб страница, оптимизирана за телефон. Достатъчно е да сканират QR кода или да отворят линка."}},
+  {"@type":"Question","name":"Какво е електронно / дигитално меню в този смисъл?","acceptedAnswer":{"@type":"Answer","text":"Текстовото меню с категории, снимки, цени, търсене и филтри е в HTML — удобно за четене и за търсачки, за разлика от статичен PDF. Собственикът актуализира съдържанието през защитен админ панел."}},
+  {"@type":"Question","name":"Има ли английски за туристи?","acceptedAnswer":{"@type":"Answer","text":"Да. Менютата са двуезични (български и английски); гостът може да превключи езика на страницата."}},
+  {"@type":"Question","name":"Как да получа emenu.click за моя ресторант?","acceptedAnswer":{"@type":"Answer","text":"Пишете или се обадете чрез контактите на тази страница — обикновено можем да качим първото ви меню още в същия ден."}}
 ]}
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -41,6 +54,8 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="favicon.ico">
   <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+  <!--LOCALE_HREFLANG-->
+
 </head>
 <body class="landing-page">
 
@@ -295,6 +310,55 @@
     </div>
   </section>
 
+  <!-- FAQ: crawlable text + buyer questions (schema in <head> FAQPage) -->
+  <section class="l-faq" id="faq" aria-label="Frequently asked questions">
+    <div class="l-faq__inner">
+      <header class="l-section-header l-faq__header">
+        <p class="l-section-header__eyebrow"
+           data-en="Questions"
+           data-bg="Въпроси">Въпроси</p>
+        <h2 class="l-section-header__title"
+            data-en="Digital menu &amp; QR — what you should know"
+            data-bg="Дигитално меню и QR — какво е важно да знаете">Дигитално меню и QR — какво е важно да знаете</h2>
+      </header>
+      <div class="l-faq__list">
+        <div class="l-faq__item">
+          <h3 class="l-faq__q" data-en="What is emenu.click?" data-bg="Какво е emenu.click?">Какво е emenu.click?</h3>
+          <p class="l-faq__a"
+             data-en="emenu.click is a service for restaurants in Bulgaria: each venue gets its own web page with a menu, opened via a table QR code or a short link. Guests do not install an app — the menu loads in the phone browser."
+             data-bg="emenu.click е услуга за ресторанти в България: всяко заведение получава собствена уеб страница с меню, отваряна през QR код на масата или през кратък линк. Гостите не инсталират приложение — менюто се зарежда в браузъра на телефона.">emenu.click е услуга за ресторанти в България: всяко заведение получава собствена уеб страница с меню, отваряна през QR код на масата или през кратък линк. Гостите не инсталират приложение — менюто се зарежда в браузъра на телефона.</p>
+        </div>
+        <div class="l-faq__item">
+          <h3 class="l-faq__q" data-en="Do guests need to install an app?" data-bg="Трябва ли на гостите да инсталират приложение?">Трябва ли на гостите да инсталират приложение?</h3>
+          <p class="l-faq__a"
+             data-en="No. The menu is a normal web page optimized for phones. Scanning the QR code or opening the link is enough."
+             data-bg="Не. Менюто е обикновена уеб страница, оптимизирана за телефон. Достатъчно е да сканират QR кода или да отворят линка.">Не. Менюто е обикновена уеб страница, оптимизирана за телефон. Достатъчно е да сканират QR кода или да отворят линка.</p>
+        </div>
+        <div class="l-faq__item">
+          <h3 class="l-faq__q" data-en="What counts as an electronic / digital menu here?" data-bg="Какво е електронно / дигитално меню в този смисъл?">Какво е електронно / дигитално меню в този смисъл?</h3>
+          <p class="l-faq__a"
+             data-en="The menu with categories, photos, prices, search and filters is in HTML — readable for people and for search engines, unlike a static PDF. The owner updates content through a secure admin panel."
+             data-bg="Текстовото меню с категории, снимки, цени, търсене и филтри е в HTML — удобно за четене и за търсачки, за разлика от статичен PDF. Собственикът актуализира съдържанието през защитен админ панел.">Текстовото меню с категории, снимки, цени, търсене и филтри е в HTML — удобно за четене и за търсачки, за разлика от статичен PDF. Собственикът актуализира съдържанието през защитен админ панел.</p>
+        </div>
+        <div class="l-faq__item">
+          <h3 class="l-faq__q" data-en="Is there English for tourists?" data-bg="Има ли английски за туристи?">Има ли английски за туристи?</h3>
+          <p class="l-faq__a"
+             data-en="Yes. Menus are bilingual (Bulgarian and English); the guest can switch language on the page."
+             data-bg="Да. Менютата са двуезични (български и английски); гостът може да превключи езика на страницата.">Да. Менютата са двуезични (български и английски); гостът може да превключи езика на страницата.</p>
+        </div>
+        <div class="l-faq__item">
+          <h3 class="l-faq__q" data-en="How do I get emenu.click for my restaurant?" data-bg="Как да получа emenu.click за моя ресторант?">Как да получа emenu.click за моя ресторант?</h3>
+          <p class="l-faq__a"
+             data-en="Write or call using the contacts on this page — we can often put your first menu live the same day."
+             data-bg="Пишете или се обадете чрез контактите на тази страница — обикновено можем да качим първото ви меню още в същия ден.">Пишете или се обадете чрез контактите на тази страница — обикновено можем да качим първото ви меню още в същия ден.</p>
+        </div>
+      </div>
+      <p class="l-faq__more"
+         data-en="See live examples under “Our menus” or open the full list of menu links above."
+         data-bg="Вижте живи примери под „Нашите менюта“ или отворете пълния списък с линкове по-горе.">Вижте живи примери под „Нашите менюта“ или отворете пълния списък с линкове по-горе.</p>
+    </div>
+  </section>
+
   <!-- CTA / CONTACT -->
   <section class="l-cta-block" id="contact" aria-label="Contact">
     <div class="l-cta-block__bg" aria-hidden="true"></div>
@@ -340,9 +404,18 @@
            data-en="Short link. Full menu. Same hospitality."
            data-bg="Кратък линк. Пълно меню. Същото гостоприемство.">Кратък линк. Пълно меню. Същото гостоприемство.</p>
       </div>
+      <nav class="l-footer__legal" aria-label="Legal">
+        <a class="l-footer__legal-link" href="/privacy/" data-en="Privacy" data-bg="Поверителност">Поверителност</a>
+        <span class="l-footer__legal-sep" aria-hidden="true">·</span>
+        <a class="l-footer__legal-link" href="/terms/" data-en="Terms" data-bg="Условия">Условия</a>
+        <span class="l-footer__legal-sep" aria-hidden="true">·</span>
+        <a class="l-footer__legal-link" href="/about/" data-en="About" data-bg="За нас">За нас</a>
+        <span class="l-footer__legal-sep" aria-hidden="true">·</span>
+        <a class="l-footer__legal-link" href="/articles/" data-en="Articles" data-bg="Статии">Статии</a>
+      </nav>
       <p class="l-footer__copy"
-         data-en="Menus are for reference. Prices may vary."
-         data-bg="Менютата са за справка. Цените могат да варират.">Менютата са за справка. Цените могат да варират.</p>
+         data-en="Menu content is provided by each venue; details may change."
+         data-bg="Съдържанието на менютата е от заведението; детайлите може да се променят.">Съдържанието на менютата е от заведението; детайлите може да се променят.</p>
       <div class="l-footer__contact">
         <a href="tel:+359898513566" class="l-footer__link">+359 898 513 566</a>
         <a href="https://wa.me/359898513566" class="l-footer__link l-footer__link--whatsapp js-wa-contact" rel="noopener noreferrer" target="_blank" data-wa-base="https://wa.me/359898513566"
@@ -353,6 +426,13 @@
       </div>
     </div>
   </footer>
+
+  <div id="cookieNotice" class="cookie-notice" role="status" aria-live="polite">
+    <p class="cookie-notice__text">
+      <span data-en="We use local storage for your language preference and optional aggregated analytics. " data-bg="Използваме локално хранилище за езика и по избор агрегирана аналитика. ">Използваме локално хранилище за езика и по избор агрегирана аналитика. </span><a class="cookie-notice__link" href="/privacy/" data-en="Privacy" data-bg="Поверителност">Поверителност</a>
+    </p>
+    <button type="button" class="cookie-notice__ok" id="cookieNoticeOk" aria-label="OK">OK</button>
+  </div>
 
   <script type="module" src="js/analytics.js"></script>
   <script src="js/app.js"></script>
