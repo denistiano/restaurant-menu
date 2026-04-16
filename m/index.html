@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="../css/layout.css" />
   <!-- API origin (scheme+host+port). Production server; use http://127.0.0.1:8080 for local API only. -->
   <meta name="menu-api-base" content="https://tebeshir.online" />
 </head>
@@ -107,6 +108,7 @@
       <button class="editor-tab" data-tab="config">Settings</button>
       <button class="editor-tab" data-tab="categories">Menu</button>
       <button class="editor-tab" data-tab="qr">QR media</button>
+      <button class="editor-tab hidden" data-tab="layout" id="layoutTab">Layout &amp; Reservations</button>
     </nav>
 
     <!-- Panels -->
@@ -367,6 +369,46 @@
         <p class="qr-flyer__status" id="qrFlyerStatus" aria-live="polite"></p>
       </section>
 
+      <!-- LAYOUT & RESERVATIONS panel (super-admin only) -->
+      <section class="editor-panel hidden" id="panel-layout">
+        <!-- Sub-tabs -->
+        <div class="lf-subtab-bar" id="lfSubTabBar" style="display:flex;gap:6px;margin-bottom:16px;">
+          <button class="lf-mode-btn is-active" data-subtab="editor">Floor plan editor</button>
+          <button class="lf-mode-btn" data-subtab="reservations">Reservations</button>
+          <a id="reservePublicLink" href="#" target="_blank" rel="noopener"
+             style="margin-left:auto;font:500 12px var(--font-sans);color:var(--color-accent);
+                    align-self:center;text-decoration:none;white-space:nowrap;">
+            Guest link ↗
+          </a>
+        </div>
+
+        <!-- Layout editor host -->
+        <div id="lfEditorHost"></div>
+
+        <!-- Reservations host -->
+        <div id="lfReservationsHost" style="display:none">
+          <div class="adm-res-bar">
+            <label style="font:500 12px var(--font-sans);color:var(--color-text-muted)">Date</label>
+            <input type="date" id="admResDate" />
+            <button class="lf-save-btn" id="admResLoad" style="padding:6px 16px;font-size:12px">Load</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="adm-res-table" id="admResTable">
+              <thead>
+                <tr>
+                  <th>Time</th><th>Table</th><th>Guest</th><th>Party</th>
+                  <th>Contact</th><th>Status</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admResTbody"></tbody>
+            </table>
+          </div>
+          <p id="admResEmpty" style="display:none;padding:24px 0;text-align:center;color:var(--color-text-muted);font:400 13px var(--font-sans)">
+            No reservations for this date.
+          </p>
+        </div>
+      </section>
+
     </div><!-- /editor-body -->
   </div><!-- /editorScreen -->
 
@@ -387,6 +429,7 @@
   <script type="module" src="../js/analytics.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" crossorigin="anonymous"></script>
   <script src="qr-flyers.js"></script>
+  <script src="layout-editor.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

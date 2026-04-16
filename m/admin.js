@@ -633,6 +633,7 @@
   async function openEditorForRestaurantId(rid) {
     activeWorkspaceId = rid;
     currentRestaurant = { id: rid };
+    _resetLayoutPanel();
     await loadAndOpenEditor();
   }
 
@@ -1103,6 +1104,14 @@
         }
       });
     }
+
+    // Show Layout & Reservations tab only for super admins
+    const layoutTab = document.getElementById('layoutTab');
+    if (layoutTab) layoutTab.classList.toggle('hidden', !sessionSuperAdmin);
+
+    if (sessionSuperAdmin) {
+      _initLayoutPanel();
+    }
   }
 
   /* ── BACK BUTTON ─────────────────────────────────────────── */
@@ -1144,6 +1153,149 @@
     });
     adminTrack('admin_tab_view', { tab: String(tabId).slice(0, 40) });
     if (tabId === 'qr' && window.AdminQrFlyers) window.AdminQrFlyers.refresh();
+    if (tabId === 'layout' && sessionSuperAdmin) _initLayoutPanel();
+  }
+
+  /* ── LAYOUT & RESERVATIONS (super-admin) ─────────────────── */
+  let _layoutPanelInit = false;
+
+  function _initLayoutPanel() {
+    if (_layoutPanelInit) return;
+    _layoutPanelInit = true;
+
+    const rid  = currentRestaurant?.id || '';
+    const base = getMenuApiBase();
+
+    // Public reserve link
+    const reserveLink = document.getElementById('reservePublicLink');
+    if (reserveLink) {
+      try {
+        reserveLink.href = new URL(`../reserve/?r=${encodeURIComponent(rid)}`, window.location.href).href;
+      } catch (_) {}
+    }
+
+    // Sub-tab switching
+    const subTabBar = document.getElementById('lfSubTabBar');
+    const editorHost = document.getElementById('lfEditorHost');
+    const resHost    = document.getElementById('lfReservationsHost');
+    if (subTabBar) {
+      subTabBar.querySelectorAll('[data-subtab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          subTabBar.querySelectorAll('[data-subtab]').forEach(b => b.classList.remove('is-active'));
+          btn.classList.add('is-active');
+          const st = btn.dataset.subtab;
+          if (editorHost) editorHost.style.display = st === 'editor' ? '' : 'none';
+          if (resHost)    resHost.style.display    = st === 'reservations' ? '' : 'none';
+          if (st === 'reservations') _loadReservations();
+        });
+      });
+    }
+
+    // Init layout editor
+    if (window.LayoutEditor && rid && base) {
+      window.LayoutEditor.init({
+        container:    editorHost,
+        apiBase:      base,
+        restaurantId: rid,
+        jwt:          getAuthToken(),
+      });
+    }
+
+    // Reservations date input + load button
+    const dateInput = document.getElementById('admResDate');
+    if (dateInput) {
+      dateInput.value = new Date().toISOString().slice(0, 10);
+    }
+    const loadBtn = document.getElementById('admResLoad');
+    if (loadBtn) loadBtn.addEventListener('click', _loadReservations);
+  }
+
+  function _resetLayoutPanel() {
+    _layoutPanelInit = false;
+    const editorHost = document.getElementById('lfEditorHost');
+    if (editorHost) editorHost.innerHTML = '';
+  }
+
+  async function _loadReservations() {
+    const rid  = currentRestaurant?.id || '';
+    const base = getMenuApiBase();
+    const date = document.getElementById('admResDate')?.value || new Date().toISOString().slice(0, 10);
+    const tbody = document.getElementById('admResTbody');
+    const empty = document.getElementById('admResEmpty');
+    if (!tbody || !rid || !base) return;
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:14px;text-align:center;color:var(--color-text-muted)">Loading…</td></tr>';
+    if (empty) empty.style.display = 'none';
+    try {
+      const res = await fetch(
+        `${base}/api/admin/reservations/${encodeURIComponent(rid)}?date=${date}`,
+        { headers: { Authorization: 'Bearer ' + getAuthToken() } }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const list = await res.json();
+      if (!list.length) {
+        tbody.innerHTML = '';
+        if (empty) empty.style.display = '';
+        return;
+      }
+      const STATUS_NEXT = {
+        PENDING:   'CONFIRMED',
+        CONFIRMED: 'SEATED',
+        SEATED:    'COMPLETED',
+      };
+      tbody.innerHTML = list.map(r => {
+        const time  = r.reservedTime ? r.reservedTime.slice(0, 5) : '—';
+        const badge = r.status.toLowerCase().replace('_', '-');
+        const nextS = STATUS_NEXT[r.status];
+        const actions = nextS
+          ? `<button class="adm-res-action" data-id="${r.id}" data-status="${nextS}">${_statusLabel(nextS)}</button> `
+          : '';
+        const cancelAction = r.status !== 'CANCELLED' && r.status !== 'COMPLETED'
+          ? `<button class="adm-res-action" data-id="${r.id}" data-status="CANCELLED" style="color:#dc2626">Cancel</button>`
+          : '';
+        return `<tr>
+          <td>${time}</td>
+          <td>${_esc(r.tableId)}</td>
+          <td>${_esc(r.guestName)}</td>
+          <td>${r.partySize}</td>
+          <td>${_esc(r.guestContact || '—')}</td>
+          <td><span class="adm-res-badge adm-res-badge--${badge}">${r.status.replace('_', ' ')}</span></td>
+          <td>${actions}${cancelAction}</td>
+        </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('[data-id][data-status]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id  = btn.dataset.id;
+          const st  = btn.dataset.status;
+          btn.disabled = true;
+          try {
+            const upd = await fetch(
+              `${base}/api/admin/reservations/${encodeURIComponent(rid)}/${id}`,
+              {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getAuthToken() },
+                body: JSON.stringify({ status: st }),
+              }
+            );
+            if (!upd.ok) throw new Error(`HTTP ${upd.status}`);
+            _loadReservations();
+          } catch (err) {
+            showToast('Failed: ' + err.message, 'error');
+            btn.disabled = false;
+          }
+        });
+      });
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="7" style="color:#dc2626;padding:14px">${_esc(err.message)}</td></tr>`;
+    }
+  }
+
+  function _statusLabel(s) {
+    return { CONFIRMED: 'Confirm', SEATED: 'Seat', COMPLETED: 'Complete' }[s] || s;
+  }
+
+  function _esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   /* ── URL PREVIEW HELPER ──────────────────────────────────── */
