@@ -185,6 +185,7 @@
 
     applyWhatsappPrefill();
     refreshCatalogMeta();
+    _carouselBuildDots();
   }
 
   function normalizeSearchText(s) {
@@ -205,43 +206,138 @@
     return normalizeSearchText(parts.filter(Boolean).join(' '));
   }
 
+  /* ── Carousel state ─────────────────────────────────────── */
+  let _carouselPage = 0;
+
+  function _carouselMetrics() {
+    const track = document.getElementById('restaurantGrid');
+    if (!track) return { cardsPerPage: 1, totalPages: 0, cardW: 0, visibleCards: [] };
+    const visibleCards = Array.from(
+      track.querySelectorAll('.l-card:not(.is-catalog-hidden)')
+    );
+    if (!visibleCards.length) return { cardsPerPage: 1, totalPages: 0, cardW: 0, visibleCards };
+    const gap = 12;
+    const cardW = visibleCards[0].getBoundingClientRect().width || 1;
+    const trackW = track.clientWidth;
+    const cardsPerPage = Math.max(1, Math.floor((trackW + gap) / (cardW + gap)));
+    const totalPages = Math.ceil(visibleCards.length / cardsPerPage);
+    return { cardsPerPage, totalPages, cardW, visibleCards };
+  }
+
+  function _carouselBuildDots() {
+    const dots = document.getElementById('catalogDots');
+    const prev = document.getElementById('catalogPrev');
+    const next = document.getElementById('catalogNext');
+    if (!dots) return;
+    const { totalPages } = _carouselMetrics();
+    dots.innerHTML = '';
+    for (let i = 0; i < totalPages; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'l-catalog__dot' + (i === _carouselPage ? ' is-active' : '');
+      btn.setAttribute('role', 'listitem');
+      const lblKey = currentLang === 'bg' ? `Страница ${i + 1}` : `Page ${i + 1}`;
+      btn.setAttribute('aria-label', lblKey);
+      btn.addEventListener('click', () => _carouselGoTo(i));
+      dots.appendChild(btn);
+    }
+    if (prev) prev.disabled = _carouselPage <= 0;
+    if (next) next.disabled = _carouselPage >= totalPages - 1;
+  }
+
+  function _carouselGoTo(page) {
+    const { cardsPerPage, totalPages, cardW, visibleCards } = _carouselMetrics();
+    if (!visibleCards.length) return;
+    _carouselPage = Math.max(0, Math.min(page, totalPages - 1));
+    const idx = _carouselPage * cardsPerPage;
+    if (visibleCards[idx]) {
+      const track = document.getElementById('restaurantGrid');
+      const trackScrollPaddingLeft = 20;
+      const gap = 12;
+      const offsetLeft = idx * (cardW + gap);
+      if (track) {
+        track.scrollTo({ left: offsetLeft, behavior: 'smooth' });
+      }
+    }
+    _carouselBuildDots();
+  }
+
+  function _carouselSyncFromScroll() {
+    const { cardsPerPage, totalPages, cardW } = _carouselMetrics();
+    if (!cardW) return;
+    const track = document.getElementById('restaurantGrid');
+    if (!track) return;
+    const gap = 12;
+    const page = Math.round(track.scrollLeft / ((cardW + gap) * cardsPerPage));
+    const clamped = Math.max(0, Math.min(page, totalPages - 1));
+    if (clamped !== _carouselPage) {
+      _carouselPage = clamped;
+      _carouselBuildDots();
+    }
+  }
+
+  function initCarousel() {
+    const track = document.getElementById('restaurantGrid');
+    const prev  = document.getElementById('catalogPrev');
+    const next  = document.getElementById('catalogNext');
+    if (!track) return;
+
+    let scrollTimer;
+    track.addEventListener('scroll', () => {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(_carouselSyncFromScroll, 80);
+    }, { passive: true });
+
+    prev?.addEventListener('click', () => _carouselGoTo(_carouselPage - 1));
+    next?.addEventListener('click', () => _carouselGoTo(_carouselPage + 1));
+
+    /* Rebuild dots on resize (card sizes change at breakpoints) */
+    const ro = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => {
+          _carouselPage = 0;
+          _carouselBuildDots();
+        })
+      : null;
+    if (ro) ro.observe(track);
+  }
+
   function refreshCatalogMeta() {
     const meta = document.getElementById('restaurantCatalogMeta');
-    const grid = document.getElementById('restaurantGrid');
-    if (!meta || !grid) return;
-    const cards = grid.querySelectorAll('.l-card');
-    if (!cards.length) {
-      meta.textContent = '';
-      return;
-    }
+    const track = document.getElementById('restaurantGrid');
+    if (!meta || !track) return;
+    const cards = track.querySelectorAll('.l-card');
+    if (!cards.length) { meta.textContent = ''; return; }
     let visible = 0;
-    cards.forEach(c => {
-      if (!c.classList.contains('is-catalog-hidden')) visible++;
-    });
+    cards.forEach(c => { if (!c.classList.contains('is-catalog-hidden')) visible++; });
     const total = cards.length;
     if (currentLang === 'bg') {
-      meta.textContent =
-        visible === total ? `${total} заведения` : `${visible} от ${total} заведения`;
+      meta.textContent = visible === total
+        ? `${total} заведения`
+        : `${visible} от ${total}`;
     } else {
-      meta.textContent =
-        visible === total ? `${total} venues` : `${visible} of ${total} venues`;
+      meta.textContent = visible === total
+        ? `${total} venues`
+        : `${visible} of ${total}`;
     }
   }
 
   function applyCatalogFilter(rawQuery) {
-    const grid = document.getElementById('restaurantGrid');
+    const track = document.getElementById('restaurantGrid');
     const empty = document.getElementById('restaurantCatalogEmpty');
-    if (!grid) return;
+    if (!track) return;
     const needle = normalizeSearchText(rawQuery.trim());
-    const cards = grid.querySelectorAll('.l-card');
+    const cards = track.querySelectorAll('.l-card');
     let visible = 0;
     cards.forEach(card => {
-      const blob = card.dataset.searchBlob || '';
-      const match = !needle || blob.includes(needle);
+      const match = !needle || (card.dataset.searchBlob || '').includes(needle);
       card.classList.toggle('is-catalog-hidden', !match);
       if (match) visible++;
     });
     if (empty) empty.hidden = visible > 0 || cards.length === 0;
+    /* Reset carousel to page 0 when filter changes */
+    _carouselPage = 0;
+    track.scrollLeft = 0;
+    _carouselBuildDots();
     refreshCatalogMeta();
   }
 
@@ -255,10 +351,7 @@
       catalogFilterTimer = setTimeout(() => applyCatalogFilter(input.value), 140);
     });
     input.addEventListener('keydown', e => {
-      if (e.key === 'Escape') {
-        input.value = '';
-        applyCatalogFilter('');
-      }
+      if (e.key === 'Escape') { input.value = ''; applyCatalogFilter(''); }
     });
   }
 
@@ -290,8 +383,12 @@
     grid.innerHTML = '';
 
     if (!restaurants.length) {
-      grid.innerHTML =
-        '<p class="l-catalog__empty" style="grid-column:1/-1;padding:40px 16px">No restaurants found.</p>';
+      const p = document.createElement('p');
+      p.className = 'l-catalog__empty';
+      p.style.padding = '40px 16px';
+      p.textContent =
+        currentLang === 'bg' ? 'Няма налични заведения.' : 'No restaurants found.';
+      grid.appendChild(p);
       refreshCatalogMeta();
       return;
     }
@@ -359,8 +456,14 @@
     });
 
     applyLang(currentLang);
+    /* Reset carousel, apply any live search query, rebuild dots */
+    _carouselPage = 0;
     const searchInput = document.getElementById('restaurantCatalogSearch');
     applyCatalogFilter(searchInput ? searchInput.value : '');
+    /* Wait one frame so card layout is painted before measuring */
+    requestAnimationFrame(() => {
+      requestAnimationFrame(_carouselBuildDots);
+    });
   }
 
   /** Show all landing reveal targets immediately (no scroll-based hiding). */
@@ -443,6 +546,7 @@
     initScrollNav();
     initHeroNavMerge();
     initCatalogSearch();
+    initCarousel();
     initScrollDepth();
     initCTATracking();
 

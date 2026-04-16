@@ -54,7 +54,10 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="favicon.ico">
   <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
-  <!--LOCALE_HREFLANG-->
+    <link rel="alternate" hreflang="bg" href="https://emenu.click/bg/" />
+  <link rel="alternate" hreflang="en" href="https://emenu.click/en/" />
+  <link rel="alternate" hreflang="x-default" href="https://emenu.click/bg/" />
+
 
 </head>
 <body class="landing-page">
@@ -298,10 +301,23 @@
           <p class="l-catalog__meta" id="restaurantCatalogMeta" aria-live="polite"></p>
         </div>
         <div class="l-catalog__viewport">
-          <div class="l-grid l-grid--catalog" id="restaurantGrid" aria-busy="true"></div>
+          <div class="l-catalog__track" id="restaurantGrid" aria-busy="true"></div>
           <p class="l-catalog__empty" id="restaurantCatalogEmpty" hidden
              data-en="No venues match your search."
              data-bg="Няма заведения по това търсене.">Няма заведения по това търсене.</p>
+        </div>
+        <div class="l-catalog__nav">
+          <button class="l-catalog__arrow l-catalog__arrow--prev" id="catalogPrev"
+                  data-aria-en="Previous venues" data-aria-bg="Предишни заведения"
+                  aria-label="Предишни заведения" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="l-catalog__dots" id="catalogDots" role="list" aria-label="Pages"></div>
+          <button class="l-catalog__arrow l-catalog__arrow--next" id="catalogNext"
+                  data-aria-en="Next venues" data-aria-bg="Следващи заведения"
+                  aria-label="Следващи заведения">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
         </div>
       </div>
       <!--GENERATED_RESTAURANT_INDEX_START-->
