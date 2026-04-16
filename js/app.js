@@ -76,10 +76,15 @@
       el.addEventListener('click', () =>
         window.trackEvent?.('cta_click', { cta_type: 'hero', page: 'landing' }));
     });
-    document.querySelectorAll('[data-scroll-target="restaurants"]').forEach(el => {
+    document.querySelectorAll('[data-scroll-target]').forEach(el => {
       el.addEventListener('click', e => {
         e.preventDefault();
-        const target = document.getElementById('restaurants');
+        const id = el.getAttribute('data-scroll-target');
+        if (!id) return;
+        if (el.classList.contains('l-nav__icon-btn')) {
+          window.trackEvent?.('cta_click', { cta_type: 'nav_compact', page: 'landing' });
+        }
+        const target = document.getElementById(id);
         if (!target) return;
         const nav = document.getElementById('lNav');
         const navH = nav ? nav.offsetHeight : 0;
@@ -135,6 +140,26 @@
       el.textContent = el.dataset[lang] || el.dataset.en;
     });
 
+    document.querySelectorAll('[data-placeholder-en]').forEach(el => {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        el.placeholder =
+          lang === 'bg'
+            ? (el.dataset.placeholderBg || el.dataset.placeholderEn || '')
+            : (el.dataset.placeholderEn || el.dataset.placeholderBg || '');
+      }
+    });
+
+    document.querySelectorAll('[data-aria-en]').forEach(el => {
+      if (el.hasAttribute('aria-label')) {
+        el.setAttribute(
+          'aria-label',
+          lang === 'bg'
+            ? (el.dataset.ariaBg || el.dataset.ariaEn || '')
+            : (el.dataset.ariaEn || el.dataset.ariaBg || '')
+        );
+      }
+    });
+
     const btn = document.getElementById('langToggle');
     if (btn) {
       const label = btn.querySelector('.l-lang-toggle__label');
@@ -159,6 +184,102 @@
     }
 
     applyWhatsappPrefill();
+    refreshCatalogMeta();
+  }
+
+  function normalizeSearchText(s) {
+    return String(s || '')
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function restaurantSearchBlob(r) {
+    const parts = [
+      r.id,
+      r.name && r.name.en,
+      r.name && r.name.bg,
+      r.description && r.description.en,
+      r.description && r.description.bg
+    ];
+    return normalizeSearchText(parts.filter(Boolean).join(' '));
+  }
+
+  function refreshCatalogMeta() {
+    const meta = document.getElementById('restaurantCatalogMeta');
+    const grid = document.getElementById('restaurantGrid');
+    if (!meta || !grid) return;
+    const cards = grid.querySelectorAll('.l-card');
+    if (!cards.length) {
+      meta.textContent = '';
+      return;
+    }
+    let visible = 0;
+    cards.forEach(c => {
+      if (!c.classList.contains('is-catalog-hidden')) visible++;
+    });
+    const total = cards.length;
+    if (currentLang === 'bg') {
+      meta.textContent =
+        visible === total ? `${total} заведения` : `${visible} от ${total} заведения`;
+    } else {
+      meta.textContent =
+        visible === total ? `${total} venues` : `${visible} of ${total} venues`;
+    }
+  }
+
+  function applyCatalogFilter(rawQuery) {
+    const grid = document.getElementById('restaurantGrid');
+    const empty = document.getElementById('restaurantCatalogEmpty');
+    if (!grid) return;
+    const needle = normalizeSearchText(rawQuery.trim());
+    const cards = grid.querySelectorAll('.l-card');
+    let visible = 0;
+    cards.forEach(card => {
+      const blob = card.dataset.searchBlob || '';
+      const match = !needle || blob.includes(needle);
+      card.classList.toggle('is-catalog-hidden', !match);
+      if (match) visible++;
+    });
+    if (empty) empty.hidden = visible > 0 || cards.length === 0;
+    refreshCatalogMeta();
+  }
+
+  let catalogFilterTimer;
+
+  function initCatalogSearch() {
+    const input = document.getElementById('restaurantCatalogSearch');
+    if (!input) return;
+    input.addEventListener('input', () => {
+      clearTimeout(catalogFilterTimer);
+      catalogFilterTimer = setTimeout(() => applyCatalogFilter(input.value), 140);
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        input.value = '';
+        applyCatalogFilter('');
+      }
+    });
+  }
+
+  function initHeroNavMerge() {
+    const ctas = document.getElementById('heroCtas');
+    const nav = document.getElementById('lNav');
+    if (!ctas || !nav || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        const merged =
+          !entry.isIntersecting || entry.intersectionRatio < 0.12;
+        nav.classList.toggle('l-nav--show-cta-icons', merged);
+        ctas.classList.toggle('l-hero__ctas--merged', merged);
+      },
+      {
+        root: null,
+        rootMargin: '-48px 0px 0px 0px',
+        threshold: [0, 0.08, 0.12, 0.2, 0.35, 0.55, 1]
+      }
+    );
+    io.observe(ctas);
   }
 
   /* ============================================================
@@ -169,21 +290,23 @@
     grid.innerHTML = '';
 
     if (!restaurants.length) {
-      grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.4);padding:60px 0">No restaurants found.</p>';
+      grid.innerHTML =
+        '<p class="l-catalog__empty" style="grid-column:1/-1;padding:40px 16px">No restaurants found.</p>';
+      refreshCatalogMeta();
       return;
     }
 
     restaurants.forEach((r, index) => {
       const imgSrc = resolveLandingImageUrl(r);
-      const isFeatured = index === 0;
 
       const card = document.createElement('a');
-      card.className   = 'l-card' + (isFeatured ? ' l-card--featured' : '');
-      card.href        = `${r.id}/`;
+      card.className = 'l-card';
+      card.href = `${r.id}/`;
       card.dataset.nameEn = r.name.en || '';
       card.dataset.nameBg = r.name.bg || r.name.en || '';
       card.dataset.descEn = r.description.en || '';
       card.dataset.descBg = r.description.bg || r.description.en || '';
+      card.dataset.searchBlob = restaurantSearchBlob(r);
       card.setAttribute('aria-label', r.name[currentLang] || r.name.en);
 
       card.addEventListener('click', () => {
@@ -236,6 +359,8 @@
     });
 
     applyLang(currentLang);
+    const searchInput = document.getElementById('restaurantCatalogSearch');
+    applyCatalogFilter(searchInput ? searchInput.value : '');
   }
 
   /** Show all landing reveal targets immediately (no scroll-based hiding). */
@@ -316,6 +441,8 @@
     }
     initCookieNotice();
     initScrollNav();
+    initHeroNavMerge();
+    initCatalogSearch();
     initScrollDepth();
     initCTATracking();
 

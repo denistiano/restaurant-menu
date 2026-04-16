@@ -66,6 +66,22 @@
         <img src="favicon.ico" alt="emenu.click" class="l-nav__logo-img" width="36" height="36" decoding="async" />
         <span class="l-nav__logo-text">emenu.click</span>
       </a>
+      <div class="l-nav__spacer" aria-hidden="true"></div>
+      <div class="l-nav__actions" id="lNavActions">
+        <a href="#restaurants" class="l-nav__icon-btn" id="navToMenus" data-scroll-target="restaurants"
+           data-aria-en="Scroll to live menus" data-aria-bg="Към живите менюта" aria-label="Към живите менюта" title="">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/>
+            <rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>
+          </svg>
+        </a>
+        <a href="#contact" class="l-nav__icon-btn" id="navToContact" data-scroll-target="contact"
+           data-aria-en="Scroll to contact" data-aria-bg="Към контакт" aria-label="Към контакт" title="">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </a>
+      </div>
       <button type="button" class="l-lang-toggle" id="langToggle" aria-label="Toggle language">
         <span class="l-lang-toggle__label">EN</span>
       </button>
@@ -107,10 +123,10 @@
       <p class="l-hero__sub"
          data-en="QR on the table, or a short emenu.click link — guests open the full menu in their language. No app, no paper, no stale printouts."
          data-bg="QR на масата или кратък линк на emenu.click — гостите отварят пълното меню на своя език. Без приложение, без хартия, без остарели менюта.">QR на масата или кратък линк на emenu.click — гостите отварят пълното меню на своя език. Без приложение, без хартия, без остарели менюта.</p>
-      <div class="l-hero__ctas">
+      <div class="l-hero__ctas" id="heroCtas">
         <a href="#restaurants" class="l-hero__cta l-hero__cta--secondary" data-scroll-target="restaurants"
            data-en="Our menus" data-bg="Нашите менюта">Нашите менюта</a>
-        <a href="#contact" class="l-hero__cta">
+        <a href="#contact" class="l-hero__cta" data-scroll-target="contact">
           <span data-en="Get yours" data-bg="Искам е-меню">Искам е-меню</span>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
@@ -263,7 +279,31 @@
         <div class="l-listing__rule" aria-hidden="true"></div>
       </header>
 
-      <div class="l-grid" id="restaurantGrid" aria-busy="true"></div>
+      <div class="l-catalog">
+        <div class="l-catalog__toolbar">
+          <label class="l-catalog__search-label">
+            <span class="visually-hidden" data-en="Search menus" data-bg="Търсене в менютата">Търсене в менютата</span>
+            <span class="l-catalog__search-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+                <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+              </svg>
+            </span>
+            <input type="search" id="restaurantCatalogSearch" class="l-catalog__search"
+                   data-placeholder-en="Search by venue name…"
+                   data-placeholder-bg="Търси по име на заведение…"
+                   placeholder="Търси по име на заведение…"
+                   autocomplete="off"
+                   spellcheck="false" />
+          </label>
+          <p class="l-catalog__meta" id="restaurantCatalogMeta" aria-live="polite"></p>
+        </div>
+        <div class="l-catalog__viewport">
+          <div class="l-grid l-grid--catalog" id="restaurantGrid" aria-busy="true"></div>
+          <p class="l-catalog__empty" id="restaurantCatalogEmpty" hidden
+             data-en="No venues match your search."
+             data-bg="Няма заведения по това търсене.">Няма заведения по това търсене.</p>
+        </div>
+      </div>
       <!--GENERATED_RESTAURANT_INDEX_START-->
       <nav class="l-restaurant-index" id="publishedMenuIndex" aria-label="Published menu pages">
         <h3 class="l-restaurant-index__title"
