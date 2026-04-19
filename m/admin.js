@@ -99,7 +99,15 @@
       quantityPh: 'e.g. 250',
       selectTag: 'Select tag…',
       selectIngredient: 'Select ingredient…',
-      selectAllergen: 'Select allergen…'
+      selectAllergen: 'Select allergen…',
+      workspacePickerTitle: 'Workspaces',
+      workspaceSearchPlaceholder: 'Search by name or ID…',
+      chooseWorkspaceBtn: 'Choose workspace',
+      categorySettingsTitle: 'Category',
+      categoryNamesSection: 'Names',
+      categoryScheduleSection: 'Timed section',
+      categoryReorderHint: 'Drag ⠿ on the category row to reorder in the list.',
+      deleteCategory: 'Delete category'
     },
     bg: {
       backToSite: '← Назад към сайта',
@@ -155,7 +163,15 @@
       quantityPh: 'напр. 250',
       selectTag: 'Избери таг…',
       selectIngredient: 'Избери съставка…',
-      selectAllergen: 'Избери алерген…'
+      selectAllergen: 'Избери алерген…',
+      workspacePickerTitle: 'Обекти',
+      workspaceSearchPlaceholder: 'Търсене по име или ID…',
+      chooseWorkspaceBtn: 'Избери обект',
+      categorySettingsTitle: 'Категория',
+      categoryNamesSection: 'Имена',
+      categoryScheduleSection: 'Времева секция',
+      categoryReorderHint: 'Плъзни ⠿ до реда на категорията за подредба в списъка.',
+      deleteCategory: 'Изтрий категорията'
     }
   };
   const tr = (k) => (I18N[adminLang] && I18N[adminLang][k]) || I18N.en[k] || k;
@@ -343,14 +359,15 @@
   const postAuthPanel = document.getElementById('postAuthPanel');
   const postAuthHint = document.getElementById('postAuthHint');
   const superOnlyHint = document.getElementById('superOnlyHint');
-  const venueTabStrip = document.getElementById('venueTabStrip');
+  const authWorkspacePickBtn = document.getElementById('authWorkspacePickBtn');
+  const authWorkspacePickLabel = document.getElementById('authWorkspacePickLabel');
   const superOpsLink = document.getElementById('superOpsLink');
   const logsDashboardLink = document.getElementById('logsDashboardLink');
   const authSignOutBtn = document.getElementById('authSignOutBtn');
   const authSignInBtn = document.getElementById('authSignInBtn');
-  const editorVenueStrip = document.getElementById('editorVenueStrip');
   const authErrorEl      = document.getElementById('authError');
-  const editorTitle  = document.getElementById('editorTitle');
+  const editorWorkspacePickBtn = document.getElementById('editorWorkspacePickBtn');
+  const editorWorkspacePickLabel = document.getElementById('editorWorkspacePickLabel');
   const previewLink  = document.getElementById('previewLink');
   const saveBtn      = document.getElementById('saveBtn');
   const dirtyBadge   = document.getElementById('dirtyBadge');
@@ -362,6 +379,19 @@
   const modalCancel  = document.getElementById('modalCancel');
   const adminLangToggleAuth = document.getElementById('adminLangToggleAuth');
   const adminLangToggleEditor = document.getElementById('adminLangToggleEditor');
+  const workspacePickerBackdrop = document.getElementById('workspacePickerBackdrop');
+  const workspacePickerSheet = document.getElementById('workspacePickerSheet');
+  const wsPickerTitle = document.getElementById('wsPickerTitle');
+  const wsPickerSearch = document.getElementById('wsPickerSearch');
+  const wsPickerList = document.getElementById('wsPickerList');
+  const wsPickerClose = document.getElementById('wsPickerClose');
+  const catSettingsBackdrop = document.getElementById('catSettingsBackdrop');
+  const catSettingsSheet = document.getElementById('catSettingsSheet');
+  const catSettingsBody = document.getElementById('catSettingsBody');
+  const catSettingsTitle = document.getElementById('catSettingsTitle');
+  const catSettingsClose = document.getElementById('catSettingsClose');
+  let _workspacePickerContext = 'auth'; // 'auth' | 'editor'
+  let _catSettingsIdx = -1;
 
   function reorderPair(parent, firstId, secondId) {
     const first = document.getElementById(firstId);
@@ -393,7 +423,7 @@
     if (rerender && menuData && !editorScreen.classList.contains('hidden')) {
       renderCategories(menuData.restaurant.menu.categories);
     }
-    if (rerender && scopedRestaurantIds.length > 1) {
+    if (rerender && scopedRestaurantIds.length > 0) {
       refreshWorkspaceTabLabels();
     }
   }
@@ -459,6 +489,12 @@
     setRowLabel('infoNameBgRow', tr('nameBulgarian'));
     setRowLabel('infoDescEnRow', tr('descEnglish'));
     setRowLabel('infoDescBgRow', tr('descBulgarian'));
+
+    if (workspacePickerSheet && !workspacePickerSheet.classList.contains('hidden')) {
+      if (wsPickerTitle) wsPickerTitle.textContent = tr('workspacePickerTitle');
+      if (wsPickerSearch) wsPickerSearch.placeholder = tr('workspaceSearchPlaceholder');
+      populateWorkspacePickerList(wsPickerSearch?.value || '');
+    }
   }
 
   /* ── TOAST ──────────────────────────────────────────────── */
@@ -532,54 +568,105 @@
   }
 
   function refreshWorkspaceTabLabels() {
-    if (venueTabStrip) {
-      venueTabStrip.classList.toggle('hidden', scopedRestaurantIds.length === 0);
-      if (scopedRestaurantIds.length) {
-        renderVenueTabs(venueTabStrip, activeWorkspaceId, async r => {
-          await openEditorForRestaurantId(r);
-        });
+    const hasVenues = scopedRestaurantIds.length > 0;
+    if (authWorkspacePickBtn) {
+      authWorkspacePickBtn.classList.toggle('hidden', !hasVenues);
+      if (hasVenues && authWorkspacePickLabel) {
+        authWorkspacePickLabel.textContent = activeWorkspaceId
+          ? workspaceDisplayNameForId(activeWorkspaceId)
+          : tr('chooseWorkspaceBtn');
       }
     }
-    renderEditorVenueStrip();
+    if (editorWorkspacePickBtn) {
+      const inEditor = editorScreen && !editorScreen.classList.contains('hidden');
+      editorWorkspacePickBtn.classList.toggle('hidden', !hasVenues || !inEditor);
+      if (hasVenues && inEditor && editorWorkspacePickLabel && menuData && menuData.restaurant) {
+        const r = menuData.restaurant;
+        editorWorkspacePickLabel.textContent = workspaceDisplayNameForId(r.id) || (r.name && r.name.en) || r.id;
+      }
+    }
   }
 
-  function renderVenueTabs(container, activeId, onPick) {
-    if (!container) return;
-    container.innerHTML = '';
+  function syncBodyScrollLock() {
+    const wsOpen = workspacePickerSheet && !workspacePickerSheet.classList.contains('hidden');
+    const catOpen = catSettingsSheet && !catSettingsSheet.classList.contains('hidden');
+    document.body.style.overflow = wsOpen || catOpen ? 'hidden' : '';
+  }
+
+  function closeWorkspacePicker() {
+    workspacePickerBackdrop?.classList.add('hidden');
+    workspacePickerSheet?.classList.add('hidden');
+    authWorkspacePickBtn?.setAttribute('aria-expanded', 'false');
+    editorWorkspacePickBtn?.setAttribute('aria-expanded', 'false');
+    syncBodyScrollLock();
+  }
+
+  function populateWorkspacePickerList(filterText) {
+    if (!wsPickerList) return;
+    const q = (filterText || '').trim().toLowerCase();
+    wsPickerList.innerHTML = '';
     scopedRestaurantIds.forEach(rid => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'venue-tab' + (rid === activeId ? ' venue-tab--active' : '');
-      btn.textContent = workspaceDisplayNameForId(rid);
-      btn.title = rid;
-      btn.setAttribute('aria-selected', rid === activeId ? 'true' : 'false');
-      btn.addEventListener('click', () => onPick(rid));
-      container.appendChild(btn);
+      const label = workspaceDisplayNameForId(rid);
+      const hay = `${label} ${rid}`.toLowerCase();
+      if (q && !hay.includes(q)) return;
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'ws-picker-row' + (rid === activeWorkspaceId ? ' ws-picker-row--active' : '');
+      row.setAttribute('role', 'option');
+      row.setAttribute('aria-selected', rid === activeWorkspaceId ? 'true' : 'false');
+      row.dataset.rid = rid;
+      row.innerHTML = `
+        <span class="ws-picker-row__main">
+          <span class="ws-picker-row__name">${esc(label)}</span>
+          <span class="ws-picker-row__id">${esc(rid)}</span>
+        </span>
+        ${rid === activeWorkspaceId ? `<span class="ws-picker-row__check" aria-hidden="true">✓</span>` : ''}
+      `;
+      row.addEventListener('click', async () => {
+        closeWorkspacePicker();
+        if (_workspacePickerContext === 'auth') {
+          await openEditorForRestaurantId(rid);
+          return;
+        }
+        if (rid === activeWorkspaceId) return;
+        if (isDirty) {
+          const ok = await confirm(
+            adminLang === 'bg'
+              ? 'Има незаписани промени. Да превключим без запазване?'
+              : 'You have unsaved changes. Switch workspace without saving?'
+        );
+          if (!ok) return;
+        }
+        setDirty(false);
+        activeWorkspaceId = rid;
+        currentRestaurant = { id: rid };
+        _resetLayoutPanel();
+        await loadAndOpenEditor();
+      });
+      wsPickerList.appendChild(row);
     });
+    if (!wsPickerList.children.length && scopedRestaurantIds.length) {
+      const empty = document.createElement('p');
+      empty.className = 'ws-picker-empty';
+      empty.textContent = adminLang === 'bg' ? 'Няма съвпадения.' : 'No matches.';
+      wsPickerList.appendChild(empty);
+    }
   }
 
-  function renderEditorVenueStrip() {
-    if (!editorVenueStrip) return;
-    if (scopedRestaurantIds.length <= 1) {
-      editorVenueStrip.classList.add('hidden');
-      return;
+  function openWorkspacePicker(context) {
+    _workspacePickerContext = context === 'editor' ? 'editor' : 'auth';
+    if (wsPickerTitle) wsPickerTitle.textContent = tr('workspacePickerTitle');
+    if (wsPickerSearch) {
+      wsPickerSearch.placeholder = tr('workspaceSearchPlaceholder');
+      wsPickerSearch.value = '';
     }
-    editorVenueStrip.classList.remove('hidden');
-    renderVenueTabs(editorVenueStrip, activeWorkspaceId, async rid => {
-      if (rid === activeWorkspaceId) return;
-      if (isDirty) {
-        const ok = await confirm(
-          adminLang === 'bg'
-            ? 'Има незаписани промени. Да превключим без запазване?'
-            : 'You have unsaved changes. Switch workspace without saving?'
-        );
-        if (!ok) return;
-      }
-      setDirty(false);
-      activeWorkspaceId = rid;
-      currentRestaurant = { id: rid };
-      await loadAndOpenEditor();
-    });
+    populateWorkspacePickerList('');
+    workspacePickerBackdrop?.classList.remove('hidden');
+    workspacePickerSheet?.classList.remove('hidden');
+    syncBodyScrollLock();
+    const expandBtn = context === 'editor' ? editorWorkspacePickBtn : authWorkspacePickBtn;
+    expandBtn?.setAttribute('aria-expanded', 'true');
+    setTimeout(() => wsPickerSearch?.focus(), 50);
   }
 
   function showCredentialsUi() {
@@ -603,12 +690,7 @@
       postAuthHint.classList.toggle('hidden', scopedRestaurantIds.length === 0);
       postAuthHint.textContent = tr('chooseWorkspaceHint');
     }
-    if (venueTabStrip) {
-      venueTabStrip.classList.toggle('hidden', scopedRestaurantIds.length === 0);
-      renderVenueTabs(venueTabStrip, activeWorkspaceId, async rid => {
-        await openEditorForRestaurantId(rid);
-      });
-    }
+    refreshWorkspaceTabLabels();
   }
 
   async function signOutSession() {
@@ -1082,10 +1164,9 @@
     authScreen.classList.add('hidden');
     editorScreen.classList.remove('hidden');
     window.scrollTo(0, 0);
-    renderEditorVenueStrip();
 
     const r = menuData.restaurant;
-    editorTitle.textContent = 'Editing: ' + (r.name.en || r.id);
+    refreshWorkspaceTabLabels();
     previewLink.href = '../' + r.id + '/';
     setDirty(false);
     editorSessionStart = Date.now();
@@ -1393,7 +1474,239 @@
   }
 
   /* ── CATEGORIES ──────────────────────────────────────────── */
+  function closeCategorySettingsSheet() {
+    _catSettingsIdx = -1;
+    catSettingsBackdrop?.classList.add('hidden');
+    catSettingsSheet?.classList.add('hidden');
+    if (catSettingsBody) catSettingsBody.innerHTML = '';
+    syncBodyScrollLock();
+  }
+
+  function updateCategoryHeaderFromCat(block, cat) {
+    if (!block) return;
+    const nameEl = block.querySelector('.category-block__name');
+    if (nameEl) nameEl.textContent = cat.name.en || cat.id;
+    const badge = block.querySelector('.category-section__badge');
+    if (badge) {
+      badge.classList.toggle('hidden', !(cat.schedule && cat.schedule.enabled));
+    }
+  }
+
+  function openCategorySettingsSheet(catIdx) {
+    const cats = menuData?.restaurant?.menu?.categories;
+    if (!cats || !catSettingsBody) return;
+    const cat = cats[catIdx];
+    if (!cat) return;
+    _catSettingsIdx = catIdx;
+    if (catSettingsTitle) {
+      catSettingsTitle.textContent = `${tr('categorySettingsTitle')}: ${cat.name.en || cat.id}`;
+    }
+
+    const categoryNameFields = isBgFirst()
+      ? `
+          <div class="category-name-field">
+            <label>${esc(tr('categoryBulgarian'))}</label>
+            <input class="cat-name-bg cat-sheet-name-bg" type="text" value="${esc(cat.name.bg || '')}" placeholder="${esc(tr('categoryBgPh'))}" />
+          </div>
+          <div class="category-name-field">
+            <label>${esc(tr('categoryEnglish'))}</label>
+            <input class="cat-name-en cat-sheet-name-en" type="text" value="${esc(cat.name.en || '')}" placeholder="${esc(tr('categoryEnPh'))}" />
+          </div>
+        `
+      : `
+          <div class="category-name-field">
+            <label>${esc(tr('categoryEnglish'))}</label>
+            <input class="cat-name-en cat-sheet-name-en" type="text" value="${esc(cat.name.en || '')}" placeholder="${esc(tr('categoryEnPh'))}" />
+          </div>
+          <div class="category-name-field">
+            <label>${esc(tr('categoryBulgarian'))}</label>
+            <input class="cat-name-bg cat-sheet-name-bg" type="text" value="${esc(cat.name.bg || '')}" placeholder="${esc(tr('categoryBgPh'))}" />
+          </div>
+        `;
+
+    catSettingsBody.innerHTML = `
+      <div class="form-section cat-settings-block">
+        <h3 class="form-section__title">${esc(tr('categoryNamesSection'))}</h3>
+        <div class="category-name-fields">${categoryNameFields}</div>
+      </div>
+      <div class="form-section cat-settings-block">
+        <h3 class="form-section__title">${esc(tr('categoryScheduleSection'))}</h3>
+        <div class="cat-schedule-section cat-schedule-section--sheet">
+          <label class="cat-schedule-toggle">
+            <input type="checkbox" class="cat-schedule-cb cat-sheet-schedule-enabled" ${cat.schedule && cat.schedule.enabled ? 'checked' : ''} />
+            <span class="toggle-switch"></span>
+            <span class="cat-schedule-label">${adminLang === 'bg' ? 'Времева секция' : 'Timed section'}</span>
+          </label>
+          <div class="cat-schedule-fields${cat.schedule && cat.schedule.enabled ? '' : ' hidden'}">
+            <div class="cat-schedule-times">
+              <div class="cat-schedule-time-field">
+                <label>${adminLang === 'bg' ? 'От' : 'From'}</label>
+                <input type="time" class="cat-schedule-start field-input" value="${esc((cat.schedule && cat.schedule.start_time) || '12:00')}" />
+              </div>
+              <div class="cat-schedule-time-field">
+                <label>${adminLang === 'bg' ? 'До' : 'To'}</label>
+                <input type="time" class="cat-schedule-end field-input" value="${esc((cat.schedule && cat.schedule.end_time) || '14:00')}" />
+              </div>
+            </div>
+            <div class="cat-schedule-behavior">
+              <span class="cat-schedule-behavior-label">${adminLang === 'bg' ? 'Поведение' : 'Behaviour'}</span>
+              <label class="cat-behavior-row">
+                <input type="checkbox" class="cat-schedule-cb cat-schedule-active-top"
+                  ${(cat.schedule && cat.schedule.move_active_top !== false) ? 'checked' : ''} />
+                <span class="toggle-switch"></span>
+                <span>${adminLang === 'bg' ? 'Премести най-горе, когато е активна' : 'Move to top when currently active'}</span>
+              </label>
+              <label class="cat-behavior-row">
+                <input type="checkbox" class="cat-schedule-cb cat-schedule-inactive-bottom"
+                  ${(cat.schedule && cat.schedule.move_inactive_bottom !== false) ? 'checked' : ''} />
+                <span class="toggle-switch"></span>
+                <span>${adminLang === 'bg' ? 'Премести най-долу, когато е неактивна' : 'Move to bottom when currently inactive'}</span>
+              </label>
+            </div>
+            <span class="cat-schedule-status"></span>
+          </div>
+        </div>
+      </div>
+      <p class="cat-settings-reorder-hint">${esc(tr('categoryReorderHint'))}</p>
+      <div class="cat-settings-actions">
+        <button type="button" class="cat-btn cat-sheet-up" ${catIdx === 0 ? 'disabled' : ''}>↑ ${adminLang === 'bg' ? 'Нагоре' : 'Up'}</button>
+        <button type="button" class="cat-btn cat-sheet-down" ${catIdx >= cats.length - 1 ? 'disabled' : ''}>↓ ${adminLang === 'bg' ? 'Надолу' : 'Down'}</button>
+      </div>
+      <button type="button" class="btn-delete-category-sheet">${esc(tr('deleteCategory'))}</button>
+    `;
+
+    catSettingsBackdrop?.classList.remove('hidden');
+    catSettingsSheet?.classList.remove('hidden');
+    syncBodyScrollLock();
+
+    const block = categoriesList.querySelector(`[data-cat-idx="${catIdx}"]`);
+
+    catSettingsBody.querySelector('.cat-sheet-name-en')?.addEventListener('input', e => {
+      cat.name.en = e.target.value;
+      updateCategoryHeaderFromCat(block, cat);
+      setDirty(true);
+    });
+    catSettingsBody.querySelector('.cat-sheet-name-bg')?.addEventListener('input', e => {
+      cat.name.bg = e.target.value;
+      setDirty(true);
+    });
+
+    (function wireSheetSchedule() {
+      const scheduleCb = catSettingsBody.querySelector('.cat-sheet-schedule-enabled');
+      const schedFields = catSettingsBody.querySelector('.cat-schedule-fields');
+      const startInput = catSettingsBody.querySelector('.cat-schedule-start');
+      const endInput = catSettingsBody.querySelector('.cat-schedule-end');
+      const statusEl = catSettingsBody.querySelector('.cat-schedule-status');
+      const activeTopCb = catSettingsBody.querySelector('.cat-schedule-active-top');
+      const inactiveBottomCb = catSettingsBody.querySelector('.cat-schedule-inactive-bottom');
+
+      function timeSectionIsActive(sched) {
+        if (!sched || !sched.enabled) return null;
+        const tz = (menuData.restaurant.menu.config || {}).timezone || 'Europe/Sofia';
+        try {
+          const now = new Date();
+          const ts = now.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false });
+          const [ch, cm] = ts.split(':').map(Number);
+          const cur = ch * 60 + cm;
+          const [sh, sm] = (sched.start_time || '12:00').split(':').map(Number);
+          const [eh, em] = (sched.end_time || '14:00').split(':').map(Number);
+          const start = sh * 60 + sm;
+          const end = eh * 60 + em;
+          return end > start ? (cur >= start && cur < end) : (cur >= start || cur < end);
+        } catch {
+          return null;
+        }
+      }
+
+      function updateStatus() {
+        if (!cat.schedule || !cat.schedule.enabled) {
+          statusEl.textContent = '';
+          return;
+        }
+        const active = timeSectionIsActive(cat.schedule);
+        const s = cat.schedule.start_time || '';
+        const e = cat.schedule.end_time || '';
+        statusEl.textContent = active
+          ? `✓ Currently active (${s}–${e})`
+          : `○ Inactive now (${s}–${e})`;
+        statusEl.dataset.active = active ? '1' : '0';
+      }
+
+      scheduleCb.addEventListener('change', () => {
+        if (!cat.schedule) cat.schedule = { start_time: '12:00', end_time: '14:00' };
+        cat.schedule.enabled = scheduleCb.checked;
+        schedFields.classList.toggle('hidden', !scheduleCb.checked);
+        updateCategoryHeaderFromCat(block, cat);
+        updateStatus();
+        setDirty(true);
+      });
+      startInput.addEventListener('change', () => {
+        if (!cat.schedule) cat.schedule = { enabled: true };
+        cat.schedule.start_time = startInput.value;
+        updateStatus();
+        setDirty(true);
+      });
+      endInput.addEventListener('change', () => {
+        if (!cat.schedule) cat.schedule = { enabled: true };
+        cat.schedule.end_time = endInput.value;
+        updateStatus();
+        setDirty(true);
+      });
+      if (activeTopCb) {
+        activeTopCb.addEventListener('change', () => {
+          if (!cat.schedule) cat.schedule = { enabled: true };
+          cat.schedule.move_active_top = activeTopCb.checked;
+          setDirty(true);
+        });
+      }
+      if (inactiveBottomCb) {
+        inactiveBottomCb.addEventListener('change', () => {
+          if (!cat.schedule) cat.schedule = { enabled: true };
+          cat.schedule.move_inactive_bottom = inactiveBottomCb.checked;
+          setDirty(true);
+        });
+      }
+      updateStatus();
+    })();
+
+    catSettingsBody.querySelector('.cat-sheet-up')?.addEventListener('click', e => {
+      e.preventDefault();
+      if (catIdx === 0) return;
+      const arr = menuData.restaurant.menu.categories;
+      [arr[catIdx - 1], arr[catIdx]] = [arr[catIdx], arr[catIdx - 1]];
+      closeCategorySettingsSheet();
+      renderCategories(arr);
+      setDirty(true);
+    });
+    catSettingsBody.querySelector('.cat-sheet-down')?.addEventListener('click', e => {
+      e.preventDefault();
+      const arr = menuData.restaurant.menu.categories;
+      if (catIdx === arr.length - 1) return;
+      [arr[catIdx], arr[catIdx + 1]] = [arr[catIdx + 1], arr[catIdx]];
+      closeCategorySettingsSheet();
+      renderCategories(arr);
+      setDirty(true);
+    });
+
+    catSettingsBody.querySelector('.btn-delete-category-sheet')?.addEventListener('click', async e => {
+      e.preventDefault();
+      const ic = cat.items ? cat.items.length : 0;
+      const ok = await confirm(
+        adminLang === 'bg'
+          ? `Изтрий категорията „${cat.name.en}“? Всички ${ic} продукта ще бъдат премахнати.`
+          : `Delete category "${cat.name.en}"? All ${ic} items will be removed.`
+      );
+      if (!ok) return;
+      adminTrack('admin_category_delete', { category: String(cat.name.en || cat.id).slice(0, 80) });
+      menuData.restaurant.menu.categories.splice(catIdx, 1);
+      closeCategorySettingsSheet();
+      renderCategories(menuData.restaurant.menu.categories);
+      setDirty(true);
+    });
+  }
+
   function renderCategories(categories) {
+    closeCategorySettingsSheet();
     categoriesList.innerHTML = '';
     categories.forEach((cat, catIdx) => {
       categoriesList.appendChild(buildCategoryBlock(cat, catIdx, categories));
@@ -1494,227 +1807,67 @@
 
   function buildCategoryBlock(cat, catIdx, categories) {
     const block = document.createElement('div');
-    block.className = 'category-block';
+    block.className = 'category-block category-section';
     block.dataset.catIdx = catIdx;
 
     const itemCount = cat.items ? cat.items.length : 0;
-    const categoryNameFields = isBgFirst()
-      ? `
-          <div class="category-name-field">
-            <label>${esc(tr('categoryBulgarian'))}</label>
-            <input class="cat-name-bg" type="text" value="${esc(cat.name.bg || '')}" placeholder="${esc(tr('categoryBgPh'))}" />
-          </div>
-          <div class="category-name-field">
-            <label>${esc(tr('categoryEnglish'))}</label>
-            <input class="cat-name-en" type="text" value="${esc(cat.name.en || '')}" placeholder="${esc(tr('categoryEnPh'))}" />
-          </div>
-        `
-      : `
-          <div class="category-name-field">
-            <label>${esc(tr('categoryEnglish'))}</label>
-            <input class="cat-name-en" type="text" value="${esc(cat.name.en || '')}" placeholder="${esc(tr('categoryEnPh'))}" />
-          </div>
-          <div class="category-name-field">
-            <label>${esc(tr('categoryBulgarian'))}</label>
-            <input class="cat-name-bg" type="text" value="${esc(cat.name.bg || '')}" placeholder="${esc(tr('categoryBgPh'))}" />
-          </div>
-        `;
+    const timedHidden = !(cat.schedule && cat.schedule.enabled);
+    const itemLabel = adminLang === 'bg' ? 'продукта' : `item${itemCount !== 1 ? 's' : ''}`;
+    const gearAria = adminLang === 'bg' ? 'Настройки на категорията' : 'Category settings';
+
     block.innerHTML = `
-      <div class="category-block__header">
+      <div class="category-section__header">
         <span class="category-block__drag" title="Drag to reorder">⠿</span>
-        <span class="category-block__name">${esc(cat.name.en || cat.id)}</span>
-        <span class="category-block__count">${itemCount} ${adminLang === 'bg' ? 'продукта' : `item${itemCount !== 1 ? 's' : ''}`}</span>
-        <div class="category-block__actions">
-          <button class="cat-btn cat-btn--up" title="Move up">↑</button>
-          <button class="cat-btn cat-btn--down" title="Move down">↓</button>
-          <button class="cat-btn cat-btn--danger cat-btn--del" title="${adminLang === 'bg' ? 'Изтрий категория' : 'Delete category'}">${adminLang === 'bg' ? 'Изтрий' : 'Delete'}</button>
-        </div>
-        <span class="category-block__chevron">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
+        <button type="button" class="category-section__toggle" aria-expanded="false">
+          <span class="category-block__name">${esc(cat.name.en || cat.id)}</span>
+          <span class="category-section__badge${timedHidden ? ' hidden' : ''}">${adminLang === 'bg' ? 'Времева' : 'Timed'}</span>
+          <span class="category-block__count">${itemCount} ${itemLabel}</span>
+          <span class="category-block__chevron" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </button>
+        <button type="button" class="category-section__gear" aria-label="${esc(gearAria)}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
       </div>
       <div class="category-block__body"><div class="category-block__body-inner">
-        <div class="category-name-fields">
-          ${categoryNameFields}
-        </div>
-        <div class="cat-schedule-section">
-          <label class="cat-schedule-toggle">
-            <input type="checkbox" class="cat-schedule-cb" ${cat.schedule && cat.schedule.enabled ? 'checked' : ''} />
-            <span class="toggle-switch"></span>
-            <span class="cat-schedule-label">${adminLang === 'bg' ? 'Времева секция' : 'Timed section'}</span>
-          </label>
-          <div class="cat-schedule-fields${cat.schedule && cat.schedule.enabled ? '' : ' hidden'}">
-            <div class="cat-schedule-times">
-              <div class="cat-schedule-time-field">
-                <label>${adminLang === 'bg' ? 'От' : 'From'}</label>
-                <input type="time" class="cat-schedule-start field-input" value="${esc((cat.schedule && cat.schedule.start_time) || '12:00')}" />
-              </div>
-              <div class="cat-schedule-time-field">
-                <label>${adminLang === 'bg' ? 'До' : 'To'}</label>
-                <input type="time" class="cat-schedule-end field-input" value="${esc((cat.schedule && cat.schedule.end_time) || '14:00')}" />
-              </div>
-            </div>
-            <div class="cat-schedule-behavior">
-              <span class="cat-schedule-behavior-label">${adminLang === 'bg' ? 'Поведение' : 'Behaviour'}</span>
-              <label class="cat-behavior-row">
-                <input type="checkbox" class="cat-schedule-cb cat-schedule-active-top"
-                  ${(cat.schedule && cat.schedule.move_active_top !== false) ? 'checked' : ''} />
-                <span class="toggle-switch"></span>
-                <span>${adminLang === 'bg' ? 'Премести най-горе, когато е активна' : 'Move to top when currently active'}</span>
-              </label>
-              <label class="cat-behavior-row">
-                <input type="checkbox" class="cat-schedule-cb cat-schedule-inactive-bottom"
-                  ${(cat.schedule && cat.schedule.move_inactive_bottom !== false) ? 'checked' : ''} />
-                <span class="toggle-switch"></span>
-                <span>${adminLang === 'bg' ? 'Премести най-долу, когато е неактивна' : 'Move to bottom when currently inactive'}</span>
-              </label>
-            </div>
-            <span class="cat-schedule-status"></span>
-          </div>
-        </div>
-        <div class="category-items-section">
-          <div class="category-items-section__head">
-            <span class="category-items-section__title">${esc(tr('itemsSectionTitle'))}</span>
-            <span class="category-items-section__hint">${esc(tr('itemsSectionHint'))}</span>
-          </div>
+        <div class="category-items-wrap">
+          <p class="category-items-hint">${esc(tr('itemsSectionHint'))}</p>
           <div class="items-list" id="items-${catIdx}"></div>
-          <button class="btn-add-item">${adminLang === 'bg' ? '+ Добави продукт' : '+ Add item'}</button>
+          <button type="button" class="btn-add-item">${adminLang === 'bg' ? '+ Добави продукт' : '+ Add item'}</button>
         </div>
       </div></div>
     `;
 
-    // Expand/collapse
-    const header = block.querySelector('.category-block__header');
-    header.addEventListener('click', e => {
-      if (e.target.closest('.category-block__actions')) return;
-      block.classList.toggle('open');
-    });
-
-    // Name change
-    block.querySelector('.cat-name-en').addEventListener('input', e => {
-      cat.name.en = e.target.value;
-      block.querySelector('.category-block__name').textContent = e.target.value || cat.id;
-      setDirty(true);
-    });
-    block.querySelector('.cat-name-bg').addEventListener('input', e => {
-      cat.name.bg = e.target.value;
-      setDirty(true);
-    });
-
-    // Schedule toggle
-    (function wireSchedule() {
-      const scheduleCb  = block.querySelector('.cat-schedule-cb');
-      const schedFields = block.querySelector('.cat-schedule-fields');
-      const startInput  = block.querySelector('.cat-schedule-start');
-      const endInput    = block.querySelector('.cat-schedule-end');
-      const statusEl    = block.querySelector('.cat-schedule-status');
-
-      function timeSectionIsActive(sched) {
-        if (!sched || !sched.enabled) return null;
-        const tz  = (menuData.restaurant.menu.config || {}).timezone || 'Europe/Sofia';
-        try {
-          const now = new Date();
-          const ts  = now.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false });
-          const [ch, cm] = ts.split(':').map(Number);
-          const cur  = ch * 60 + cm;
-          const [sh, sm] = (sched.start_time || '12:00').split(':').map(Number);
-          const [eh, em] = (sched.end_time   || '14:00').split(':').map(Number);
-          const start = sh * 60 + sm, end = eh * 60 + em;
-          return end > start ? (cur >= start && cur < end) : (cur >= start || cur < end);
-        } catch { return null; }
-      }
-
-      function updateStatus() {
-        if (!cat.schedule || !cat.schedule.enabled) { statusEl.textContent = ''; return; }
-        const active = timeSectionIsActive(cat.schedule);
-        const s = cat.schedule.start_time || '', e = cat.schedule.end_time || '';
-        statusEl.textContent = active ? `✓ Currently active (${s}–${e})` : `○ Inactive now (${s}–${e})`;
-        statusEl.dataset.active = active ? '1' : '0';
-      }
-
-      const activeTopCb      = block.querySelector('.cat-schedule-active-top');
-      const inactiveBottomCb = block.querySelector('.cat-schedule-inactive-bottom');
-
-      scheduleCb.addEventListener('change', () => {
-        if (!cat.schedule) cat.schedule = { start_time: '12:00', end_time: '14:00' };
-        cat.schedule.enabled = scheduleCb.checked;
-        schedFields.classList.toggle('hidden', !scheduleCb.checked);
-        updateStatus();
-        setDirty(true);
-      });
-      startInput.addEventListener('change', () => {
-        if (!cat.schedule) cat.schedule = { enabled: true };
-        cat.schedule.start_time = startInput.value;
-        updateStatus();
-        setDirty(true);
-      });
-      endInput.addEventListener('change', () => {
-        if (!cat.schedule) cat.schedule = { enabled: true };
-        cat.schedule.end_time = endInput.value;
-        updateStatus();
-        setDirty(true);
-      });
-      if (activeTopCb) {
-        activeTopCb.addEventListener('change', () => {
-          if (!cat.schedule) cat.schedule = { enabled: true };
-          cat.schedule.move_active_top = activeTopCb.checked;
-          setDirty(true);
-        });
-      }
-      if (inactiveBottomCb) {
-        inactiveBottomCb.addEventListener('change', () => {
-          if (!cat.schedule) cat.schedule = { enabled: true };
-          cat.schedule.move_inactive_bottom = inactiveBottomCb.checked;
-          setDirty(true);
-        });
-      }
-      updateStatus();
-    })();
-
-    // Move up
-    block.querySelector('.cat-btn--up').addEventListener('click', e => {
+    const toggleBtn = block.querySelector('.category-section__toggle');
+    toggleBtn.addEventListener('click', e => {
+      e.preventDefault();
       e.stopPropagation();
-      if (catIdx === 0) return;
-      const arr = menuData.restaurant.menu.categories;
-      [arr[catIdx - 1], arr[catIdx]] = [arr[catIdx], arr[catIdx - 1]];
-      renderCategories(arr);
-      setDirty(true);
+      const open = block.classList.toggle('open');
+      toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
 
-    // Move down
-    block.querySelector('.cat-btn--down').addEventListener('click', e => {
+    block.querySelector('.category-section__gear')?.addEventListener('click', e => {
+      e.preventDefault();
       e.stopPropagation();
-      const arr = menuData.restaurant.menu.categories;
-      if (catIdx === arr.length - 1) return;
-      [arr[catIdx], arr[catIdx + 1]] = [arr[catIdx + 1], arr[catIdx]];
-      renderCategories(arr);
-      setDirty(true);
+      openCategorySettingsSheet(catIdx);
     });
 
-    // Delete category
-    block.querySelector('.cat-btn--del').addEventListener('click', async e => {
+    block.querySelector('.btn-add-item').addEventListener('click', e => {
       e.stopPropagation();
-      const ok = await confirm(`Delete category "${cat.name.en}"? All ${itemCount} items will be removed.`);
-      if (!ok) return;
-      adminTrack('admin_category_delete', { category: String(cat.name.en || cat.id).slice(0, 80) });
-      menuData.restaurant.menu.categories.splice(catIdx, 1);
-      renderCategories(menuData.restaurant.menu.categories);
-      setDirty(true);
-    });
-
-    // Add item
-    block.querySelector('.btn-add-item').addEventListener('click', () => {
       if (!cat.items) cat.items = [];
       cat.items.push({ name: { en: '', bg: '' }, description: { en: '', bg: '' }, price: 0, tags: [], availability: true, image: undefined });
+      if (!block.classList.contains('open')) {
+        block.classList.add('open');
+        toggleBtn.setAttribute('aria-expanded', 'true');
+      }
       refreshItemsList(block, cat, catIdx);
       setDirty(true);
-      // Open the new item
       const itemsEl = block.querySelector(`#items-${catIdx}`);
-      const last = itemsEl.lastElementChild;
+      const last = itemsEl && itemsEl.lastElementChild;
       if (last) last.classList.add('open');
     });
 
-    // Render items
     refreshItemsList(block, cat, catIdx);
 
     return block;
@@ -1722,9 +1875,11 @@
 
   function refreshItemsList(catBlock, cat, catIdx) {
     const itemsEl = catBlock.querySelector(`#items-${catIdx}`);
+    if (!cat.items) cat.items = [];
     itemsEl.innerHTML = '';
+    const n = cat.items.length;
     catBlock.querySelector('.category-block__count').textContent =
-      `${cat.items.length} ${adminLang === 'bg' ? 'продукта' : `item${cat.items.length !== 1 ? 's' : ''}`}`;
+      `${n} ${adminLang === 'bg' ? 'продукта' : `item${n !== 1 ? 's' : ''}`}`;
     cat.items.forEach((item, itemIdx) => {
       itemsEl.appendChild(buildItemBlock(item, itemIdx, cat, catIdx, catBlock));
     });
@@ -2699,6 +2854,19 @@
   adminLangToggleAuth?.addEventListener('click', () => applyAdminLang(adminLang === 'bg' ? 'en' : 'bg'));
   adminLangToggleEditor?.addEventListener('click', () => applyAdminLang(adminLang === 'bg' ? 'en' : 'bg'));
   applyAdminLang(adminLang, false);
+
+  authWorkspacePickBtn?.addEventListener('click', () => openWorkspacePicker('auth'));
+  editorWorkspacePickBtn?.addEventListener('click', () => openWorkspacePicker('editor'));
+  workspacePickerBackdrop?.addEventListener('click', closeWorkspacePicker);
+  wsPickerClose?.addEventListener('click', closeWorkspacePicker);
+  wsPickerSearch?.addEventListener('input', () => populateWorkspacePickerList(wsPickerSearch.value));
+  catSettingsBackdrop?.addEventListener('click', closeCategorySettingsSheet);
+  catSettingsClose?.addEventListener('click', closeCategorySettingsSheet);
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    closeWorkspacePicker();
+    closeCategorySettingsSheet();
+  });
 
   (async () => {
     const restored = await restoreSessionIfPossible();
