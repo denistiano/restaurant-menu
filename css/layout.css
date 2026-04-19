@@ -43,7 +43,60 @@
 }
 
 /* ================================================================
-   MODE SELECTOR
+   LAYOUT PANEL SUB-NAV — segmented control + guest link
+   ================================================================ */
+.lf-seg-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.lf-seg-ctrl {
+  display: flex;
+  padding: 3px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px;
+  gap: 2px;
+}
+.lf-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  font: 500 13px var(--font-sans, 'Inter', system-ui, sans-serif);
+  color: rgba(240,236,228,0.45);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.lf-seg-btn.is-active {
+  background: var(--accent, #c4955a);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(196,149,90,0.3);
+}
+.lf-seg-btn:hover:not(.is-active) {
+  background: rgba(255,255,255,0.07);
+  color: var(--text, #f0ece4);
+}
+.lf-guest-link {
+  margin-left: auto;
+  font: 500 12px var(--font-sans, 'Inter', system-ui, sans-serif);
+  color: var(--accent, #c4955a);
+  text-decoration: none;
+  white-space: nowrap;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+.lf-guest-link:hover { opacity: 1; text-decoration: underline; }
+
+/* ================================================================
+   LAYOUT EDITOR INTERNAL MODE SELECTOR  (Simple / Tables / Floor plan)
    ================================================================ */
 .lf-mode-bar {
   display: flex;

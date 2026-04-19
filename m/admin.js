@@ -440,12 +440,13 @@
     const saveBtnEl = document.getElementById('saveBtn'); if (saveBtnEl && saveBtnEl.textContent !== 'Saving…' && saveBtnEl.textContent !== 'Запазване…') saveBtnEl.textContent = tr('save');
     const dirty = document.getElementById('dirtyBadge'); if (dirty) dirty.textContent = tr('unsaved');
 
-    const tabs = document.querySelectorAll('.editor-tab');
-    tabs.forEach(tab => {
-      if (tab.dataset.tab === 'info') tab.textContent = tr('editorRestaurantTab');
-      if (tab.dataset.tab === 'config') tab.textContent = tr('editorSettingsTab');
-      if (tab.dataset.tab === 'categories') tab.textContent = tr('editorMenuTab');
-      if (tab.dataset.tab === 'qr') tab.textContent = tr('editorQrTab');
+    document.querySelectorAll('.editor-nav__item').forEach(item => {
+      const lbl = item.querySelector('.editor-nav__label');
+      if (!lbl) return;
+      if (item.dataset.tab === 'info')       lbl.textContent = tr('editorRestaurantTab');
+      if (item.dataset.tab === 'config')     lbl.textContent = tr('editorSettingsTab');
+      if (item.dataset.tab === 'categories') lbl.textContent = tr('editorMenuTab');
+      if (item.dataset.tab === 'qr')         lbl.textContent = tr('editorQrTab');
     });
 
     // Info bilingual row labels
@@ -1133,7 +1134,7 @@
     currentRestaurant = null;
     setDirty(false);
     showPostAuthUi();
-    document.querySelectorAll('.editor-tab').forEach(t => {
+    document.querySelectorAll('.editor-nav__item').forEach(t => {
       t.classList.toggle('active', t.dataset.tab === 'info');
     });
     document.querySelectorAll('.editor-panel').forEach(p => {
@@ -1145,7 +1146,7 @@
 
   /* ── TABS ────────────────────────────────────────────────── */
   function switchTab(tabId) {
-    document.querySelectorAll('.editor-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+    document.querySelectorAll('.editor-nav__item').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
     document.querySelectorAll('.editor-panel').forEach(p => {
       const active = p.id === 'panel-' + tabId;
       p.classList.toggle('active', active);
@@ -1532,7 +1533,7 @@
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
       </div>
-      <div class="category-block__body">
+      <div class="category-block__body"><div class="category-block__body-inner">
         <div class="category-name-fields">
           ${categoryNameFields}
         </div>
@@ -1579,7 +1580,7 @@
           <div class="items-list" id="items-${catIdx}"></div>
           <button class="btn-add-item">${adminLang === 'bg' ? '+ Добави продукт' : '+ Add item'}</button>
         </div>
-      </div>
+      </div></div>
     `;
 
     // Expand/collapse
@@ -2279,7 +2280,7 @@
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
       </div>
-      <div class="item-block__body">
+      <div class="item-block__body"><div class="item-block__body-inner">
         <div class="item-fields">
           <div class="item-field-2col">
             ${nameFields}
@@ -2395,7 +2396,7 @@
         <div class="item-actions">
           <button class="btn-delete-item">${adminLang === 'bg' ? 'Изтрий продукт' : 'Delete item'}</button>
         </div>
-      </div>
+      </div></div>
     `;
 
     // Expand/collapse (ignore clicks from drag handle)
@@ -2650,11 +2651,11 @@
     if (isDirty) { e.preventDefault(); e.returnValue = ''; }
   });
 
-  /* ── Tab bar (single delegation — avoids duplicate listeners on re-open) ── */
-  document.getElementById('editorTabs').addEventListener('click', e => {
-    const tab = e.target.closest('.editor-tab');
-    if (!tab || !tab.dataset.tab) return;
-    switchTab(tab.dataset.tab);
+  /* ── Nav bar (single delegation — avoids duplicate listeners on re-open) ── */
+  document.getElementById('editorNav').addEventListener('click', e => {
+    const item = e.target.closest('.editor-nav__item');
+    if (!item || !item.dataset.tab) return;
+    switchTab(item.dataset.tab);
   });
 
   /* ── Debounced “any field changed” while editor is open ── */
