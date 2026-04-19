@@ -37,8 +37,8 @@
 
   const RESTAURANT_ID  = window.RESTAURANT_ID  || 'unknown';
   const RESOURCES_BASE = window.RESOURCES_BASE || '../resources';
-  /** UI mark ≤250px: same artwork as favicon (use .ico); large hero/marketing uses resources/logo.png. */
-  const SITE_FAVICON_HREF = '../favicon.ico';
+  /** Small UI marks (back buttons, errors): webp in resources; tab icon stays favicon.ico in HTML. */
+  const SITE_FAVICON_HREF = '../resources/logo.webp';
   const SITE_BRAND = (typeof window !== 'undefined' && window.__SEO__ && window.__SEO__.siteName)
     ? String(window.__SEO__.siteName)
     : 'emenu.click';

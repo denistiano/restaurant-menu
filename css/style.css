@@ -40,6 +40,22 @@
 
 html { scroll-behavior: smooth; }
 
+html, body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+textarea,
+select,
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="image"]),
+[contenteditable="true"],
+pre, code, kbd, samp {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
 body {
   font-family: var(--font-sans);
   background: var(--color-bg);
@@ -1129,7 +1145,7 @@ html:has(.landing-page) {
   content: '';
   position: absolute;
   inset: 0;
-  background: url("../favicon.ico") no-repeat 50% 42%;
+  background: url("../resources/logo.webp") no-repeat 50% 42%;
   background-size: min(180px, 42vw);
   opacity: 0.04;
   pointer-events: none;

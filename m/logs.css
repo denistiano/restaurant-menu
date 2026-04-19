@@ -762,3 +762,11 @@
   font-size: 11px;
   text-transform: uppercase;
 }
+
+/* Global /m bottom nav — avoid content hidden behind strip (admin.css defines .m-app-nav) */
+body.has-m-app-nav.spl-body .spl-shell {
+  padding-bottom: calc(var(--m-app-strip-h, 52px) + env(safe-area-inset-bottom, 0px));
+}
+body.has-m-app-nav.spl-body .spl-gate {
+  padding-bottom: calc(24px + var(--m-app-strip-h, 52px) + env(safe-area-inset-bottom, 0px));
+}
