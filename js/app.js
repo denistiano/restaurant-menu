@@ -127,6 +127,95 @@
     return `resources/${r.id}/${raw}`;
   }
 
+  /** Guest reserve page — relative to current locale segment when present. */
+  function landingReserveUrl(restaurantId) {
+    const q = 'r=' + encodeURIComponent(restaurantId);
+    const path = window.location.pathname;
+    if (path.startsWith('/en/') || path.startsWith('/bg/') || path === '/en' || path === '/bg') {
+      return '../reserve/?' + q;
+    }
+    return 'reserve/?' + q;
+  }
+
+  function collapseLandingSplit(except) {
+    document.querySelectorAll('#restaurantGrid .l-card--expanded').forEach(c => {
+      if (!except || c !== except) {
+        c.classList.remove('l-card--expanded');
+        c.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  function bindLandingCardSplit(card, r, index) {
+    const menuHref = `${r.id}/`;
+    const reserveHref = landingReserveUrl(r.id);
+    const menuA = card.querySelector('.l-card__split-action--menu');
+    const resA = card.querySelector('.l-card__split-action--reserve');
+    if (menuA) menuA.setAttribute('href', menuHref);
+    if (resA) resA.setAttribute('href', reserveHref);
+
+    function navPrep() {
+      try {
+        sessionStorage.setItem('e_menu_last_restaurant_id_v1', String(r.id));
+      } catch (e) { /* ignore */ }
+    }
+
+    if (menuA) {
+      menuA.addEventListener('click', () => {
+        navPrep();
+        window.trackEvent?.('restaurant_select', {
+          restaurant_id: r.id,
+          restaurant_name: r.name && r.name.en,
+          position: index,
+          destination: 'menu'
+        });
+      });
+    }
+    if (resA) {
+      resA.addEventListener('click', () => {
+        navPrep();
+        window.trackEvent?.('restaurant_select', {
+          restaurant_id: r.id,
+          restaurant_name: r.name && r.name.en,
+          position: index,
+          destination: 'reserve'
+        });
+      });
+    }
+
+    card.addEventListener('click', e => {
+      if (e.target.closest('.l-card__split-action')) return;
+      if (card.classList.contains('l-card--expanded')) {
+        collapseLandingSplit(null);
+        return;
+      }
+      collapseLandingSplit(card);
+      card.classList.add('l-card--expanded');
+      card.setAttribute('aria-expanded', 'true');
+    });
+
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target.closest('.l-card__split-action')) return;
+        e.preventDefault();
+        card.click();
+      }
+      if (e.key === 'Escape') {
+        if (card.classList.contains('l-card--expanded')) {
+          e.preventDefault();
+          collapseLandingSplit(null);
+        }
+      }
+    });
+  }
+
+  document.addEventListener('click', e => {
+    const ex = e.target.closest('#restaurantGrid .l-card--expanded');
+    if (ex) return;
+    if (e.target.closest('#restaurantGrid .l-card')) return;
+    collapseLandingSplit(null);
+  });
+
   /* ============================================================
      LANGUAGE
      ============================================================ */
@@ -396,26 +485,16 @@
     restaurants.forEach((r, index) => {
       const imgSrc = resolveLandingImageUrl(r);
 
-      const card = document.createElement('a');
+      const card = document.createElement('article');
       card.className = 'l-card';
-      card.href = `${r.id}/`;
+      card.tabIndex = 0;
       card.dataset.nameEn = r.name.en || '';
       card.dataset.nameBg = r.name.bg || r.name.en || '';
       card.dataset.descEn = r.description.en || '';
       card.dataset.descBg = r.description.bg || r.description.en || '';
       card.dataset.searchBlob = restaurantSearchBlob(r);
       card.setAttribute('aria-label', r.name[currentLang] || r.name.en);
-
-      card.addEventListener('click', () => {
-        try {
-          sessionStorage.setItem('e_menu_last_restaurant_id_v1', String(r.id));
-        } catch { /* ignore */ }
-        window.trackEvent?.('restaurant_select', {
-          restaurant_id:   r.id,
-          restaurant_name: r.name.en,
-          position:        index
-        });
-      });
+      card.setAttribute('aria-expanded', 'false');
 
       const nameLang = r.name[currentLang] || r.name.en;
       const descLang = r.description[currentLang] || r.description.en;
@@ -426,15 +505,29 @@
         <div class="l-card__img-placeholder"></div>
         <div class="l-card__overlay"></div>
         <div class="l-card__body">
-          <span class="l-card__tag" data-en="View menu" data-bg="Виж менюто">View menu</span>
+          <span class="l-card__tag" data-en="Tap to choose" data-bg="Избери">Tap to choose</span>
           <h2 class="l-card__name">${escapeHtml(nameLang)}</h2>
           <p class="l-card__desc">${escapeHtml(descLang)}</p>
           <span class="l-card__cta">
-            <span data-en="Explore" data-bg="Разгледай">Explore</span>
+            <span data-en="Menu or reserve" data-bg="Меню или резервация">Menu or reserve</span>
             <span class="l-card__cta-arrow">→</span>
           </span>
         </div>
+        <div class="l-card__split" aria-hidden="true">
+          <div class="l-card__split-inner">
+            <a class="l-card__split-action l-card__split-action--menu" href="#">
+              <span class="l-card__split-kicker" data-en="Open" data-bg="Отвори">Open</span>
+              <span class="l-card__split-title" data-en="Menu" data-bg="Меню">Menu</span>
+            </a>
+            <a class="l-card__split-action l-card__split-action--reserve" href="#">
+              <span class="l-card__split-kicker" data-en="Book" data-bg="Запази">Book</span>
+              <span class="l-card__split-title" data-en="Reservations" data-bg="Резервации">Reservations</span>
+            </a>
+          </div>
+        </div>
       `;
+
+      bindLandingCardSplit(card, r, index);
 
       grid.appendChild(card);
 

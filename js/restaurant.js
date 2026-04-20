@@ -1719,7 +1719,17 @@
              data-aria-en="Back to all restaurants" data-aria-bg="Към всички ресторанти">
             <img src="${SITE_FAVICON_HREF}" alt="${esc(SITE_BRAND)}" class="back-link__logo" width="40" height="40" decoding="async" />
           </a>
-          <div style="display:flex;align-items:center;gap:12px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <a href="../reserve/?r=${encodeURIComponent(restaurant.id)}" class="header-reserve-link" id="headerReserveLink"
+               data-title-en="Reserve a table" data-title-bg="Резервация на маса"
+               data-aria-en="Reserve a table" data-aria-bg="Резервация на маса">
+              <svg class="header-reserve-link__icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2"/>
+                <path d="M3 10h18"/>
+                <path d="M8 15h.01M12 15h.01"/>
+              </svg>
+              <span class="header-reserve-link__text" data-en="Reserve" data-bg="Резервация">Reserve</span>
+            </a>
             <div class="theme-switcher" role="group" aria-label="Menu theme">
               <button class="theme-btn" data-theme="classic">Classic</button>
               <button class="theme-btn" data-theme="modern">Modern</button>
@@ -1826,6 +1836,13 @@
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
     });
+
+    const reserveNav = document.getElementById('headerReserveLink');
+    if (reserveNav) {
+      reserveNav.addEventListener('click', () => {
+        trackRestaurantEvent('reserve_nav_click', { restaurant_id: restaurant.id });
+      });
+    }
 
     /* Search bar */
     const searchInput = document.getElementById('searchInput');

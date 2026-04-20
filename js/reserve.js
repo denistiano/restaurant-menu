@@ -87,8 +87,8 @@
         $name.textContent = rest.name?.en || rest.name?.bg || rid;
         $sub.textContent  = 'Reserve a table';
         document.title    = `Reserve — ${$name.textContent}`;
-        const th = String(rest.theme || 'classic').toLowerCase();
-        document.body.setAttribute('data-theme', th === 'modern' ? 'modern' : 'classic');
+        /* Match guest menu look: always use dark “modern” shell (same family as menu pages). */
+        document.body.setAttribute('data-theme', 'modern');
       }
     } catch (_) {}
   }
