@@ -273,6 +273,10 @@
   function _applyTransform(){$canvasTransform.style.transformOrigin='0 0';$canvasTransform.style.transform='translate('+_panX+'px,'+_panY+'px) scale('+_zoom+')';if($zoomPct)$zoomPct.textContent=Math.round(_zoom*100)+'%';}
   function _fitToScreen(){
     if(!$canvasWrapper)return;var wr=$canvasWrapper.getBoundingClientRect();if(!wr.width||!wr.height)return;
+    if(typeof LayoutBounds!=='undefined'&&LayoutBounds.editorFitPanZoom&&_cfg&&_cfg.mode==='grid'){
+      var o=LayoutBounds.editorFitPanZoom(wr,_cfg,ZOOM_MIN,1.0);
+      _zoom=o.zoom;_panX=o.panX;_panY=o.panY;_applyTransform();return;
+    }
     var cols=(_cfg&&_cfg.gridCols)||DEF_COLS,rows=(_cfg&&_cfg.gridRows)||DEF_ROWS;
     var cvW=cols*(CELL_SIZE+CELL_GAP)-CELL_GAP+CELL_PAD*2,cvH=rows*(CELL_SIZE+CELL_GAP)-CELL_GAP+CELL_PAD*2;
     _zoom=_clamp(Math.min((wr.width-CELL_PAD*2)/cvW,(wr.height-CELL_PAD*2)/cvH),ZOOM_MIN,1.0);
@@ -339,7 +343,13 @@
 
   async function _save(){
     if(_saving||!_dirty)return;_saving=true;$saveBtn.disabled=true;$saveStatus.textContent='Saving…';$saveStatus.className='lf-save-bar__status';
-    try{var r=await fetch(_apiBase+'/api/super/layout/'+_rid,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_jwt},body:JSON.stringify(_cfg)});if(!r.ok)throw new Error(await r.text());_dirty=false;$saveStatus.textContent='Layout saved ✓';$saveStatus.className='lf-save-bar__status is-saved';$saveBtn.disabled=true;}
+    try{
+      if(_cfg.mode==='grid'&&typeof LayoutBounds!=='undefined'&&LayoutBounds.frameToPersist){
+        var fp=LayoutBounds.frameToPersist(_cfg);
+        if(fp)_cfg.contentFrame=fp;
+        _cfg.version=Math.max(3,_cfg.version||2);
+      }
+      var r=await fetch(_apiBase+'/api/super/layout/'+_rid,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_jwt},body:JSON.stringify(_cfg)});if(!r.ok)throw new Error(await r.text());_dirty=false;$saveStatus.textContent='Layout saved ✓';$saveStatus.className='lf-save-bar__status is-saved';$saveBtn.disabled=true;}
     catch(err){$saveStatus.textContent='Save failed — '+err.message;$saveStatus.className='lf-save-bar__status is-error';$saveBtn.disabled=false;}
     finally{_saving=false;}
   }

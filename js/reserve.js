@@ -44,10 +44,20 @@
 
   $back.href = '../' + encodeURIComponent(rid) + '/';
 
-  const today = new Date();
-  $dateInput.value = params.get('date') || today.toISOString().slice(0, 10);
-  $dateInput.min   = today.toISOString().slice(0, 10);
-  $timeInput.value = params.get('time') || _roundSlot(today);
+  function localYmd(d) {
+    const x = d instanceof Date ? d : new Date(d);
+    const y = x.getFullYear();
+    const m = String(x.getMonth() + 1).padStart(2, '0');
+    const day = String(x.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  const now = new Date();
+  const todayLocal = localYmd(now);
+  const paramDate = params.get('date');
+  $dateInput.min = todayLocal;
+  $dateInput.value = paramDate && paramDate >= todayLocal ? paramDate : todayLocal;
+  $timeInput.value = params.get('time') || _roundSlot(now);
 
   $dateInput.addEventListener('change', () => _reloadOccupied());
   $timeInput.addEventListener('change', () => _reloadOccupied());
@@ -62,8 +72,8 @@
       layout = (lr.status === 204 || lr.status === 404) ? null
              : lr.ok ? JSON.parse((await lr.json()).configJson)
              : null;
-      if (layout) _fetchName();
-      await _reloadOccupied(false);
+      if (layout) await _fetchName();
+      await _reloadOccupied(true);
     } catch (e) { _showError(e.message); }
   }
 
@@ -77,6 +87,8 @@
         $name.textContent = rest.name?.en || rest.name?.bg || rid;
         $sub.textContent  = 'Reserve a table';
         document.title    = `Reserve — ${$name.textContent}`;
+        const th = String(rest.theme || 'classic').toLowerCase();
+        document.body.setAttribute('data-theme', th === 'modern' ? 'modern' : 'classic');
       }
     } catch (_) {}
   }
@@ -140,6 +152,8 @@
   }
 
   function _renderTableCards(tables) {
+    const stage = document.createElement('div');
+    stage.className = 'rv-floor-stage';
     const wrap = document.createElement('div');
     wrap.className = 'rv-table-list';
     tables.forEach(t => {
@@ -152,40 +166,135 @@
       if (!taken) card.addEventListener('click', () => _selectTable(t.id, t));
       wrap.appendChild(card);
     });
-    $body.appendChild(wrap);
+    stage.appendChild(wrap);
+    $body.appendChild(stage);
   }
 
   function _renderGrid() {
-    const cols  = layout.gridCols || 10;
-    const rows  = layout.gridRows || 7;
-    const cells = layout.cells    || [];
-    const byPos = {};
-    cells.forEach(c => { byPos[`${c.col}_${c.row}`] = c; });
+    const LB = typeof window.LayoutBounds !== 'undefined' ? window.LayoutBounds : null;
+    const frame = LB && layout.mode === 'grid' ? LB.getFrameOrStored(layout) : null;
 
-    const availW = Math.min(window.innerWidth - 48, 680);
-    const cellSz = Math.max(44, Math.min(68, Math.floor((availW - (cols - 1) * 3) / cols)));
+    if (!frame || !LB) {
+      _renderGridFullBleed();
+      return;
+    }
+
+    const cols = frame.spanCols;
+    const rows = frame.spanRows;
+    const originCol = frame.originCol;
+    const originRow = frame.originRow;
+    const gap = LB.CELL_GAP;
+    const pad = LB.CELL_PAD;
+    const cells = layout.cells || [];
+    const byPos = {};
+    cells.forEach(c => { if (c) byPos[`${c.col}_${c.row}`] = c; });
+
+    const headerReserve = 200;
+    const availW = Math.max(280, window.innerWidth - 28);
+    const availH = Math.max(200, window.innerHeight - headerReserve);
+    let cellSz = Math.floor((availW - 2 * pad - gap * (cols - 1)) / cols);
+    cellSz = Math.min(cellSz, Math.floor((availH - 2 * pad - gap * (rows - 1)) / rows));
+    cellSz = Math.max(40, Math.min(92, cellSz));
+
+    const stage = document.createElement('div');
+    stage.className = 'rv-floor-stage';
 
     const outer = document.createElement('div');
     outer.className = 'rv-canvas-outer';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'rv-floor-wrap';
+
+    const zonesLayer = document.createElement('div');
+    zonesLayer.className = 'rv-floor-zones';
+    (layout.zones || []).forEach(z => {
+      if (!z) return;
+      if (z.col < originCol || z.col >= originCol + cols || z.row < originRow || z.row >= originRow + rows) return;
+      const chip = document.createElement('span');
+      chip.className = 'rv-zone-chip';
+      chip.textContent = z.label || '';
+      chip.style.left = `${pad + (z.col - originCol) * (cellSz + gap)}px`;
+      chip.style.top = `${pad + (z.row - originRow) * (cellSz + gap)}px`;
+      zonesLayer.appendChild(chip);
+    });
+
     const canvas = document.createElement('div');
     canvas.className = 'rv-canvas';
     canvas.style.gridTemplateColumns = `repeat(${cols}, ${cellSz}px)`;
-    canvas.style.gridTemplateRows    = `repeat(${rows}, ${cellSz}px)`;
+    canvas.style.gridTemplateRows = `repeat(${rows}, ${cellSz}px)`;
+    canvas.style.padding = `${pad}px`;
 
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const cell = byPos[`${c}_${r}`];
-        const el   = document.createElement('div');
-        el.style.width  = cellSz + 'px';
+    for (let dr = 0; dr < rows; dr++) {
+      for (let dc = 0; dc < cols; dc++) {
+        const gc = originCol + dc;
+        const gr = originRow + dr;
+        const cell = byPos[`${gc}_${gr}`];
+        const el = document.createElement('div');
+        el.style.width = cellSz + 'px';
         el.style.height = cellSz + 'px';
 
         if (!cell || !cell.active) {
           el.className = 'rv-cell is-inactive';
         } else {
           const taken = occupied.includes(cell.id);
-          const sel   = cell.id === selectedId;
+          const sel = cell.id === selectedId;
           el.className = 'rv-cell ' + (sel ? 'is-selected' : taken ? 'is-taken' : 'is-free');
-          el.innerHTML  = _tableSvg(cell.shape || 'square', cellSz, cell.capacity || 2, cell.rotation || 0);
+          el.innerHTML = _tableSvg(cell.shape || 'square', cellSz, cell.capacity || 2, cell.rotation || 0);
+          el.innerHTML += `<span class="rv-cell__label">${_esc(cell.label || '')}</span>`;
+          if (cell.capacity) el.innerHTML += `<span class="rv-cell__cap">${cell.capacity}</span>`;
+          if (!taken) el.addEventListener('click', () => _selectTable(cell.id, cell));
+        }
+        canvas.appendChild(el);
+      }
+    }
+
+    wrap.appendChild(zonesLayer);
+    wrap.appendChild(canvas);
+    outer.appendChild(wrap);
+    stage.appendChild(outer);
+    $body.appendChild(stage);
+  }
+
+  /** Fallback: full grid (no layout-bounds) — still size cells to viewport width */
+  function _renderGridFullBleed() {
+    const cols = layout.gridCols || 10;
+    const rows = layout.gridRows || 7;
+    const cells = layout.cells || [];
+    const byPos = {};
+    cells.forEach(c => { if (c) byPos[`${c.col}_${c.row}`] = c; });
+
+    const gap = 3;
+    const pad = 10;
+    const availW = Math.max(280, window.innerWidth - 28);
+    const availH = Math.max(200, window.innerHeight - 220);
+    let cellSz = Math.floor((availW - 2 * pad - gap * (cols - 1)) / cols);
+    cellSz = Math.min(cellSz, Math.floor((availH - 2 * pad - gap * (rows - 1)) / rows));
+    cellSz = Math.max(36, Math.min(72, cellSz));
+
+    const stage = document.createElement('div');
+    stage.className = 'rv-floor-stage';
+    const outer = document.createElement('div');
+    outer.className = 'rv-canvas-outer';
+    const canvas = document.createElement('div');
+    canvas.className = 'rv-canvas';
+    canvas.style.gridTemplateColumns = `repeat(${cols}, ${cellSz}px)`;
+    canvas.style.gridTemplateRows = `repeat(${rows}, ${cellSz}px)`;
+    canvas.style.padding = `${pad}px`;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = byPos[`${c}_${r}`];
+        const el = document.createElement('div');
+        el.style.width = cellSz + 'px';
+        el.style.height = cellSz + 'px';
+
+        if (!cell || !cell.active) {
+          el.className = 'rv-cell is-inactive';
+        } else {
+          const taken = occupied.includes(cell.id);
+          const sel = cell.id === selectedId;
+          el.className = 'rv-cell ' + (sel ? 'is-selected' : taken ? 'is-taken' : 'is-free');
+          el.innerHTML = _tableSvg(cell.shape || 'square', cellSz, cell.capacity || 2, cell.rotation || 0);
           el.innerHTML += `<span class="rv-cell__label">${_esc(cell.label || '')}</span>`;
           if (cell.capacity) el.innerHTML += `<span class="rv-cell__cap">${cell.capacity}</span>`;
           if (!taken) el.addEventListener('click', () => _selectTable(cell.id, cell));
@@ -194,7 +303,8 @@
       }
     }
     outer.appendChild(canvas);
-    $body.appendChild(outer);
+    stage.appendChild(outer);
+    $body.appendChild(stage);
   }
 
   /* ------------------------------------------------------------------ */
@@ -478,4 +588,11 @@
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+
+  let _resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (sheetOpen || !layout) return;
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(() => { _renderFloor(); }, 180);
+  });
 })();
