@@ -1850,12 +1850,12 @@
             <img src="${SITE_FAVICON_HREF}" alt="${esc(SITE_BRAND)}" class="back-link__logo" width="40" height="40" decoding="async" />
           </a>
           <div class="header-actions">
-            ${headerMenuBlock}
             <div class="theme-switcher" role="group" aria-label="Menu theme">
               <button class="theme-btn" data-theme="classic">Classic</button>
               <button class="theme-btn" data-theme="modern">Modern</button>
             </div>
             ${langBlockHtml}
+            ${headerMenuBlock}
           </div>
         </nav>
         <div class="restaurant-header__content">
