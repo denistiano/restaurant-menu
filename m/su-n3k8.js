@@ -261,7 +261,7 @@
           return refreshList();
         })
         .then(function () {
-          renderVenueAssignmentUI('suNew');
+          if (el('suNewVenueChosen')) renderVenueAssignmentUI('suNew');
           return true;
         });
     });
@@ -301,13 +301,14 @@
   }
 
   function refreshList() {
+    var tbody = el('suTbody');
+    if (!tbody) return Promise.resolve();
     return api('/api/super/users').then(function (res) {
       if (!res.ok) {
         alert('Failed to load users: HTTP ' + res.status);
         return;
       }
       return res.json().then(function (users) {
-        var tbody = el('suTbody');
         tbody.innerHTML = '';
         /* forEach + .bind: a `for` loop with `var u` made every row's Setup link / Delete target the last user. */
         users.forEach(function (u) {
@@ -364,7 +365,8 @@
 
   function closeEditModal() {
     editTargetUser = null;
-    el('suEditBackdrop').classList.add('su-hidden');
+    var eb = el('suEditBackdrop');
+    if (eb) eb.classList.add('su-hidden');
   }
 
   function saveEditModal() {
@@ -434,7 +436,8 @@
   }
 
   function closeLinkModal() {
-    el('suLinkBackdrop').classList.add('su-hidden');
+    var lb = el('suLinkBackdrop');
+    if (lb) lb.classList.add('su-hidden');
   }
 
   function deleteUser(id, username) {
@@ -448,28 +451,35 @@
     });
   }
 
-  el('suLinkCopy').addEventListener('click', function () {
-    var v = el('suLinkUrl').value;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(v).catch(function () {
-        el('suLinkUrl').select();
+  if (el('suLinkCopy')) {
+    el('suLinkCopy').addEventListener('click', function () {
+      var urlEl = el('suLinkUrl');
+      if (!urlEl) return;
+      var v = urlEl.value;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(v).catch(function () {
+          urlEl.select();
+          document.execCommand('copy');
+        });
+      } else {
+        urlEl.select();
         document.execCommand('copy');
-      });
-    } else {
-      el('suLinkUrl').select();
-      document.execCommand('copy');
-    }
-  });
-
-  el('suLinkClose').addEventListener('click', closeLinkModal);
-  el('suEditCancel').addEventListener('click', closeEditModal);
-  el('suEditSave').addEventListener('click', saveEditModal);
-  el('suEditBackdrop').addEventListener('click', function (e) {
-    if (e.target === el('suEditBackdrop')) closeEditModal();
-  });
-  el('suLinkBackdrop').addEventListener('click', function (e) {
-    if (e.target === el('suLinkBackdrop')) closeLinkModal();
-  });
+      }
+    });
+  }
+  if (el('suLinkClose')) el('suLinkClose').addEventListener('click', closeLinkModal);
+  if (el('suEditCancel')) el('suEditCancel').addEventListener('click', closeEditModal);
+  if (el('suEditSave')) el('suEditSave').addEventListener('click', saveEditModal);
+  if (el('suEditBackdrop')) {
+    el('suEditBackdrop').addEventListener('click', function (e) {
+      if (e.target === el('suEditBackdrop')) closeEditModal();
+    });
+  }
+  if (el('suLinkBackdrop')) {
+    el('suLinkBackdrop').addEventListener('click', function (e) {
+      if (e.target === el('suLinkBackdrop')) closeLinkModal();
+    });
+  }
 
   el('suLoginBtn').addEventListener('click', function () {
     var username = el('suUser').value.trim();
@@ -533,18 +543,21 @@
     }
   });
 
-  el('suRefreshBtn').addEventListener('click', function () {
-    loadVenueCatalog()
-      .then(function () {
-        return refreshList();
-      })
-      .then(function () {
-        renderVenueAssignmentUI('suNew');
-        if (editTargetUser && !el('suEditBackdrop').classList.contains('su-hidden')) {
-          renderVenueAssignmentUI('suEdit');
-        }
-      });
-  });
+  if (el('suRefreshBtn')) {
+    el('suRefreshBtn').addEventListener('click', function () {
+      loadVenueCatalog()
+        .then(function () {
+          return refreshList();
+        })
+        .then(function () {
+          if (el('suNewVenueChosen')) renderVenueAssignmentUI('suNew');
+          var eb = el('suEditBackdrop');
+          if (editTargetUser && eb && !eb.classList.contains('su-hidden')) {
+            renderVenueAssignmentUI('suEdit');
+          }
+        });
+    });
+  }
 
   el('suCreateBtn').addEventListener('click', function () {
     var err = el('suCreateErr');
