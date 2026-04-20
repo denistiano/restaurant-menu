@@ -123,6 +123,18 @@
             <label class="field-label">Bulgarian</label>
             <input class="field-input" id="infoNameBg" type="text" placeholder="Име на ресторанта" />
           </div>
+          <div class="field-row" id="infoNameTrRow">
+            <label class="field-label" id="infoNameTrLabel">Turkish</label>
+            <input class="field-input" id="infoNameTr" type="text" placeholder="" />
+          </div>
+          <div class="field-row" id="infoNameRuRow">
+            <label class="field-label" id="infoNameRuLabel">Russian</label>
+            <input class="field-input" id="infoNameRu" type="text" placeholder="" />
+          </div>
+          <div class="field-row" id="infoNameElRow">
+            <label class="field-label" id="infoNameElLabel">Greek</label>
+            <input class="field-input" id="infoNameEl" type="text" placeholder="" />
+          </div>
         </div>
         <div class="form-section">
           <h3 class="form-section__title" id="infoSectionDescTitle">Tagline / Description</h3>
@@ -134,6 +146,18 @@
             <label class="field-label">Bulgarian</label>
             <textarea class="field-input field-textarea" id="infoDescBg" placeholder="Кратко описание на български"></textarea>
           </div>
+          <div class="field-row" id="infoDescTrRow">
+            <label class="field-label" id="infoDescTrLabel">Turkish</label>
+            <textarea class="field-input field-textarea" id="infoDescTr" placeholder=""></textarea>
+          </div>
+          <div class="field-row" id="infoDescRuRow">
+            <label class="field-label" id="infoDescRuLabel">Russian</label>
+            <textarea class="field-input field-textarea" id="infoDescRu" placeholder=""></textarea>
+          </div>
+          <div class="field-row" id="infoDescElRow">
+            <label class="field-label" id="infoDescElLabel">Greek</label>
+            <textarea class="field-input field-textarea" id="infoDescEl" placeholder=""></textarea>
+          </div>
         </div>
         <div class="form-section">
           <h3 class="form-section__title" id="infoSectionAppearanceTitle">Appearance</h3>
@@ -144,7 +168,7 @@
               <option value="modern">Modern (dark cards)</option>
             </select>
           </div>
-          <div class="field-row">
+          <div class="field-row" id="infoLangRow">
             <label class="field-label">Default language</label>
             <select class="field-input field-select" id="infoLang">
               <option value="en">English</option>
@@ -240,6 +264,49 @@
               <span class="toggle-row__label">Show allergens</span>
               <span class="toggle-row__hint">Display allergen information</span>
               <input type="checkbox" class="toggle-cb" id="cfgAllergens" />
+              <span class="toggle-switch"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-row__label" id="cfgReservationsLabel">Table reservations</span>
+              <span class="toggle-row__hint" id="cfgReservationsHint">Let guests open booking from the menu (⋯ menu)</span>
+              <input type="checkbox" class="toggle-cb" id="cfgReservations" />
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="form-section__title" id="cfgSectionLanguagesTitle">Menu languages</h3>
+          <p class="form-section__desc" id="cfgSectionLanguagesDesc">Guests only see languages you enable. At least one is required.</p>
+          <div class="toggle-list">
+            <label class="toggle-row">
+              <span class="toggle-row__label" id="cfgLangEnLabel">English</span>
+              <span class="toggle-row__hint" id="cfgLangEnHint">Menu copy in English</span>
+              <input type="checkbox" class="toggle-cb" id="cfgLangEn" checked />
+              <span class="toggle-switch"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-row__label" id="cfgLangBgLabel">Bulgarian</span>
+              <span class="toggle-row__hint" id="cfgLangBgHint">Menu copy in Bulgarian</span>
+              <input type="checkbox" class="toggle-cb" id="cfgLangBg" checked />
+              <span class="toggle-switch"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-row__label" id="cfgLangTrLabel">Turkish</span>
+              <span class="toggle-row__hint" id="cfgLangTrHint">Menu copy in Turkish</span>
+              <input type="checkbox" class="toggle-cb" id="cfgLangTr" />
+              <span class="toggle-switch"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-row__label" id="cfgLangRuLabel">Russian</span>
+              <span class="toggle-row__hint" id="cfgLangRuHint">Menu copy in Russian</span>
+              <input type="checkbox" class="toggle-cb" id="cfgLangRu" />
+              <span class="toggle-switch"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-row__label" id="cfgLangElLabel">Greek</span>
+              <span class="toggle-row__hint" id="cfgLangElHint">Menu copy in Greek</span>
+              <input type="checkbox" class="toggle-cb" id="cfgLangEl" />
               <span class="toggle-switch"></span>
             </label>
           </div>

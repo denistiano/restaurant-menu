@@ -173,6 +173,8 @@
   let quantityMetrics   = [];   // from restaurants.json
   let currentLang       = localStorage.getItem('preferredLang')   || null;
   let currentTheme      = localStorage.getItem('preferredTheme')  || null;
+  /** Languages enabled for this menu (from `menu.config.enabled_languages`). */
+  let publicMenuLangs   = ['en', 'bg'];
   let activeCategory    = 'all';
   let activeTags        = new Set();
   let allTags           = [];
@@ -193,6 +195,90 @@
 
   /* ── Timed-section minute timer ─────────────────────────── */
   let timedSectionTimer = null;
+
+  const PUBLIC_LANG_CODES = ['en', 'bg', 'tr', 'ru', 'el'];
+
+  const LANG_PICKER_EN = {
+    en: 'English',
+    bg: 'Bulgarian',
+    tr: 'Turkish',
+    ru: 'Russian',
+    el: 'Greek'
+  };
+  const LANG_PICKER_BG = {
+    en: 'Английски',
+    bg: 'Български',
+    tr: 'Турски',
+    ru: 'Руски',
+    el: 'Гръцки'
+  };
+
+  function langPickerFullName(code, uiLang) {
+    const c = String(code).toLowerCase();
+    if (uiLang === 'bg') return LANG_PICKER_BG[c] || c.toUpperCase();
+    return LANG_PICKER_EN[c] || c.toUpperCase();
+  }
+
+  function normalizePublicMenuLanguages(cfg) {
+    const raw = cfg && cfg.enabled_languages;
+    let list = [];
+    if (Array.isArray(raw)) {
+      list = raw
+        .map(x => String(x).toLowerCase())
+        .filter(c => PUBLIC_LANG_CODES.includes(c));
+    }
+    if (!list.length) return ['en', 'bg'];
+    return [...new Set(list)].sort(
+      (a, b) => PUBLIC_LANG_CODES.indexOf(a) - PUBLIC_LANG_CODES.indexOf(b)
+    );
+  }
+
+  function langShort(code) {
+    const c = String(code || 'en').toLowerCase();
+    if (c === 'bg') return 'BG';
+    if (c === 'el') return 'EL';
+    return c.toUpperCase().slice(0, 2);
+  }
+
+  function syncLangPickerOptionLabels(lang) {
+    document.querySelectorAll('.lang-picker-sheet__opt').forEach(btn => {
+      const code = btn.dataset.lang;
+      if (code) btn.textContent = langPickerFullName(code, lang);
+    });
+  }
+
+  function updateLangToggleButtonUi() {
+    const btn = document.getElementById('langToggle');
+    if (!btn || publicMenuLangs.length <= 1) return;
+    const label = btn.querySelector('.lang-toggle__label');
+    if (!label) return;
+    if (publicMenuLangs.length === 2) {
+      const other =
+        publicMenuLangs[0] === currentLang ? publicMenuLangs[1] : publicMenuLangs[0];
+      label.textContent = langShort(other);
+    } else {
+      label.textContent = langShort(currentLang);
+    }
+  }
+
+  function closeLangPickerSheet() {
+    const sheet = document.getElementById('langPickerSheet');
+    const backdrop = document.getElementById('langPickerBackdrop');
+    const btn = document.getElementById('langToggle');
+    if (sheet) sheet.classList.add('hidden');
+    if (backdrop) backdrop.classList.add('hidden');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+
+  function closeHeaderMenuPanel() {
+    const menuPanel = document.getElementById('headerMenuPanel');
+    const menuBtn = document.getElementById('headerMenuBtn');
+    if (menuPanel) {
+      menuPanel.classList.add('hidden');
+      menuPanel.setAttribute('hidden', '');
+    }
+    if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+  }
 
   /* ============================================================
      TIMED SECTIONS
@@ -452,19 +538,18 @@
     if (!query) return true;
     const q = query.toLowerCase();
 
-    // name (both languages)
-    const names = [item.name?.en, item.name?.bg].filter(Boolean);
+    const names = PUBLIC_LANG_CODES.map(c => item.name && item.name[c]).filter(Boolean);
     if (names.some(n => n.toLowerCase().includes(q))) return true;
 
-    // description (both languages)
     if (item.description) {
-      const descs = [item.description.en, item.description.bg].filter(Boolean);
+      const descs = PUBLIC_LANG_CODES.map(c => item.description[c]).filter(Boolean);
       if (descs.some(d => d.toLowerCase().includes(q))) return true;
     }
 
-    // tags (both languages)
     if (item.tags?.length) {
-      const tagTexts = item.tags.flatMap(t => [t.en, t.bg]).filter(Boolean);
+      const tagTexts = item.tags.flatMap(t =>
+        PUBLIC_LANG_CODES.map(c => t[c]).filter(Boolean)
+      );
       if (tagTexts.some(t => t.toLowerCase().includes(q))) return true;
     }
 
@@ -871,15 +956,13 @@
     localStorage.setItem('preferredLang', lang);
     document.documentElement.lang = lang;
 
-    const btn = document.getElementById('langToggle');
-    if (btn) {
-      btn.querySelector('.lang-toggle__label').textContent = lang === 'bg' ? 'EN' : 'BG';
-    }
+    updateLangToggleButtonUi();
 
     updatePageTitle();
 
     if (!initialized) {
       updateTranslatables(lang);
+      syncLangPickerOptionLabels(lang);
       document.querySelectorAll('.restaurant-footer [data-wa-base]').forEach(setWhatsappPrefill);
       return;
     }
@@ -901,6 +984,7 @@
 
     setTimeout(() => {
       updateTranslatables(lang);
+      syncLangPickerOptionLabels(lang);
       updatePageTitle();
       document.querySelectorAll('.restaurant-footer [data-wa-base]').forEach(setWhatsappPrefill);
       if (data) renderAdvancedFilters(data.restaurant.menu.categories);
@@ -1710,6 +1794,52 @@
 
     const bgStyle = bgSrc ? `background-image: url('${bgSrc}')` : '';
 
+    const menuCfg = (restaurant.menu && restaurant.menu.config) || {};
+    publicMenuLangs = normalizePublicMenuLanguages(menuCfg);
+    const reservationsOn = menuCfg.reservations_enabled !== false;
+
+    let langBlockHtml = '';
+    if (publicMenuLangs.length === 2) {
+      langBlockHtml = `
+            <button class="lang-toggle" id="langToggle" type="button" data-aria-en="Switch menu language" data-aria-bg="Превключи езика на менюто">
+              <span class="lang-toggle__label">EN</span>
+            </button>`;
+    } else if (publicMenuLangs.length > 2) {
+      langBlockHtml = `
+            <button class="lang-toggle" id="langToggle" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="langPickerSheet" data-aria-en="Choose menu language" data-aria-bg="Избери език на менюто">
+              <span class="lang-toggle__label">EN</span>
+            </button>
+            <div id="langPickerBackdrop" class="lang-picker-backdrop hidden" aria-hidden="true"></div>
+            <div id="langPickerSheet" class="lang-picker-sheet hidden" role="dialog" aria-modal="true" aria-label="Language">
+              <div class="lang-picker-sheet__scroll" id="langPickerList" role="listbox"></div>
+            </div>`;
+    }
+
+    const headerMenuBlock = reservationsOn
+      ? `
+            <div class="header-menu-wrap">
+              <button type="button" class="header-menu-btn" id="headerMenuBtn"
+                aria-controls="headerMenuPanel" aria-expanded="false" aria-haspopup="true"
+                data-aria-en="Menu options" data-aria-bg="Опции на менюто">
+                <svg class="header-menu-btn__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
+                </svg>
+              </button>
+              <div class="header-menu-panel hidden" id="headerMenuPanel" role="menu" hidden>
+                <a href="../reserve/?r=${encodeURIComponent(restaurant.id)}" class="header-menu-panel__link header-reserve-link" id="headerReserveLink" role="menuitem"
+                   data-title-en="Reserve a table" data-title-bg="Резервация на маса"
+                   data-aria-en="Reserve a table" data-aria-bg="Резервация на маса">
+                  <svg class="header-reserve-link__icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                    <path d="M3 10h18"/>
+                    <path d="M8 15h.01M12 15h.01"/>
+                  </svg>
+                  <span data-en="Reserve" data-bg="Резервация">Reserve</span>
+                </a>
+              </div>
+            </div>`
+      : '';
+
     root.innerHTML = `
       <header class="restaurant-header">
         <div class="restaurant-header__bg" style="${bgStyle}" aria-hidden="true"></div>
@@ -1719,24 +1849,13 @@
              data-aria-en="Back to all restaurants" data-aria-bg="Към всички ресторанти">
             <img src="${SITE_FAVICON_HREF}" alt="${esc(SITE_BRAND)}" class="back-link__logo" width="40" height="40" decoding="async" />
           </a>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <a href="../reserve/?r=${encodeURIComponent(restaurant.id)}" class="header-reserve-link" id="headerReserveLink"
-               data-title-en="Reserve a table" data-title-bg="Резервация на маса"
-               data-aria-en="Reserve a table" data-aria-bg="Резервация на маса">
-              <svg class="header-reserve-link__icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="5" width="18" height="14" rx="2"/>
-                <path d="M3 10h18"/>
-                <path d="M8 15h.01M12 15h.01"/>
-              </svg>
-              <span class="header-reserve-link__text" data-en="Reserve" data-bg="Резервация">Reserve</span>
-            </a>
+          <div class="header-actions">
+            ${headerMenuBlock}
             <div class="theme-switcher" role="group" aria-label="Menu theme">
               <button class="theme-btn" data-theme="classic">Classic</button>
               <button class="theme-btn" data-theme="modern">Modern</button>
             </div>
-            <button class="lang-toggle" id="langToggle" aria-label="Toggle language">
-              <span class="lang-toggle__label">EN</span>
-            </button>
+            ${langBlockHtml}
           </div>
         </nav>
         <div class="restaurant-header__content">
@@ -1830,12 +1949,25 @@
     injectRestaurantFooterContact(document.getElementById('rfContactMount'));
 
     /* Bind events */
-    document.getElementById('langToggle')
-      .addEventListener('click', () => applyLang(currentLang === 'en' ? 'bg' : 'en'));
-
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
     });
+
+    const headerMenuBtn = document.getElementById('headerMenuBtn');
+    const headerMenuPanel = document.getElementById('headerMenuPanel');
+    if (headerMenuBtn && headerMenuPanel && reservationsOn) {
+      headerMenuBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (headerMenuPanel.classList.contains('hidden')) {
+          closeLangPickerSheet();
+          headerMenuPanel.classList.remove('hidden');
+          headerMenuPanel.removeAttribute('hidden');
+          headerMenuBtn.setAttribute('aria-expanded', 'true');
+        } else {
+          closeHeaderMenuPanel();
+        }
+      });
+    }
 
     const reserveNav = document.getElementById('headerReserveLink');
     if (reserveNav) {
@@ -1843,6 +1975,61 @@
         trackRestaurantEvent('reserve_nav_click', { restaurant_id: restaurant.id });
       });
     }
+
+    const langToggleEl = document.getElementById('langToggle');
+    if (langToggleEl && publicMenuLangs.length === 2) {
+      langToggleEl.addEventListener('click', e => {
+        e.stopPropagation();
+        closeHeaderMenuPanel();
+        const other =
+          publicMenuLangs[0] === currentLang ? publicMenuLangs[1] : publicMenuLangs[0];
+        applyLang(other);
+      });
+    } else if (langToggleEl && publicMenuLangs.length > 2) {
+      const list = document.getElementById('langPickerList');
+      const backdrop = document.getElementById('langPickerBackdrop');
+      publicMenuLangs.forEach(code => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'lang-toggle lang-picker-sheet__opt';
+        b.setAttribute('role', 'option');
+        b.dataset.lang = code;
+        b.textContent = langPickerFullName(code, currentLang || 'en');
+        list.appendChild(b);
+      });
+      langToggleEl.addEventListener('click', e => {
+        e.stopPropagation();
+        closeHeaderMenuPanel();
+        const sheet = document.getElementById('langPickerSheet');
+        const opening = sheet && sheet.classList.contains('hidden');
+        if (opening) {
+          syncLangPickerOptionLabels(currentLang);
+          sheet.classList.remove('hidden');
+          backdrop.classList.remove('hidden');
+          langToggleEl.setAttribute('aria-expanded', 'true');
+        } else {
+          closeLangPickerSheet();
+        }
+      });
+      if (backdrop) {
+        backdrop.addEventListener('click', e => {
+          e.stopPropagation();
+          closeLangPickerSheet();
+        });
+      }
+      list.addEventListener('click', e => {
+        const opt = e.target.closest('.lang-picker-sheet__opt');
+        if (!opt || !opt.dataset.lang) return;
+        e.stopPropagation();
+        applyLang(opt.dataset.lang);
+        closeLangPickerSheet();
+      });
+    }
+
+    document.addEventListener('click', () => {
+      closeHeaderMenuPanel();
+      closeLangPickerSheet();
+    });
 
     /* Search bar */
     const searchInput = document.getElementById('searchInput');
@@ -1910,17 +2097,15 @@
     applyFilters(categories);
 
     // Apply language (no animation yet)
-    const lang = currentLang || restaurant.default_language || 'en';
+    let lang = currentLang || restaurant.default_language || 'en';
+    if (!publicMenuLangs.includes(lang)) lang = publicMenuLangs[0];
     currentLang = lang;
     localStorage.setItem('preferredLang', lang);
     document.documentElement.lang = lang;
     updatePageTitle();
     updateTranslatables(lang);
-
-    const langBtnEl = document.getElementById('langToggle');
-    if (langBtnEl) {
-      langBtnEl.querySelector('.lang-toggle__label').textContent = lang === 'bg' ? 'EN' : 'BG';
-    }
+    updateLangToggleButtonUi();
+    syncLangPickerOptionLabels(lang);
 
     // From here on, transitions are enabled
     initialized = true;

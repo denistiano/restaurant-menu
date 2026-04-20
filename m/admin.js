@@ -84,16 +84,34 @@
       mainBadge: 'MAIN',
       nameEnglish: 'Name (English)',
       nameBulgarian: 'Name (Bulgarian)',
+      nameTurkish: 'Name (Turkish)',
+      nameRussian: 'Name (Russian)',
+      nameGreek: 'Name (Greek)',
       descEnglish: 'Description (English)',
       descBulgarian: 'Description (Bulgarian)',
+      descTurkish: 'Description (Turkish)',
+      descRussian: 'Description (Russian)',
+      descGreek: 'Description (Greek)',
       itemNamePh: 'Item name',
       itemBgNamePh: 'Наименование',
+      itemTrNamePh: 'Ürün adı',
+      itemRuNamePh: 'Название',
+      itemElNamePh: 'Όνομα',
       itemDescPh: 'Short description...',
       itemBgDescPh: 'Кратко описание...',
+      itemTrDescPh: 'Kısa açıklama…',
+      itemRuDescPh: 'Краткое описание…',
+      itemElDescPh: 'Σύντομη περιγραφή…',
       categoryEnglish: 'English name',
       categoryBulgarian: 'Bulgarian name',
+      categoryTurkish: 'Turkish name',
+      categoryRussian: 'Russian name',
+      categoryGreek: 'Greek name',
       categoryEnPh: 'Category name',
       categoryBgPh: 'Категория',
+      categoryTrPh: 'Kategori',
+      categoryRuPh: 'Категория',
+      categoryElPh: 'Κατηγορία',
       quantity: 'Quantity',
       unit: 'Unit',
       quantityPh: 'e.g. 250',
@@ -107,7 +125,22 @@
       categoryNamesSection: 'Names',
       categoryScheduleSection: 'Timed section',
       categoryReorderHint: 'Drag ⠿ on the category row to reorder in the list.',
-      deleteCategory: 'Delete category'
+      deleteCategory: 'Delete category',
+      cfgLanguagesTitle: 'Menu languages',
+      cfgLanguagesDesc: 'Guests only see languages you enable. At least one is required.',
+      cfgReservationsTitle: 'Table reservations',
+      cfgReservationsHint: 'Let guests open booking from the menu (⋯ menu)',
+      cfgLangEnLabel: 'English',
+      cfgLangBgLabel: 'Bulgarian',
+      cfgLangEnHint: 'Menu copy in English',
+      cfgLangBgHint: 'Menu copy in Bulgarian',
+      cfgLangTrLabel: 'Turkish',
+      cfgLangRuLabel: 'Russian',
+      cfgLangElLabel: 'Greek',
+      cfgLangTrHint: 'Menu copy in Turkish',
+      cfgLangRuHint: 'Menu copy in Russian',
+      cfgLangElHint: 'Menu copy in Greek',
+      langMustPickOne: 'Choose at least one menu language.'
     },
     bg: {
       backToSite: '← Назад към сайта',
@@ -148,16 +181,34 @@
       mainBadge: 'ОСНОВНА',
       nameEnglish: 'Име (Английски)',
       nameBulgarian: 'Име (Български)',
+      nameTurkish: 'Име (Турски)',
+      nameRussian: 'Име (Руски)',
+      nameGreek: 'Име (Гръцки)',
       descEnglish: 'Описание (Английски)',
       descBulgarian: 'Описание (Български)',
+      descTurkish: 'Описание (Турски)',
+      descRussian: 'Описание (Руски)',
+      descGreek: 'Описание (Гръцки)',
       itemNamePh: 'Име на продукт',
       itemBgNamePh: 'Наименование',
+      itemTrNamePh: 'Ürün adı',
+      itemRuNamePh: 'Название',
+      itemElNamePh: 'Όνομα',
       itemDescPh: 'Кратко описание...',
       itemBgDescPh: 'Кратко описание...',
+      itemTrDescPh: 'Kısa açıklama…',
+      itemRuDescPh: 'Краткое описание…',
+      itemElDescPh: 'Σύντομη περιγραφή…',
       categoryEnglish: 'Име на английски',
       categoryBulgarian: 'Име на български',
+      categoryTurkish: 'Име на турски',
+      categoryRussian: 'Име на руски',
+      categoryGreek: 'Име на гръцки',
       categoryEnPh: 'Категория',
       categoryBgPh: 'Категория',
+      categoryTrPh: 'Kategori',
+      categoryRuPh: 'Категория',
+      categoryElPh: 'Κατηγορία',
       quantity: 'Количество',
       unit: 'Мярка',
       quantityPh: 'напр. 250',
@@ -171,11 +222,217 @@
       categoryNamesSection: 'Имена',
       categoryScheduleSection: 'Времева секция',
       categoryReorderHint: 'Плъзни ⠿ до реда на категорията за подредба в списъка.',
-      deleteCategory: 'Изтрий категорията'
+      deleteCategory: 'Изтрий категорията',
+      cfgLanguagesTitle: 'Езици на менюто',
+      cfgLanguagesDesc: 'Гостите виждат само избраните езици. Поне един е задължителен.',
+      cfgReservationsTitle: 'Резервации на маса',
+      cfgReservationsHint: 'Гостите отварят резервация от менюто (⋯ меню)',
+      cfgLangEnLabel: 'Английски',
+      cfgLangBgLabel: 'Български',
+      cfgLangEnHint: 'Текстове на менюто на английски',
+      cfgLangBgHint: 'Текстове на менюто на български',
+      cfgLangTrLabel: 'Турски',
+      cfgLangRuLabel: 'Руски',
+      cfgLangElLabel: 'Гръцки',
+      cfgLangTrHint: 'Текстове на турски',
+      cfgLangRuHint: 'Текстове на руски',
+      cfgLangElHint: 'Текстове на гръцки',
+      langMustPickOne: 'Избери поне един език на менюто.'
     }
   };
   const tr = (k) => (I18N[adminLang] && I18N[adminLang][k]) || I18N.en[k] || k;
   const isBgFirst = () => adminLang === 'bg';
+
+  const KNOWN_MENU_LANGS = ['en', 'bg', 'tr', 'ru', 'el'];
+
+  const MENU_LANG_OPTIONS = [
+    { code: 'en', id: 'cfgLangEn' },
+    { code: 'bg', id: 'cfgLangBg' },
+    { code: 'tr', id: 'cfgLangTr' },
+    { code: 'ru', id: 'cfgLangRu' },
+    { code: 'el', id: 'cfgLangEl' }
+  ];
+
+  const ITEM_NAME_LABEL_KEY = {
+    en: 'nameEnglish',
+    bg: 'nameBulgarian',
+    tr: 'nameTurkish',
+    ru: 'nameRussian',
+    el: 'nameGreek'
+  };
+  const ITEM_DESC_LABEL_KEY = {
+    en: 'descEnglish',
+    bg: 'descBulgarian',
+    tr: 'descTurkish',
+    ru: 'descRussian',
+    el: 'descGreek'
+  };
+  const ITEM_NAME_PH_KEY = {
+    en: 'itemNamePh',
+    bg: 'itemBgNamePh',
+    tr: 'itemTrNamePh',
+    ru: 'itemRuNamePh',
+    el: 'itemElNamePh'
+  };
+  const ITEM_DESC_PH_KEY = {
+    en: 'itemDescPh',
+    bg: 'itemBgDescPh',
+    tr: 'itemTrDescPh',
+    ru: 'itemRuDescPh',
+    el: 'itemElDescPh'
+  };
+  const CAT_LABEL_KEY = {
+    en: 'categoryEnglish',
+    bg: 'categoryBulgarian',
+    tr: 'categoryTurkish',
+    ru: 'categoryRussian',
+    el: 'categoryGreek'
+  };
+  const CAT_PH_KEY = {
+    en: 'categoryEnPh',
+    bg: 'categoryBgPh',
+    tr: 'categoryTrPh',
+    ru: 'categoryRuPh',
+    el: 'categoryElPh'
+  };
+
+  function emptyLocalizedRecord() {
+    const o = {};
+    KNOWN_MENU_LANGS.forEach(c => {
+      o[c] = '';
+    });
+    return o;
+  }
+
+  function langCap(code) {
+    return code.charAt(0).toUpperCase() + code.slice(1);
+  }
+
+  /** Default language dropdown label in Restaurant → Appearance */
+  function defaultLanguageOptionLabel(code) {
+    const labels = {
+      en: { en: 'English', bg: 'Английски' },
+      bg: { en: 'Bulgarian', bg: 'Български' },
+      tr: { en: 'Turkish', bg: 'Турски' },
+      ru: { en: 'Russian', bg: 'Руски' },
+      el: { en: 'Greek', bg: 'Гръцки' }
+    };
+    const row = labels[code];
+    if (!row) return code.toUpperCase();
+    return adminLang === 'bg' ? row.bg : row.en;
+  }
+
+  /** Normalized list of enabled menu language codes (subset of KNOWN_MENU_LANGS). Default: en+bg. */
+  function normalizeEnabledLanguages(cfg) {
+    const raw = cfg && cfg.enabled_languages;
+    let list = [];
+    if (Array.isArray(raw)) {
+      list = raw
+        .map(x => String(x).toLowerCase())
+        .filter(c => KNOWN_MENU_LANGS.includes(c));
+    }
+    if (!list.length) return ['en', 'bg'];
+    return [...new Set(list)].sort((a, b) => KNOWN_MENU_LANGS.indexOf(a) - KNOWN_MENU_LANGS.indexOf(b));
+  }
+
+  function getEnabledMenuLangsFromState() {
+    return normalizeEnabledLanguages(menuData?.restaurant?.menu?.config);
+  }
+
+  /** Visible localized field order in admin (Restaurant / Menu tabs). */
+  function orderEnabledLangsForFields(enabled) {
+    const base = isBgFirst()
+      ? ['bg', 'en', 'tr', 'ru', 'el']
+      : ['en', 'bg', 'tr', 'ru', 'el'];
+    return base.filter(code => enabled.includes(code));
+  }
+
+  /** First non-empty name for category/item header among enabled languages. */
+  function primaryLocalizedName(nameObj, enabled) {
+    if (!nameObj || typeof nameObj !== 'object') return '';
+    for (const code of orderEnabledLangsForFields(enabled)) {
+      const v = nameObj[code];
+      if (v && String(v).trim()) return String(v).trim();
+    }
+    return String(
+      nameObj.en || nameObj.bg || nameObj.tr || nameObj.ru || nameObj.el || ''
+    ).trim();
+  }
+
+  function infoNameRowId(code) {
+    return `infoName${langCap(code)}Row`;
+  }
+
+  function infoDescRowId(code) {
+    return `infoDesc${langCap(code)}Row`;
+  }
+
+  /**
+   * Show/hide localized info rows and default-language selector from Settings → Menu languages.
+   */
+  function applyInfoLanguageRows() {
+    const enabled = getEnabledMenuLangsFromState();
+    KNOWN_MENU_LANGS.forEach(code => {
+      const show = enabled.includes(code);
+      const nr = document.getElementById(infoNameRowId(code));
+      if (nr) nr.classList.toggle('hidden', !show);
+      const dr = document.getElementById(infoDescRowId(code));
+      if (dr) dr.classList.toggle('hidden', !show);
+    });
+
+    const langRow = document.getElementById('infoLangRow');
+    if (langRow) langRow.classList.toggle('hidden', enabled.length <= 1);
+
+    const sel = document.getElementById('infoLang');
+    if (sel) {
+      const prev = sel.value;
+      sel.innerHTML = '';
+      enabled.forEach(code => {
+        const opt = document.createElement('option');
+        opt.value = code;
+        opt.textContent = defaultLanguageOptionLabel(code);
+        sel.appendChild(opt);
+      });
+      if (enabled.includes(prev)) sel.value = prev;
+      else sel.value = enabled[0];
+    }
+
+    const nameParent = document.getElementById('infoNameEnRow')?.parentElement;
+    const descParent = document.getElementById('infoDescEnRow')?.parentElement;
+    const nameOrder = orderEnabledLangsForFields(enabled);
+    const descOrder = orderEnabledLangsForFields(enabled);
+    nameOrder.forEach(code => {
+      const row = document.getElementById(infoNameRowId(code));
+      if (row && !row.classList.contains('hidden') && nameParent) nameParent.appendChild(row);
+    });
+    descOrder.forEach(code => {
+      const row = document.getElementById(infoDescRowId(code));
+      if (row && !row.classList.contains('hidden') && descParent) descParent.appendChild(row);
+    });
+  }
+
+  function onMenuLanguageTogglesChange(ev) {
+    const anyChecked = MENU_LANG_OPTIONS.some(o => document.getElementById(o.id)?.checked);
+    if (!anyChecked) {
+      if (ev && ev.target) ev.target.checked = true;
+      showToast(tr('langMustPickOne'), 'error');
+      return;
+    }
+    const r = menuData?.restaurant;
+    if (r?.menu) {
+      if (!r.menu.config) r.menu.config = {};
+      r.menu.config.enabled_languages = [];
+      MENU_LANG_OPTIONS.forEach(({ code, id }) => {
+        if (document.getElementById(id)?.checked) r.menu.config.enabled_languages.push(code);
+      });
+    }
+    setDirty(true);
+    applyInfoLanguageRows();
+    const cats = menuData?.restaurant?.menu?.categories;
+    if (cats && editorScreen && !editorScreen.classList.contains('hidden')) {
+      renderCategories(cats);
+    }
+  }
 
   const DEFAULT_CURRENCY_SUPPORT = [
     { code: 'EUR', label: 'Euro (€)', symbol: '€' },
@@ -393,19 +650,6 @@
   let _workspacePickerContext = 'auth'; // 'auth' | 'editor'
   let _catSettingsIdx = -1;
 
-  function reorderPair(parent, firstId, secondId) {
-    const first = document.getElementById(firstId);
-    const second = document.getElementById(secondId);
-    if (!parent || !first || !second) return;
-    if (isBgFirst()) {
-      parent.appendChild(second);
-      parent.appendChild(first);
-    } else {
-      parent.appendChild(first);
-      parent.appendChild(second);
-    }
-  }
-
   function applyAdminLang(lang, rerender = true) {
     adminLang = (lang === 'bg') ? 'bg' : 'en';
     localStorage.setItem(ADMIN_LANG_KEY, adminLang);
@@ -415,10 +659,7 @@
     if (adminLangToggleEditor) adminLangToggleEditor.textContent = next;
     applyStaticTranslations();
 
-    const nameSection = document.getElementById('infoNameEnRow')?.parentElement;
-    const descSection = document.getElementById('infoDescEnRow')?.parentElement;
-    reorderPair(nameSection, 'infoNameEnRow', 'infoNameBgRow');
-    reorderPair(descSection, 'infoDescEnRow', 'infoDescBgRow');
+    applyInfoLanguageRows();
 
     if (rerender && menuData && !editorScreen.classList.contains('hidden')) {
       renderCategories(menuData.restaurant.menu.categories);
@@ -463,6 +704,20 @@
     setText('cfgCurrencyAddHint', 'addCurrencies');
     setText('cfgSectionTimeTitle', 'cfgTimeTitle');
     setText('cfgSectionTimeDesc', 'cfgTimeDesc');
+    setText('cfgSectionLanguagesTitle', 'cfgLanguagesTitle');
+    setText('cfgSectionLanguagesDesc', 'cfgLanguagesDesc');
+    setText('cfgReservationsLabel', 'cfgReservationsTitle');
+    setText('cfgReservationsHint', 'cfgReservationsHint');
+    setText('cfgLangEnLabel', 'cfgLangEnLabel');
+    setText('cfgLangBgLabel', 'cfgLangBgLabel');
+    setText('cfgLangTrLabel', 'cfgLangTrLabel');
+    setText('cfgLangRuLabel', 'cfgLangRuLabel');
+    setText('cfgLangElLabel', 'cfgLangElLabel');
+    setText('cfgLangEnHint', 'cfgLangEnHint');
+    setText('cfgLangBgHint', 'cfgLangBgHint');
+    setText('cfgLangTrHint', 'cfgLangTrHint');
+    setText('cfgLangRuHint', 'cfgLangRuHint');
+    setText('cfgLangElHint', 'cfgLangElHint');
     setText('categoriesToolbarHint', 'categoriesToolbarHint');
     setText('addCategoryBtn', 'addCategory');
 
@@ -485,15 +740,19 @@
       const label = row?.querySelector('.field-label');
       if (label) label.textContent = text;
     };
-    setRowLabel('infoNameEnRow', tr('nameEnglish'));
-    setRowLabel('infoNameBgRow', tr('nameBulgarian'));
-    setRowLabel('infoDescEnRow', tr('descEnglish'));
-    setRowLabel('infoDescBgRow', tr('descBulgarian'));
+    KNOWN_MENU_LANGS.forEach(code => {
+      setRowLabel(infoNameRowId(code), tr(ITEM_NAME_LABEL_KEY[code]));
+      setRowLabel(infoDescRowId(code), tr(ITEM_DESC_LABEL_KEY[code]));
+    });
 
     if (workspacePickerSheet && !workspacePickerSheet.classList.contains('hidden')) {
       if (wsPickerTitle) wsPickerTitle.textContent = tr('workspacePickerTitle');
       if (wsPickerSearch) wsPickerSearch.placeholder = tr('workspaceSearchPlaceholder');
       populateWorkspacePickerList(wsPickerSearch?.value || '');
+    }
+
+    if (menuData && menuData.restaurant && editorScreen && !editorScreen.classList.contains('hidden')) {
+      applyInfoLanguageRows();
     }
   }
 
@@ -1428,18 +1687,28 @@
 
   /* ── POPULATE INFO ───────────────────────────────────────── */
   function populateInfo(r) {
-    document.getElementById('infoNameEn').value  = r.name.en || '';
-    document.getElementById('infoNameBg').value  = r.name.bg || '';
-    document.getElementById('infoDescEn').value  = r.description.en || '';
-    document.getElementById('infoDescBg').value  = r.description.bg || '';
+    if (!r.name || typeof r.name !== 'object') r.name = {};
+    if (!r.description || typeof r.description !== 'object') r.description = {};
+    KNOWN_MENU_LANGS.forEach(code => {
+      const cap = langCap(code);
+      const ni = document.getElementById(`infoName${cap}`);
+      const di = document.getElementById(`infoDesc${cap}`);
+      if (ni) ni.value = r.name[code] || '';
+      if (di) di.value = r.description[code] || '';
+    });
     document.getElementById('infoTheme').value   = r.menu.theme || 'classic';
     document.getElementById('infoLang').value    = r.default_language || 'en';
     document.getElementById('infoLogo').value    = r.logo || '';
     document.getElementById('infoImage').value   = r.image || '';
     document.getElementById('infoBgImage').value = r.background_image || '';
 
-    ['infoNameEn','infoNameBg','infoDescEn','infoDescBg','infoTheme','infoLang'].forEach(id => {
-      document.getElementById(id).addEventListener('input', () => setDirty(true));
+    [
+      ...KNOWN_MENU_LANGS.map(c => [`infoName${langCap(c)}`, `infoDesc${langCap(c)}`]).flat(),
+      'infoTheme',
+      'infoLang'
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', () => setDirty(true));
     });
 
     const rid = currentRestaurant?.id || 'general';
@@ -1456,21 +1725,37 @@
     document.getElementById('cfgIngredients').checked = cfg.show_ingredients === true;
     document.getElementById('cfgAllergens').checked   = cfg.show_allergens === true;
 
+    const resEl = document.getElementById('cfgReservations');
+    if (resEl) resEl.checked = cfg.reservations_enabled !== false;
+
+    const langs = normalizeEnabledLanguages(cfg);
+    MENU_LANG_OPTIONS.forEach(({ code, id }) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = langs.includes(code);
+    });
+
     const tzEl = document.getElementById('cfgTimezone');
     if (tzEl) {
       tzEl.value = cfg.timezone || 'Europe/Sofia';
       if (!tzEl.value) tzEl.value = 'Europe/Sofia'; // fallback if not in list
     }
-    ['cfgPrice','cfgDesc','cfgTags','cfgIngredients','cfgAllergens','cfgTimezone']
+    ['cfgPrice','cfgDesc','cfgTags','cfgIngredients','cfgAllergens','cfgTimezone','cfgReservations']
       .forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         el.addEventListener('change', () => setDirty(true));
       });
 
+    MENU_LANG_OPTIONS.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', onMenuLanguageTogglesChange);
+    });
+
     if (!cfg.currencies) cfg.currencies = {};
     cfg.currencies = normalizeCurrencyConfig(cfg.currencies, currentRestaurant);
     renderCurrencyConfig(cfg.currencies);
+
+    applyInfoLanguageRows();
   }
 
   /* ── CATEGORIES ──────────────────────────────────────────── */
@@ -1485,7 +1770,8 @@
   function updateCategoryHeaderFromCat(block, cat) {
     if (!block) return;
     const nameEl = block.querySelector('.category-block__name');
-    if (nameEl) nameEl.textContent = cat.name.en || cat.id;
+    const enabled = getEnabledMenuLangsFromState();
+    if (nameEl) nameEl.textContent = primaryLocalizedName(cat.name, enabled) || cat.id;
     const badge = block.querySelector('.category-section__badge');
     if (badge) {
       badge.classList.toggle('hidden', !(cat.schedule && cat.schedule.enabled));
@@ -1498,31 +1784,22 @@
     const cat = cats[catIdx];
     if (!cat) return;
     _catSettingsIdx = catIdx;
+    const enabledCat = getEnabledMenuLangsFromState();
     if (catSettingsTitle) {
-      catSettingsTitle.textContent = `${tr('categorySettingsTitle')}: ${cat.name.en || cat.id}`;
+      catSettingsTitle.textContent = `${tr('categorySettingsTitle')}: ${primaryLocalizedName(cat.name, enabledCat) || cat.id}`;
     }
 
-    const categoryNameFields = isBgFirst()
-      ? `
+    if (!cat.name || typeof cat.name !== 'object') cat.name = {};
+    const categoryNameFields = orderEnabledLangsForFields(enabledCat)
+      .map(code => {
+        const v = cat.name[code] || '';
+        return `
           <div class="category-name-field">
-            <label>${esc(tr('categoryBulgarian'))}</label>
-            <input class="cat-name-bg cat-sheet-name-bg" type="text" value="${esc(cat.name.bg || '')}" placeholder="${esc(tr('categoryBgPh'))}" />
-          </div>
-          <div class="category-name-field">
-            <label>${esc(tr('categoryEnglish'))}</label>
-            <input class="cat-name-en cat-sheet-name-en" type="text" value="${esc(cat.name.en || '')}" placeholder="${esc(tr('categoryEnPh'))}" />
-          </div>
-        `
-      : `
-          <div class="category-name-field">
-            <label>${esc(tr('categoryEnglish'))}</label>
-            <input class="cat-name-en cat-sheet-name-en" type="text" value="${esc(cat.name.en || '')}" placeholder="${esc(tr('categoryEnPh'))}" />
-          </div>
-          <div class="category-name-field">
-            <label>${esc(tr('categoryBulgarian'))}</label>
-            <input class="cat-name-bg cat-sheet-name-bg" type="text" value="${esc(cat.name.bg || '')}" placeholder="${esc(tr('categoryBgPh'))}" />
-          </div>
-        `;
+            <label>${esc(tr(CAT_LABEL_KEY[code]))}</label>
+            <input class="cat-name-${code} cat-sheet-name-${code}" type="text" value="${esc(v)}" placeholder="${esc(tr(CAT_PH_KEY[code]))}" />
+          </div>`;
+      })
+      .join('');
 
     catSettingsBody.innerHTML = `
       <div class="form-section cat-settings-block">
@@ -1581,14 +1858,13 @@
 
     const block = categoriesList.querySelector(`[data-cat-idx="${catIdx}"]`);
 
-    catSettingsBody.querySelector('.cat-sheet-name-en')?.addEventListener('input', e => {
-      cat.name.en = e.target.value;
-      updateCategoryHeaderFromCat(block, cat);
-      setDirty(true);
-    });
-    catSettingsBody.querySelector('.cat-sheet-name-bg')?.addEventListener('input', e => {
-      cat.name.bg = e.target.value;
-      setDirty(true);
+    orderEnabledLangsForFields(enabledCat).forEach(code => {
+      catSettingsBody.querySelector(`.cat-sheet-name-${code}`)?.addEventListener('input', e => {
+        if (!cat.name || typeof cat.name !== 'object') cat.name = {};
+        cat.name[code] = e.target.value;
+        updateCategoryHeaderFromCat(block, cat);
+        setDirty(true);
+      });
     });
 
     (function wireSheetSchedule() {
@@ -1691,13 +1967,14 @@
     catSettingsBody.querySelector('.btn-delete-category-sheet')?.addEventListener('click', async e => {
       e.preventDefault();
       const ic = cat.items ? cat.items.length : 0;
+      const dn = primaryLocalizedName(cat.name, getEnabledMenuLangsFromState()) || cat.id;
       const ok = await confirm(
         adminLang === 'bg'
-          ? `Изтрий категорията „${cat.name.en}“? Всички ${ic} продукта ще бъдат премахнати.`
-          : `Delete category "${cat.name.en}"? All ${ic} items will be removed.`
+          ? `Изтрий категорията „${dn}“? Всички ${ic} продукта ще бъдат премахнати.`
+          : `Delete category "${dn}"? All ${ic} items will be removed.`
       );
       if (!ok) return;
-      adminTrack('admin_category_delete', { category: String(cat.name.en || cat.id).slice(0, 80) });
+      adminTrack('admin_category_delete', { category: String(cat.name?.en || cat.id).slice(0, 80) });
       menuData.restaurant.menu.categories.splice(catIdx, 1);
       closeCategorySettingsSheet();
       renderCategories(menuData.restaurant.menu.categories);
@@ -1814,12 +2091,14 @@
     const timedHidden = !(cat.schedule && cat.schedule.enabled);
     const itemLabel = adminLang === 'bg' ? 'продукта' : `item${itemCount !== 1 ? 's' : ''}`;
     const gearAria = adminLang === 'bg' ? 'Настройки на категорията' : 'Category settings';
+    const enabledList = getEnabledMenuLangsFromState();
+    const catTitle = primaryLocalizedName(cat.name, enabledList) || cat.id;
 
     block.innerHTML = `
       <div class="category-section__header">
         <span class="category-block__drag" title="Drag to reorder">⠿</span>
         <button type="button" class="category-section__toggle" aria-expanded="false">
-          <span class="category-block__name">${esc(cat.name.en || cat.id)}</span>
+          <span class="category-block__name">${esc(catTitle)}</span>
           <span class="category-section__badge${timedHidden ? ' hidden' : ''}">${adminLang === 'bg' ? 'Времева' : 'Timed'}</span>
           <span class="category-block__count">${itemCount} ${itemLabel}</span>
           <span class="category-block__chevron" aria-hidden="true">
@@ -1856,7 +2135,14 @@
     block.querySelector('.btn-add-item').addEventListener('click', e => {
       e.stopPropagation();
       if (!cat.items) cat.items = [];
-      cat.items.push({ name: { en: '', bg: '' }, description: { en: '', bg: '' }, price: 0, tags: [], availability: true, image: undefined });
+      cat.items.push({
+        name: emptyLocalizedRecord(),
+        description: emptyLocalizedRecord(),
+        price: 0,
+        tags: [],
+        availability: true,
+        image: undefined
+      });
       if (!block.classList.contains('open')) {
         block.classList.add('open');
         toggleBtn.setAttribute('aria-expanded', 'true');
@@ -2053,11 +2339,17 @@
     const key   = (entry.en || '').toLowerCase();
     const existing = dict.find(e => (e.en || '').toLowerCase() === key);
     if (!existing) {
-      dict.push({ en: entry.en, bg: entry.bg || entry.en });
-      return entry;
+      const row = { en: entry.en, bg: entry.bg != null && entry.bg !== '' ? entry.bg : entry.en };
+      KNOWN_MENU_LANGS.forEach(c => {
+        if (c !== 'en' && c !== 'bg' && entry[c]) row[c] = entry[c];
+      });
+      dict.push(row);
+      return row;
     }
-    // Backfill missing translation
     if (!existing.bg && entry.bg) existing.bg = entry.bg;
+    KNOWN_MENU_LANGS.forEach(c => {
+      if (c !== 'en' && c !== 'bg' && entry[c] && !existing[c]) existing[c] = entry[c];
+    });
     return existing;
   }
 
@@ -2069,8 +2361,7 @@
     const q = query.toLowerCase().trim();
     if (!q) return getSortedEnums(field);
     return getSortedEnums(field).filter(e =>
-      (e.en || '').toLowerCase().includes(q) ||
-      (e.bg || '').toLowerCase().includes(q)
+      KNOWN_MENU_LANGS.some(c => (e[c] || '').toLowerCase().includes(q))
     );
   }
 
@@ -2243,6 +2534,17 @@
     addBtn.addEventListener('click', addFromInput);
   }
 
+  function formatEnumOptionLabel(entry) {
+    const enabled = getEnabledMenuLangsFromState();
+    const parts = [];
+    enabled.forEach(c => {
+      const v = entry[c];
+      if (v && String(v).trim()) parts.push(String(v).trim());
+    });
+    const uniq = [...new Set(parts)];
+    return uniq.length ? uniq.join(' / ') : String(entry.en || '');
+  }
+
   /* ── ENUM NATIVE SELECT WIDGET ─────────────────────────────── */
   function wireEnumNativeSelect(block, field, item, catIdx, itemIdx) {
     const widget = block.querySelector(`.enum-native[data-enum="${field}"]`);
@@ -2250,11 +2552,9 @@
 
     const select         = widget.querySelector('.enum-native__select');
     const addSelectedBtn = widget.querySelector('.enum-native__add-selected');
-    const newEnInput     = widget.querySelector('.enum-native__new-en');
-    const newBgInput     = widget.querySelector('.enum-native__new-bg');
     const addNewBtn      = widget.querySelector('.enum-native__add-new');
 
-    if (!select || !addSelectedBtn || !newEnInput || !addNewBtn) return;
+    if (!select || !addSelectedBtn || !addNewBtn) return;
 
     function placeholderText() {
       if (field === 'tags') return tr('selectTag');
@@ -2276,22 +2576,26 @@
       entries.forEach(entry => {
         const en = String(entry.en || '').trim();
         if (!en) return;
-        const bg = String(entry.bg || entry.en || '').trim() || en;
         const opt = document.createElement('option');
         opt.value = en;
-        opt.dataset.bg = bg;
-        opt.textContent = (bg && bg !== en) ? `${en} / ${bg}` : en;
+        opt.textContent = formatEnumOptionLabel(entry);
         select.appendChild(opt);
       });
 
       if (prev) select.value = prev;
     }
 
+    function clearNewInputs() {
+      getEnabledMenuLangsFromState().forEach(code => {
+        const inp = widget.querySelector(`.enum-native__new-${code}`);
+        if (inp) inp.value = '';
+      });
+    }
+
     function addToItem(entry) {
       if (!entry) return;
       const en = String(entry.en || '').trim();
       if (!en) return;
-      const bg = entry.bg ? String(entry.bg).trim() : '';
 
       if (!item[field]) item[field] = [];
       const exists = item[field].some(e =>
@@ -2299,8 +2603,12 @@
       );
       if (exists) return;
 
-      const canonical = ensureInDict(field, { en, bg: bg || undefined });
-      item[field].push({ en: canonical.en, bg: canonical.bg || canonical.en });
+      const canonical = ensureInDict(field, entry);
+      const row = { en: canonical.en, bg: canonical.bg || canonical.en };
+      ['tr', 'ru', 'el'].forEach(c => {
+        if (canonical[c]) row[c] = canonical[c];
+      });
+      item[field].push(row);
 
       if (field === 'tags') {
         renderItemTags(block, item, catIdx, itemIdx);
@@ -2316,34 +2624,38 @@
       setDirty(true);
       populateSelect();
 
-      // Clear inputs
       select.value = '';
-      newEnInput.value = '';
-      if (newBgInput) newBgInput.value = '';
+      clearNewInputs();
     }
 
     function addSelected() {
       const en = select.value;
       if (!en) return;
-      const opt = select.selectedOptions && select.selectedOptions[0];
-      const bg = opt ? (opt.dataset.bg || en) : en;
-      addToItem({ en, bg });
+      const full = getSortedEnums(field).find(e => String(e.en || '').trim() === en);
+      if (full) addToItem({ ...full });
     }
 
     function addNew() {
-      const en = newEnInput.value.trim();
+      const vals = {};
+      getEnabledMenuLangsFromState().forEach(code => {
+        const inp = widget.querySelector(`.enum-native__new-${code}`);
+        if (inp) vals[code] = inp.value.trim();
+      });
+      let en = vals.en || '';
+      if (!en) en = vals.bg || vals.tr || vals.ru || vals.el || '';
       if (!en) return;
-      const bg = newBgInput ? newBgInput.value.trim() : '';
-      addToItem({ en, bg });
+      addToItem(vals);
     }
 
     addSelectedBtn.addEventListener('click', addSelected);
     addNewBtn.addEventListener('click', addNew);
-    newEnInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        addNew();
-      }
+    getEnabledMenuLangsFromState().forEach(code => {
+      widget.querySelector(`.enum-native__new-${code}`)?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addNew();
+        }
+      });
     });
 
     populateSelect();
@@ -2354,8 +2666,7 @@
     const chip = document.createElement('span');
     chip.className = 'item-tag-chip';
     chip.innerHTML = `
-      <span class="item-tag-chip__en">${esc(entry.en)}</span>
-      ${entry.bg && entry.bg !== entry.en ? `<span class="item-tag-chip__bg">/ ${esc(entry.bg)}</span>` : ''}
+      <span class="item-tag-chip__en">${esc(formatEnumOptionLabel(entry))}</span>
       <button class="item-tag-chip__del" type="button" title="Remove">×</button>
     `;
     chip.querySelector('.item-tag-chip__del').addEventListener('click', e => {
@@ -2374,56 +2685,72 @@
     const price   = typeof item.price === 'number' ? item.price.toFixed(2) : '0.00';
     const currencyCfg = normalizeCurrencyConfig(menuData.restaurant.menu.config?.currencies || {}, currentRestaurant);
     const baseSymbol = currencyMeta(currencyCfg.base, currentRestaurant).symbol || currencyCfg.base;
-    const nameTxt = item.name.en || 'New item';
+    const enabledItem = getEnabledMenuLangsFromState();
+    const nameTxt = primaryLocalizedName(item.name, enabledItem) || 'New item';
 
     // Generate quantity metric options
     const metricsOptions = quantityMetrics.map(m =>
       `<option value="${esc(m.code)}" ${item.quantity?.metric === m.code ? 'selected' : ''}>${esc((m.description && (m.description[adminLang] || m.description.en)) || m.code)} (${esc((m.label && (m.label[adminLang] || m.label.en)) || m.code)})</option>`
     ).join('');
 
-    const nameFirstIsBg = isBgFirst();
-    const nameFields = nameFirstIsBg
-      ? `
+    if (!item.name || typeof item.name !== 'object') item.name = {};
+    if (!item.description || typeof item.description !== 'object') item.description = {};
+
+    const nameFields = orderEnabledLangsForFields(enabledItem)
+      .map(code => {
+        const v = item.name[code] || '';
+        return `
             <div class="item-field-row">
-              <label>${esc(tr('nameBulgarian'))}</label>
-              <input class="item-name-bg" type="text" value="${esc(item.name.bg || '')}" placeholder="${esc(tr('itemBgNamePh'))}" />
-            </div>
+              <label>${esc(tr(ITEM_NAME_LABEL_KEY[code]))}</label>
+              <input class="item-name-${code}" type="text" value="${esc(v)}" placeholder="${esc(tr(ITEM_NAME_PH_KEY[code]))}" />
+            </div>`;
+      })
+      .join('');
+    const descFields = orderEnabledLangsForFields(enabledItem)
+      .map(code => {
+        const v = item.description[code] || '';
+        return `
             <div class="item-field-row">
-              <label>${esc(tr('nameEnglish'))}</label>
-              <input class="item-name-en" type="text" value="${esc(item.name.en || '')}" placeholder="${esc(tr('itemNamePh'))}" />
-            </div>
-      `
-      : `
-            <div class="item-field-row">
-              <label>${esc(tr('nameEnglish'))}</label>
-              <input class="item-name-en" type="text" value="${esc(item.name.en || '')}" placeholder="${esc(tr('itemNamePh'))}" />
-            </div>
-            <div class="item-field-row">
-              <label>${esc(tr('nameBulgarian'))}</label>
-              <input class="item-name-bg" type="text" value="${esc(item.name.bg || '')}" placeholder="${esc(tr('itemBgNamePh'))}" />
-            </div>
-      `;
-    const descFields = nameFirstIsBg
-      ? `
-            <div class="item-field-row">
-              <label>${esc(tr('descBulgarian'))}</label>
-              <textarea class="item-desc-bg" placeholder="${esc(tr('itemBgDescPh'))}">${esc(item.description ? item.description.bg || '' : '')}</textarea>
-            </div>
-            <div class="item-field-row">
-              <label>${esc(tr('descEnglish'))}</label>
-              <textarea class="item-desc-en" placeholder="${esc(tr('itemDescPh'))}">${esc(item.description ? item.description.en || '' : '')}</textarea>
-            </div>
-      `
-      : `
-            <div class="item-field-row">
-              <label>${esc(tr('descEnglish'))}</label>
-              <textarea class="item-desc-en" placeholder="${esc(tr('itemDescPh'))}">${esc(item.description ? item.description.en || '' : '')}</textarea>
-            </div>
-            <div class="item-field-row">
-              <label>${esc(tr('descBulgarian'))}</label>
-              <textarea class="item-desc-bg" placeholder="${esc(tr('itemBgDescPh'))}">${esc(item.description ? item.description.bg || '' : '')}</textarea>
-            </div>
-      `;
+              <label>${esc(tr(ITEM_DESC_LABEL_KEY[code]))}</label>
+              <textarea class="item-desc-${code}" placeholder="${esc(tr(ITEM_DESC_PH_KEY[code]))}">${esc(v)}</textarea>
+            </div>`;
+      })
+      .join('');
+
+    const enumPh = {
+      tags: {
+        en: 'New tag (EN)',
+        bg: 'BG (optional)',
+        tr: 'TR (optional)',
+        ru: 'RU (optional)',
+        el: 'EL (optional)'
+      },
+      ingredients: {
+        en: 'New ingredient (EN)',
+        bg: 'BG (optional)',
+        tr: 'TR (optional)',
+        ru: 'RU (optional)',
+        el: 'EL (optional)'
+      },
+      allergens: {
+        en: 'New allergen (EN)',
+        bg: 'BG (optional)',
+        tr: 'TR (optional)',
+        ru: 'RU (optional)',
+        el: 'EL (optional)'
+      }
+    };
+    function enumNewRowsFor(fieldKey) {
+      const ph = enumPh[fieldKey];
+      return orderEnabledLangsForFields(enabledItem)
+        .map(
+          code => `
+                <div class="enum-native__row">
+                  <input type="text" class="enum-native__new-${code}" placeholder="${esc(ph[code] || ph.en)}" autocomplete="off" />
+                </div>`
+        )
+        .join('');
+    }
 
     block.innerHTML = `
       <div class="item-block__header">
@@ -2475,12 +2802,7 @@
                   <select class="enum-native__select" aria-label="Select tag"></select>
                   <button class="enum-native__add-selected" type="button">+ Add</button>
                 </div>
-                <div class="enum-native__row">
-                  <input type="text" class="enum-native__new-en" placeholder="New tag (EN)" autocomplete="off" />
-                </div>
-                <div class="enum-native__row">
-                  <input type="text" class="enum-native__new-bg" placeholder="BG translation (optional)" autocomplete="off" />
-                </div>
+                ${enumNewRowsFor('tags')}
                 <div class="enum-native__row">
                   <button class="enum-native__add-new" type="button">Add new</button>
                 </div>
@@ -2496,12 +2818,7 @@
                   <select class="enum-native__select" aria-label="Select ingredient"></select>
                   <button class="enum-native__add-selected" type="button">+ Add</button>
                 </div>
-                <div class="enum-native__row">
-                  <input type="text" class="enum-native__new-en" placeholder="New ingredient (EN)" autocomplete="off" />
-                </div>
-                <div class="enum-native__row">
-                  <input type="text" class="enum-native__new-bg" placeholder="BG translation (optional)" autocomplete="off" />
-                </div>
+                ${enumNewRowsFor('ingredients')}
                 <div class="enum-native__row">
                   <button class="enum-native__add-new" type="button">Add new</button>
                 </div>
@@ -2517,12 +2834,7 @@
                   <select class="enum-native__select" aria-label="Select allergen"></select>
                   <button class="enum-native__add-selected" type="button">+ Add</button>
                 </div>
-                <div class="enum-native__row">
-                  <input type="text" class="enum-native__new-en" placeholder="New allergen (EN)" autocomplete="off" />
-                </div>
-                <div class="enum-native__row">
-                  <input type="text" class="enum-native__new-bg" placeholder="BG translation (optional)" autocomplete="off" />
-                </div>
+                ${enumNewRowsFor('allergens')}
                 <div class="enum-native__row">
                   <button class="enum-native__add-new" type="button">Add new</button>
                 </div>
@@ -2560,27 +2872,19 @@
       block.classList.toggle('open');
     });
 
-    // Name EN
-    block.querySelector('.item-name-en').addEventListener('input', e => {
-      item.name.en = e.target.value;
-      block.querySelector('.item-block__name').textContent = e.target.value || 'New item';
-      setDirty(true);
-    });
-    block.querySelector('.item-name-bg').addEventListener('input', e => {
-      item.name.bg = e.target.value;
-      setDirty(true);
-    });
-
-    // Description
-    block.querySelector('.item-desc-en').addEventListener('input', e => {
-      if (!item.description) item.description = {};
-      item.description.en = e.target.value;
-      setDirty(true);
-    });
-    block.querySelector('.item-desc-bg').addEventListener('input', e => {
-      if (!item.description) item.description = {};
-      item.description.bg = e.target.value;
-      setDirty(true);
+    orderEnabledLangsForFields(enabledItem).forEach(code => {
+      block.querySelector(`.item-name-${code}`)?.addEventListener('input', e => {
+        if (!item.name || typeof item.name !== 'object') item.name = {};
+        item.name[code] = e.target.value;
+        block.querySelector('.item-block__name').textContent =
+          primaryLocalizedName(item.name, enabledItem) || 'New item';
+        setDirty(true);
+      });
+      block.querySelector(`.item-desc-${code}`)?.addEventListener('input', e => {
+        if (!item.description || typeof item.description !== 'object') item.description = {};
+        item.description[code] = e.target.value;
+        setDirty(true);
+      });
     });
 
     // Price
@@ -2702,7 +3006,7 @@
     switchTab('categories');
     const cats = menuData.restaurant.menu.categories;
     const newId = 'category_' + Date.now();
-    cats.push({ id: newId, name: { en: '', bg: '' }, items: [] });
+    cats.push({ id: newId, name: emptyLocalizedRecord(), items: [] });
     renderCategories(cats);
     setDirty(true);
     // Open and scroll to new block
@@ -2710,17 +3014,23 @@
     if (last) {
       last.classList.add('open');
       setTimeout(() => last.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-      last.querySelector('.cat-name-en').focus();
+      last.querySelector('.category-section__toggle')?.focus();
     }
   });
 
   /* ── COLLECT FORM DATA ───────────────────────────────────── */
   function collectFormData() {
     const r = menuData.restaurant;
-    r.name.en = document.getElementById('infoNameEn').value.trim();
-    r.name.bg = document.getElementById('infoNameBg').value.trim();
-    r.description.en = document.getElementById('infoDescEn').value.trim();
-    r.description.bg = document.getElementById('infoDescBg').value.trim();
+    if (!r.menu.config) r.menu.config = {};
+    if (!r.name || typeof r.name !== 'object') r.name = {};
+    if (!r.description || typeof r.description !== 'object') r.description = {};
+    KNOWN_MENU_LANGS.forEach(code => {
+      const cap = langCap(code);
+      const ne = document.getElementById(`infoName${cap}`);
+      const de = document.getElementById(`infoDesc${cap}`);
+      if (ne) r.name[code] = ne.value.trim();
+      if (de) r.description[code] = de.value.trim();
+    });
     r.menu.theme = document.getElementById('infoTheme').value;
     r.default_language = document.getElementById('infoLang').value;
     r.logo             = document.getElementById('infoLogo').value.trim();
@@ -2731,6 +3041,18 @@
     r.menu.config.show_tags        = document.getElementById('cfgTags').checked;
     r.menu.config.show_ingredients = document.getElementById('cfgIngredients').checked;
     r.menu.config.show_allergens   = document.getElementById('cfgAllergens').checked;
+    const resCfg = document.getElementById('cfgReservations');
+    if (resCfg) r.menu.config.reservations_enabled = resCfg.checked;
+    r.menu.config.enabled_languages = [];
+    MENU_LANG_OPTIONS.forEach(({ code, id }) => {
+      if (document.getElementById(id)?.checked) r.menu.config.enabled_languages.push(code);
+    });
+    const enabled = normalizeEnabledLanguages(r.menu.config);
+    if (!enabled.includes(r.default_language)) {
+      r.default_language = enabled[0] || 'en';
+      const il = document.getElementById('infoLang');
+      if (il) il.value = r.default_language;
+    }
     if (!r.menu.config.currencies) r.menu.config.currencies = {};
     r.menu.config.currencies = normalizeCurrencyConfig(r.menu.config.currencies, currentRestaurant);
     const tzEl = document.getElementById('cfgTimezone');
@@ -2740,6 +3062,10 @@
 
   /* ── SAVE TO BACKEND (JPA) ───────────────────────────────── */
   saveBtn.addEventListener('click', async () => {
+    if (!MENU_LANG_OPTIONS.some(({ id }) => document.getElementById(id)?.checked)) {
+      showToast(tr('langMustPickOne'), 'error');
+      return;
+    }
     collectFormData();
     saveBtn.disabled = true;
     saveBtn.textContent = adminLang === 'bg' ? 'Запазване…' : 'Saving…';

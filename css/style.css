@@ -1742,6 +1742,91 @@ body.legal-page {
   max-width: 900px;
   margin: 0 auto;
 }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.header-menu-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.header-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(196, 149, 90, 0.38);
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.header-menu-btn:hover {
+  background: rgba(196, 149, 90, 0.18);
+  border-color: rgba(196, 149, 90, 0.55);
+}
+.header-menu-btn:focus-visible {
+  outline: 2px solid rgba(232, 200, 140, 0.9);
+  outline-offset: 2px;
+}
+.header-menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 200px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(12, 12, 18, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  z-index: 120;
+}
+.header-menu-panel .header-reserve-link {
+  width: 100%;
+  justify-content: flex-start;
+  box-sizing: border-box;
+}
+.lang-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.lang-picker-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 150;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0));
+  background: rgba(12, 12, 18, 0.98);
+  border-radius: 18px 18px 0 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  max-height: min(50vh, 320px);
+  display: flex;
+  flex-direction: column;
+}
+.lang-picker-sheet__scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lang-picker-sheet__opt {
+  width: 100%;
+  justify-content: center;
+  box-sizing: border-box;
+}
 .header-reserve-link {
   display: inline-flex;
   align-items: center;
