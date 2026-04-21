@@ -83,6 +83,11 @@ ul, ol { list-style: none; }
   overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
 }
 
+/* Matches admin.css — JS toggles `.hidden` on overlays, sheets, panels, etc. */
+.hidden {
+  display: none !important;
+}
+
 /* ============================================================
    LOADING SPINNER
    ============================================================ */
