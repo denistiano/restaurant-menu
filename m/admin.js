@@ -3327,16 +3327,16 @@
       return;
     }
 
-    /* Check subscription status from backend */
+    /* Use the browser push manager as the source of truth for THIS device.
+       Backend state can lag (e.g. expired subscriptions), but the browser
+       always knows whether it currently holds an active push subscription. */
     let isSubscribed = false;
-    try {
-      const res = await fetch(`${getMenuApiBase()}/api/admin/push/subscriptions/${encodeURIComponent(rid)}`,
-        { headers: { Authorization: 'Bearer ' + getAuthToken() } });
-      if (res.ok) {
-        const data = await res.json();
-        isSubscribed = data.subscribed === true;
-      }
-    } catch (_) {}
+    if (_swRegistration) {
+      try {
+        const browserSub = await _swRegistration.pushManager.getSubscription();
+        isSubscribed = browserSub !== null;
+      } catch (_) {}
+    }
 
     /* Update toggle UI */
     if (toggleBtn) {
@@ -3459,19 +3459,24 @@
   }
 
   async function doUnsubscribe(rid) {
-    /* Unsubscribe from browser */
+    /* Capture the endpoint BEFORE unsubscribing so we can tell the backend
+       exactly which device to remove (supports multiple devices per account). */
+    let endpoint = null;
     if (_swRegistration) {
       try {
         const sub = await _swRegistration.pushManager.getSubscription();
-        if (sub) await sub.unsubscribe();
+        if (sub) {
+          endpoint = sub.endpoint;
+          await sub.unsubscribe();
+        }
       } catch (_) {}
     }
 
-    /* Remove from backend */
+    /* Remove THIS device's subscription from the backend */
     try {
-      await fetch(
-        `${getMenuApiBase()}/api/admin/push/subscriptions/${encodeURIComponent(rid)}`,
-        { method: 'DELETE', headers: { Authorization: 'Bearer ' + getAuthToken() } });
+      const base = `${getMenuApiBase()}/api/admin/push/subscriptions/${encodeURIComponent(rid)}`;
+      const url  = endpoint ? base + '?endpoint=' + encodeURIComponent(endpoint) : base;
+      await fetch(url, { method: 'DELETE', headers: { Authorization: 'Bearer ' + getAuthToken() } });
     } catch (_) {}
 
     showToast(adminLang === 'bg' ? 'Известията са изключени.' : 'Notifications disabled.', 'success');
