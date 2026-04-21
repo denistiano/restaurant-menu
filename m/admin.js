@@ -3216,7 +3216,41 @@
     return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
   }
 
-  /* ── Web Audio sound generator ─────────────────────────── */
+  /* ── Persistent AudioContext ────────────────────────────────
+     We keep ONE AudioContext alive for the whole admin session.
+     Chrome's autoplay policy requires a user gesture to START an
+     AudioContext, but once it has been resumed via a gesture it
+     can be re-resumed later — even from a background-tab message
+     handler — without another gesture.  That is what lets us play
+     a custom sound when a push arrives on a minimised/background tab.
+     ──────────────────────────────────────────────────────────── */
+  let _audioCtx = null;
+
+  function getAudioCtx() {
+    if (!_audioCtx) {
+      try {
+        _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (_) { return null; }
+    }
+    return _audioCtx;
+  }
+
+  /**
+   * Call on any user interaction so Chrome "warms" the AudioContext.
+   * After warming, resume() works silently even with no gesture present
+   * (e.g. when a push message wakes a background tab).
+   */
+  function warmAudioCtx() {
+    const ctx = getAudioCtx();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+  }
+
+  /* Warm the AudioContext on the first click anywhere in the panel */
+  document.addEventListener('click', warmAudioCtx, { passive: true, capture: true });
+
+  /* ── Web Audio sound generators ─────────────────────────── */
   const SOUNDS = {
     ding: (ctx) => {
       const osc = ctx.createOscillator();
@@ -3258,11 +3292,21 @@
     none: () => {}
   };
 
-  function playNotificationSound(name) {
+  /**
+   * Play a notification sound using the shared (pre-warmed) AudioContext.
+   * Returns a Promise so the SW message handler can fire-and-forget it.
+   * If the context is suspended (e.g. browser throttled the background tab),
+   * we resume it first — Chrome allows this after a prior user-gesture resume.
+   */
+  async function playNotificationSound(name) {
     const key = name || localStorage.getItem(NOTIF_SOUND_KEY) || 'ding';
     if (key === 'none') return;
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
       (SOUNDS[key] || SOUNDS.ding)(ctx);
     } catch (_) {}
   }
