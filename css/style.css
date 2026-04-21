@@ -1756,10 +1756,6 @@ body.legal-page {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
-.header-menu-wrap {
-  position: relative;
-  flex-shrink: 0;
-}
 .header-menu-btn {
   display: flex;
   align-items: center;
@@ -1781,23 +1777,6 @@ body.legal-page {
 .header-menu-btn:focus-visible {
   outline: 2px solid rgba(232, 200, 140, 0.9);
   outline-offset: 2px;
-}
-.header-menu-panel {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 6px);
-  min-width: min(100vw - 32px, 260px);
-  padding: 6px;
-  border-radius: 12px;
-  background: rgba(12, 12, 18, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-  z-index: 120;
-}
-.header-menu-panel .header-reserve-link {
-  width: 100%;
-  justify-content: flex-start;
-  box-sizing: border-box;
 }
 .lang-picker-backdrop {
   position: fixed;
@@ -1837,45 +1816,34 @@ body.legal-page {
   touch-action: manipulation;
   -webkit-tap-highlight-color: rgba(255, 255, 255, 0.12);
 }
-.header-reserve-link {
+/* Settings / hamburger menu bottom-sheet row */
+.menu-sheet__opt {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(196, 149, 90, 0.38);
-  background: rgba(255, 255, 255, 0.07);
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(196, 149, 90, 0.35);
+  background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.92);
-  font: 500 14px var(--font-sans);
+  font: 500 15px var(--font-sans);
   text-decoration: none;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  flex-shrink: 0;
+  box-sizing: border-box;
   touch-action: manipulation;
   -webkit-tap-highlight-color: rgba(255, 255, 255, 0.15);
   cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
 }
-.header-reserve-link:hover {
+.menu-sheet__opt:hover,
+.menu-sheet__opt:active {
   background: rgba(196, 149, 90, 0.18);
   border-color: rgba(196, 149, 90, 0.55);
   color: #fff;
 }
-.header-reserve-link:focus-visible {
-  outline: 2px solid rgba(232, 200, 140, 0.9);
-  outline-offset: 2px;
-}
-.header-reserve-link__icon {
-  flex-shrink: 0;
-  opacity: 0.9;
-}
-@media (max-width: 380px) {
-  .header-reserve-link {
-    min-height: 48px;
-    padding: 10px 12px;
-  }
-  .header-reserve-link__text {
-    display: none;
-  }
+.menu-sheet__opt-label {
+  flex: 1;
 }
 .restaurant-header__content {
   position: relative; z-index: 2;

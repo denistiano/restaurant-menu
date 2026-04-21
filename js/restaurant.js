@@ -270,15 +270,17 @@
     if (btn) btn.setAttribute('aria-expanded', 'false');
   }
 
-  function closeHeaderMenuPanel() {
-    const menuPanel = document.getElementById('headerMenuPanel');
-    const menuBtn = document.getElementById('headerMenuBtn');
-    if (menuPanel) {
-      menuPanel.classList.add('hidden');
-      menuPanel.setAttribute('hidden', '');
-    }
-    if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+  function closeMenuSheet() {
+    const sheet = document.getElementById('menuSheet');
+    const backdrop = document.getElementById('menuSheetBackdrop');
+    const btn = document.getElementById('headerMenuBtn');
+    if (sheet) sheet.classList.add('hidden');
+    if (backdrop) backdrop.classList.add('hidden');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
   }
+
+  /* keep old name working so any future callers are safe */
+  function closeHeaderMenuPanel() { closeMenuSheet(); }
 
   /** 3+ languages: backdrop + bottom sheet live on `body` so they never affect header flex/layout or stacking. */
   function removeLangPickerPortal() {
@@ -303,6 +305,44 @@
     scroll.id = 'langPickerList';
     scroll.className = 'lang-picker-sheet__scroll';
     scroll.setAttribute('role', 'listbox');
+    sheet.appendChild(scroll);
+    document.body.appendChild(backdrop);
+    document.body.appendChild(sheet);
+  }
+
+  function mountMenuSheetPortal(restaurant) {
+    document.getElementById('menuSheetBackdrop')?.remove();
+    document.getElementById('menuSheet')?.remove();
+
+    const backdrop = document.createElement('div');
+    backdrop.id = 'menuSheetBackdrop';
+    backdrop.className = 'lang-picker-backdrop hidden';
+    backdrop.setAttribute('aria-hidden', 'true');
+
+    const sheet = document.createElement('div');
+    sheet.id = 'menuSheet';
+    sheet.className = 'lang-picker-sheet hidden';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-modal', 'true');
+    sheet.setAttribute('aria-label', 'Options');
+
+    const scroll = document.createElement('div');
+    scroll.className = 'lang-picker-sheet__scroll';
+
+    const reserveLink = document.createElement('a');
+    reserveLink.href = `../reserve/?r=${encodeURIComponent(restaurant.id)}`;
+    reserveLink.id = 'headerReserveLink';
+    reserveLink.className = 'menu-sheet__opt';
+    reserveLink.setAttribute('role', 'menuitem');
+    reserveLink.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="14" rx="2"/>
+        <path d="M3 10h18"/>
+        <path d="M8 15h.01M12 15h.01"/>
+      </svg>
+      <span class="menu-sheet__opt-label" data-en="Reserve a table" data-bg="Резервация на маса">Reserve a table</span>`;
+
+    scroll.appendChild(reserveLink);
     sheet.appendChild(scroll);
     document.body.appendChild(backdrop);
     document.body.appendChild(sheet);
@@ -1841,27 +1881,13 @@
 
     const headerMenuBlock = reservationsOn
       ? `
-            <div class="header-menu-wrap">
-              <button type="button" class="header-menu-btn" id="headerMenuBtn"
-                aria-controls="headerMenuPanel" aria-expanded="false" aria-haspopup="true"
-                data-aria-en="Menu options" data-aria-bg="Опции на менюто">
-                <svg class="header-menu-btn__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                  <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
-                </svg>
-              </button>
-              <div class="header-menu-panel hidden" id="headerMenuPanel" role="menu" hidden>
-                <a href="../reserve/?r=${encodeURIComponent(restaurant.id)}" class="header-menu-panel__link header-reserve-link" id="headerReserveLink" role="menuitem"
-                   data-title-en="Reserve a table" data-title-bg="Резервация на маса"
-                   data-aria-en="Reserve a table" data-aria-bg="Резервация на маса">
-                  <svg class="header-reserve-link__icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="3" y="5" width="18" height="14" rx="2"/>
-                    <path d="M3 10h18"/>
-                    <path d="M8 15h.01M12 15h.01"/>
-                  </svg>
-                  <span class="header-reserve-link__text" data-en="Reserve" data-bg="Резервация">Reserve</span>
-                </a>
-              </div>
-            </div>`
+            <button type="button" class="header-menu-btn" id="headerMenuBtn"
+              aria-controls="menuSheet" aria-expanded="false" aria-haspopup="dialog"
+              data-aria-en="Menu options" data-aria-bg="Опции на менюто">
+              <svg class="header-menu-btn__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
+              </svg>
+            </button>`
       : '';
 
     root.innerHTML = `
@@ -1969,6 +1995,7 @@
     `;
 
     mountLangPickerPortal();
+    if (reservationsOn) mountMenuSheetPortal(restaurant);
 
     ensureModal();
 
@@ -1980,26 +2007,36 @@
     });
 
     const headerMenuBtn = document.getElementById('headerMenuBtn');
-    const headerMenuPanel = document.getElementById('headerMenuPanel');
-    if (headerMenuBtn && headerMenuPanel && reservationsOn) {
+    if (headerMenuBtn && reservationsOn) {
       headerMenuBtn.addEventListener('click', e => {
         e.stopPropagation();
-        if (headerMenuPanel.classList.contains('hidden')) {
+        const sheet = document.getElementById('menuSheet');
+        const backdrop = document.getElementById('menuSheetBackdrop');
+        const opening = sheet && sheet.classList.contains('hidden');
+        if (opening) {
           closeLangPickerSheet();
-          headerMenuPanel.classList.remove('hidden');
-          headerMenuPanel.removeAttribute('hidden');
+          sheet.classList.remove('hidden');
+          if (backdrop) backdrop.classList.remove('hidden');
           headerMenuBtn.setAttribute('aria-expanded', 'true');
         } else {
-          closeHeaderMenuPanel();
+          closeMenuSheet();
         }
       });
-    }
 
-    const reserveNav = document.getElementById('headerReserveLink');
-    if (reserveNav) {
-      reserveNav.addEventListener('click', () => {
-        trackRestaurantEvent('reserve_nav_click', { restaurant_id: restaurant.id });
-      });
+      const menuSheetBackdrop = document.getElementById('menuSheetBackdrop');
+      if (menuSheetBackdrop) {
+        menuSheetBackdrop.addEventListener('click', e => {
+          e.stopPropagation();
+          closeMenuSheet();
+        });
+      }
+
+      const reserveNav = document.getElementById('headerReserveLink');
+      if (reserveNav) {
+        reserveNav.addEventListener('click', () => {
+          trackRestaurantEvent('reserve_nav_click', { restaurant_id: restaurant.id });
+        });
+      }
     }
 
     const langToggleEl = document.getElementById('langToggle');
@@ -2052,9 +2089,12 @@
       }
     }
 
-    document.addEventListener('click', () => {
-      closeHeaderMenuPanel();
-      closeLangPickerSheet();
+    document.addEventListener('click', e => {
+      /* Don't close sheets when the tap is inside a sheet or its backdrop (they handle themselves) */
+      const insideLang = e.target.closest('#langPickerSheet, #langPickerBackdrop');
+      const insideMenu = e.target.closest('#menuSheet, #menuSheetBackdrop');
+      if (!insideLang) closeLangPickerSheet();
+      if (!insideMenu) closeMenuSheet();
     });
 
     /* Search bar */

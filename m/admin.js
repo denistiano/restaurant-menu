@@ -1495,6 +1495,7 @@
     adminTrack('admin_tab_view', { tab: String(tabId).slice(0, 40) });
     if (tabId === 'qr' && window.AdminQrFlyers) window.AdminQrFlyers.refresh();
     if (tabId === 'layout' && sessionSuperAdmin) _initLayoutPanel();
+    if (tabId === 'notifications') renderNotificationsTab();
   }
 
   /* ── LAYOUT & RESERVATIONS (super-admin) ─────────────────── */
@@ -3200,4 +3201,328 @@
       showCredentialsUi();
     }
   })();
+
+  /* ============================================================
+     PUSH NOTIFICATIONS
+     ============================================================ */
+
+  const NOTIF_SOUND_KEY = 'notif_sound_pref';
+
+  /** Convert URL-safe base64 string → Uint8Array (needed for pushManager.subscribe). */
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  /* ── Web Audio sound generator ─────────────────────────── */
+  const SOUNDS = {
+    ding: (ctx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.6, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    },
+    chime: (ctx) => {
+      [523, 659, 784].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        const t = ctx.currentTime + i * 0.12;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.45, t + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+        osc.start(t); osc.stop(t + 0.6);
+      });
+    },
+    pulse: (ctx) => {
+      [440, 440].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        const t = ctx.currentTime + i * 0.22;
+        gain.gain.setValueAtTime(0.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        osc.start(t); osc.stop(t + 0.2);
+      });
+    },
+    none: () => {}
+  };
+
+  function playNotificationSound(name) {
+    const key = name || localStorage.getItem(NOTIF_SOUND_KEY) || 'ding';
+    if (key === 'none') return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      (SOUNDS[key] || SOUNDS.ding)(ctx);
+    } catch (_) {}
+  }
+
+  /* ── Service Worker registration ───────────────────────── */
+  async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return null;
+    try {
+      const reg = await navigator.serviceWorker.register('../sw.js', { scope: '../' });
+      /* Listen for push sound messages from the SW */
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data && e.data.type === 'PLAY_NOTIFICATION_SOUND') {
+          playNotificationSound();
+        }
+      });
+      return reg;
+    } catch (err) {
+      console.warn('SW registration failed:', err);
+      return null;
+    }
+  }
+
+  let _swRegistration = null;
+
+  /* ── Notifications panel logic ──────────────────────────── */
+  async function renderNotificationsTab() {
+    const rid = activeWorkspaceId || currentRestaurant?.id;
+    if (!rid) return;
+
+    const supported = 'serviceWorker' in navigator && 'PushManager' in window;
+    const isIosNonStandalone = /iphone|ipad|ipod/i.test(navigator.userAgent)
+      && !window.navigator.standalone;
+
+    const iosHint       = document.getElementById('notifIosHint');
+    const unsupported   = document.getElementById('notifUnsupported');
+    const enableRow     = document.getElementById('notifEnableRow');
+    const toggleBtn     = document.getElementById('notifToggleBtn');
+    const toggleTitle   = document.getElementById('notifEnableTitle');
+    const toggleSub     = document.getElementById('notifEnableSub');
+    const deniedEl      = document.getElementById('notifDenied');
+    const prefsSection  = document.getElementById('notifPrefsSection');
+    const soundSection  = document.getElementById('notifSoundSection');
+    const soundPicker   = document.getElementById('notifSoundPicker');
+
+    if (!supported || isIosNonStandalone) {
+      if (isIosNonStandalone && iosHint) iosHint.classList.remove('hidden');
+      else if (!supported && unsupported) unsupported.classList.remove('hidden');
+      if (enableRow) enableRow.classList.add('hidden');
+      return;
+    }
+
+    /* Ensure SW is registered */
+    if (!_swRegistration) {
+      _swRegistration = await registerServiceWorker();
+    }
+
+    /* Check current permission state */
+    const permission = Notification.permission;
+    if (permission === 'denied') {
+      if (deniedEl) deniedEl.classList.remove('hidden');
+      if (enableRow) enableRow.classList.add('hidden');
+      return;
+    }
+
+    /* Check subscription status from backend */
+    let isSubscribed = false;
+    try {
+      const res = await fetch(`${getMenuApiBase()}/api/admin/push/subscriptions/${encodeURIComponent(rid)}`,
+        { headers: { Authorization: 'Bearer ' + getAuthToken() } });
+      if (res.ok) {
+        const data = await res.json();
+        isSubscribed = data.subscribed === true;
+      }
+    } catch (_) {}
+
+    /* Update toggle UI */
+    if (toggleBtn) {
+      toggleBtn.setAttribute('aria-pressed', String(isSubscribed));
+      toggleBtn.classList.toggle('is-on', isSubscribed);
+    }
+    if (toggleTitle) toggleTitle.textContent = adminLang === 'bg'
+      ? 'Получавай известия на това устройство'
+      : 'Receive notifications on this device';
+    if (toggleSub) toggleSub.textContent = isSubscribed
+      ? (adminLang === 'bg' ? 'Активно — кликни за изключване' : 'Active — tap to disable')
+      : (adminLang === 'bg' ? 'Кликни за активиране' : 'Tap to enable');
+
+    /* Show prefs + sound sections when subscribed */
+    if (prefsSection) prefsSection.classList.toggle('hidden', !isSubscribed);
+    if (soundSection) soundSection.classList.toggle('hidden', !isSubscribed);
+
+    if (isSubscribed) {
+      await loadNotifPrefs(rid);
+    }
+
+    /* Restore saved sound preference */
+    if (soundPicker) {
+      soundPicker.value = localStorage.getItem(NOTIF_SOUND_KEY) || 'ding';
+    }
+
+    /* Wire toggle button (only once) */
+    if (toggleBtn && !toggleBtn.dataset.wired) {
+      toggleBtn.dataset.wired = '1';
+      toggleBtn.addEventListener('click', () => handleNotifToggle(rid));
+    }
+
+    /* Sound picker */
+    if (soundPicker && !soundPicker.dataset.wired) {
+      soundPicker.dataset.wired = '1';
+      soundPicker.addEventListener('change', () => {
+        localStorage.setItem(NOTIF_SOUND_KEY, soundPicker.value);
+      });
+    }
+
+    /* Sound test button */
+    const testBtn = document.getElementById('notifSoundTest');
+    if (testBtn && !testBtn.dataset.wired) {
+      testBtn.dataset.wired = '1';
+      testBtn.addEventListener('click', () => playNotificationSound(soundPicker?.value));
+    }
+  }
+
+  async function handleNotifToggle(rid) {
+    const btn = document.getElementById('notifToggleBtn');
+    if (btn) btn.disabled = true;
+
+    const currentlyOn = btn && btn.getAttribute('aria-pressed') === 'true';
+
+    if (currentlyOn) {
+      await doUnsubscribe(rid);
+    } else {
+      await doSubscribe(rid);
+    }
+
+    if (btn) btn.disabled = false;
+    await renderNotificationsTab();
+  }
+
+  async function doSubscribe(rid) {
+    if (!_swRegistration) {
+      _swRegistration = await registerServiceWorker();
+      if (!_swRegistration) { showToast('Service worker not available.', 'error'); return; }
+    }
+
+    /* Get VAPID public key */
+    let vapidKey;
+    try {
+      const res = await fetch(`${getMenuApiBase()}/api/admin/push/vapid-key`,
+        { headers: { Authorization: 'Bearer ' + getAuthToken() } });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      vapidKey = data.publicKey;
+    } catch (e) {
+      showToast('Could not load push config from server.', 'error');
+      return;
+    }
+
+    /* Request permission and create browser subscription */
+    let pushSub;
+    try {
+      pushSub = await _swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey)
+      });
+    } catch (e) {
+      if (Notification.permission === 'denied') {
+        const deniedEl = document.getElementById('notifDenied');
+        if (deniedEl) deniedEl.classList.remove('hidden');
+      } else {
+        showToast('Could not create push subscription: ' + e.message, 'error');
+      }
+      return;
+    }
+
+    /* Save to backend */
+    const json = pushSub.toJSON();
+    try {
+      const res = await fetch(
+        `${getMenuApiBase()}/api/admin/push/subscriptions/${encodeURIComponent(rid)}`,
+        {
+          method: 'POST',
+          headers: authJsonHeaders(),
+          body: JSON.stringify({
+            endpoint: json.endpoint,
+            p256dh:   json.keys.p256dh,
+            auth:     json.keys.auth
+          })
+        });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      showToast(adminLang === 'bg' ? 'Известията са активирани!' : 'Notifications enabled!', 'success');
+    } catch (e) {
+      showToast('Failed to save subscription: ' + e.message, 'error');
+    }
+  }
+
+  async function doUnsubscribe(rid) {
+    /* Unsubscribe from browser */
+    if (_swRegistration) {
+      try {
+        const sub = await _swRegistration.pushManager.getSubscription();
+        if (sub) await sub.unsubscribe();
+      } catch (_) {}
+    }
+
+    /* Remove from backend */
+    try {
+      await fetch(
+        `${getMenuApiBase()}/api/admin/push/subscriptions/${encodeURIComponent(rid)}`,
+        { method: 'DELETE', headers: { Authorization: 'Bearer ' + getAuthToken() } });
+    } catch (_) {}
+
+    showToast(adminLang === 'bg' ? 'Известията са изключени.' : 'Notifications disabled.', 'success');
+  }
+
+  async function loadNotifPrefs(rid) {
+    const list = document.getElementById('notifPrefsList');
+    if (!list) return;
+
+    let prefs = [];
+    try {
+      const res = await fetch(
+        `${getMenuApiBase()}/api/admin/push/preferences/${encodeURIComponent(rid)}`,
+        { headers: { Authorization: 'Bearer ' + getAuthToken() } });
+      if (res.ok) prefs = await res.json();
+    } catch (_) { return; }
+
+    const EVENT_LABELS = {
+      NEW_RESERVATION: { en: 'New reservation submitted', bg: 'Нова резервация' }
+    };
+
+    list.innerHTML = '';
+    prefs.forEach(pref => {
+      const label = EVENT_LABELS[pref.eventType]?.[adminLang] || pref.eventType;
+      const row = document.createElement('label');
+      row.className = 'toggle-row';
+      row.innerHTML = `
+        <span class="toggle-row__label">${label}</span>
+        <input type="checkbox" class="toggle-cb notif-pref-cb" data-event="${pref.eventType}"
+               ${pref.enabled ? 'checked' : ''} />
+        <span class="toggle-switch"></span>`;
+      list.appendChild(row);
+    });
+
+    /* Save on change */
+    list.addEventListener('change', async e => {
+      const cb = e.target.closest('.notif-pref-cb');
+      if (!cb) return;
+      const updated = [...list.querySelectorAll('.notif-pref-cb')].map(c => ({
+        eventType: c.dataset.event,
+        enabled: c.checked
+      }));
+      try {
+        await fetch(
+          `${getMenuApiBase()}/api/admin/push/preferences/${encodeURIComponent(rid)}`,
+          { method: 'PUT', headers: authJsonHeaders(), body: JSON.stringify(updated) });
+      } catch (_) {}
+    });
+  }
+
+  /* Register SW as soon as the user is logged in */
+  registerServiceWorker().then(reg => { _swRegistration = reg; });
+
 })();

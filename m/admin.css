@@ -2283,3 +2283,127 @@ body.has-m-app-nav .sp-wrap {
   -webkit-overflow-scrolling: touch;
   padding: 16px 16px 24px;
 }
+
+/* ============================================================
+   PUSH NOTIFICATIONS PANEL
+   ============================================================ */
+.notif-ios-hint,
+.notif-unsupported {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.notif-ios-hint svg,
+.notif-unsupported svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--accent);
+}
+
+.notif-enable-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0 6px;
+}
+.notif-enable-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.notif-enable-title {
+  font: 500 14px var(--font-sans);
+  color: var(--text);
+}
+.notif-enable-sub {
+  font: 400 12px var(--font-sans);
+  color: var(--muted);
+}
+
+/* Big pill toggle switch */
+.notif-toggle-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.notif-toggle-btn__track {
+  display: flex;
+  align-items: center;
+  width: 52px;
+  height: 30px;
+  border-radius: 15px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  padding: 2px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.notif-toggle-btn__thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.2s ease, background 0.2s;
+}
+.notif-toggle-btn.is-on .notif-toggle-btn__track {
+  background: rgba(76, 175, 117, 0.25);
+  border-color: var(--success);
+}
+.notif-toggle-btn.is-on .notif-toggle-btn__thumb {
+  transform: translateX(22px);
+  background: var(--success);
+}
+.notif-toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notif-denied {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--danger-dim);
+  border: 1px solid rgba(224, 92, 92, 0.3);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font: 400 12px var(--font-sans);
+  color: #e05c5c;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+.notif-denied svg { flex-shrink: 0; margin-top: 1px; }
+
+/* Sound row */
+.notif-sound-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.notif-sound-test {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-2);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+  touch-action: manipulation;
+}
+.notif-sound-test:hover { background: var(--surface-3); }
