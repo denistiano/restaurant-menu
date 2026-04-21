@@ -433,28 +433,20 @@
         <p class="qr-flyer__status" id="qrFlyerStatus" aria-live="polite"></p>
       </section>
 
-      <!-- LAYOUT & RESERVATIONS panel (super-admin only) -->
+      <!-- LAYOUT panel — floor plan only (super-admin) -->
       <section class="editor-panel hidden" id="panel-layout">
-        <!-- Layout sub-nav: segmented control -->
-        <div class="lf-seg-bar">
-          <div class="lf-seg-ctrl" id="lfSubTabBar" role="tablist">
-            <button class="lf-seg-btn is-active" data-subtab="editor" type="button" role="tab" aria-selected="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="9" x2="21" y2="9"/><line x1="9" y1="15" x2="21" y2="15"/></svg>
-              Floor plan
-            </button>
-            <button class="lf-seg-btn" data-subtab="reservations" type="button" role="tab" aria-selected="false">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              Reservations
-            </button>
-          </div>
-          <a id="reservePublicLink" href="#" target="_blank" rel="noopener" class="lf-guest-link">Guest link ↗</a>
+        <div class="lf-seg-bar lf-seg-bar--single">
+          <a id="reservePublicLinkLayout" href="#" target="_blank" rel="noopener" class="lf-guest-link">Guest link ↗</a>
         </div>
-
-        <!-- Layout editor host -->
         <div id="lfEditorHost"></div>
+      </section>
 
-        <!-- Reservations host -->
-        <div id="lfReservationsHost" style="display:none">
+      <!-- RESERVATIONS panel (super-admin) -->
+      <section class="editor-panel hidden" id="panel-reservations">
+        <div class="lf-seg-bar lf-seg-bar--single">
+          <a id="reservePublicLinkRes" href="#" target="_blank" rel="noopener" class="lf-guest-link">Guest link ↗</a>
+        </div>
+        <div id="lfReservationsHost">
           <div class="adm-res-bar">
             <label style="font:500 12px var(--font-sans);color:var(--color-text-muted)">Date</label>
             <input type="date" id="admResDate" />
@@ -546,34 +538,6 @@
 
     </div><!-- /editor-body -->
 
-    <!-- Primary nav — bottom bar on mobile / sidebar on desktop -->
-    <nav class="editor-nav" id="editorNav" aria-label="Editor sections">
-      <button class="editor-nav__item active" data-tab="info" type="button">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span class="editor-nav__label">Restaurant</span>
-      </button>
-      <button class="editor-nav__item" data-tab="config" type="button">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-        <span class="editor-nav__label">Settings</span>
-      </button>
-      <button class="editor-nav__item" data-tab="categories" type="button">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        <span class="editor-nav__label">Menu</span>
-      </button>
-      <button class="editor-nav__item" data-tab="qr" type="button">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>
-        <span class="editor-nav__label">QR</span>
-      </button>
-      <button class="editor-nav__item hidden" data-tab="layout" id="layoutTab" type="button">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="9" x2="21" y2="9"/><line x1="9" y1="15" x2="21" y2="15"/></svg>
-        <span class="editor-nav__label">Layout</span>
-      </button>
-      <button class="editor-nav__item" data-tab="notifications" id="notificationsTab" type="button">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <span class="editor-nav__label">Alerts</span>
-      </button>
-    </nav>
-
   </div><!-- /editorScreen -->
 
   <!-- ── TOAST ─────────────────────────────────────────────── -->
@@ -581,6 +545,46 @@
 
   <!-- Workspace picker (native-style sheet + search) -->
   <div class="ws-picker-backdrop hidden" id="workspacePickerBackdrop" aria-hidden="true"></div>
+  <!-- Restaurant hub (editor sections) — opened from logo button in main staff nav -->
+  <div class="rh-hub-backdrop ws-picker-backdrop hidden" id="restaurantHubBackdrop" aria-hidden="true"></div>
+  <div class="rh-hub-sheet ws-picker-sheet hidden" id="restaurantHubSheet" role="dialog" aria-modal="true" aria-labelledby="restaurantHubTitle">
+    <div class="ws-picker-grab" aria-hidden="true"></div>
+    <div class="ws-picker-head">
+      <h2 class="ws-picker-title" id="restaurantHubTitle">Venue</h2>
+      <button type="button" class="ws-picker-close" id="restaurantHubClose" aria-label="Close">×</button>
+    </div>
+    <div class="rh-hub-list" id="restaurantHubList" role="list">
+      <button type="button" class="rh-hub-item is-active" data-tab="info" role="listitem">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="rh-hub-item__label" data-i18n="editorInfoTab">Info</span>
+      </button>
+      <button type="button" class="rh-hub-item" data-tab="config" role="listitem">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        <span class="rh-hub-item__label" data-i18n="editorSettingsTab">Settings</span>
+      </button>
+      <button type="button" class="rh-hub-item" data-tab="categories" role="listitem">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span class="rh-hub-item__label" data-i18n="editorMenuTab">Menu</span>
+      </button>
+      <button type="button" class="rh-hub-item" data-tab="qr" role="listitem">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>
+        <span class="rh-hub-item__label" data-i18n="editorQrTab">QR</span>
+      </button>
+      <button type="button" class="rh-hub-item hidden" data-tab="layout" id="rhHubLayoutRow" role="listitem">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="9" x2="21" y2="9"/><line x1="9" y1="15" x2="21" y2="15"/></svg>
+        <span class="rh-hub-item__label" data-i18n="editorLayoutTab">Layout</span>
+      </button>
+      <button type="button" class="rh-hub-item hidden" data-tab="reservations" id="rhHubReservationsRow" role="listitem">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="rh-hub-item__label" data-i18n="editorReservationsTab">Reservations</span>
+      </button>
+      <button type="button" class="rh-hub-item" data-tab="notifications" role="listitem">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="rh-hub-item__label" data-i18n="editorNotificationsTab">Notifications</span>
+      </button>
+    </div>
+  </div>
+
   <div class="ws-picker-sheet hidden" id="workspacePickerSheet" role="dialog" aria-modal="true" aria-labelledby="wsPickerTitle">
     <div class="ws-picker-grab" aria-hidden="true"></div>
     <div class="ws-picker-head">
@@ -620,6 +624,10 @@
       <svg class="m-app-nav__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="15" width="7" height="6" rx="1"/></svg>
       <span class="m-app-nav__label">Menu</span>
     </a>
+    <button type="button" class="m-app-nav__link m-app-nav__link--hub hidden" id="restaurantHubNavBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="restaurantHubSheet" aria-label="Open venue sections">
+      <img src="../resources/logo.webp" alt="" class="m-app-nav__hub-logo" id="restaurantHubNavLogo" width="28" height="28" decoding="async" />
+      <span class="m-app-nav__label" id="restaurantHubNavLabel">Venue</span>
+    </button>
     <a class="m-app-nav__link" href="su-n3k8.html">
       <svg class="m-app-nav__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <span class="m-app-nav__label">Users</span>

@@ -52,6 +52,9 @@
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
+.lf-seg-bar--single {
+  justify-content: flex-end;
+}
 .lf-seg-ctrl {
   display: flex;
   padding: 3px;

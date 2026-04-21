@@ -61,9 +61,16 @@
       openEditor: 'Open editor',
       incorrectPassword: 'Incorrect admin password',
       editorRestaurantTab: 'Restaurant',
+      editorInfoTab: 'Info',
       editorSettingsTab: 'Settings',
       editorMenuTab: 'Menu',
-      editorQrTab: 'QR media',
+      editorQrTab: 'QR',
+      editorLayoutTab: 'Layout',
+      editorReservationsTab: 'Reservations',
+      editorNotificationsTab: 'Notifications',
+      restaurantHubNavLabel: 'Venue',
+      restaurantHubSheetTitle: 'Venue',
+      restaurantHubNavAria: 'Open venue sections',
       preview: 'Preview ↗',
       save: 'Save',
       unsaved: 'Unsaved',
@@ -158,9 +165,16 @@
       openEditor: 'Отвори редактора',
       incorrectPassword: 'Невалидна админ парола',
       editorRestaurantTab: 'Ресторант',
+      editorInfoTab: 'Инфо',
       editorSettingsTab: 'Настройки',
       editorMenuTab: 'Меню',
-      editorQrTab: 'QR медия',
+      editorQrTab: 'QR',
+      editorLayoutTab: 'Подредба',
+      editorReservationsTab: 'Резервации',
+      editorNotificationsTab: 'Известия',
+      restaurantHubNavLabel: 'Обект',
+      restaurantHubSheetTitle: 'Обект',
+      restaurantHubNavAria: 'Отвори секциите за обекта',
       preview: 'Преглед ↗',
       save: 'Запази',
       unsaved: 'Незаписано',
@@ -725,14 +739,16 @@
     const saveBtnEl = document.getElementById('saveBtn'); if (saveBtnEl && saveBtnEl.textContent !== 'Saving…' && saveBtnEl.textContent !== 'Запазване…') saveBtnEl.textContent = tr('save');
     const dirty = document.getElementById('dirtyBadge'); if (dirty) dirty.textContent = tr('unsaved');
 
-    document.querySelectorAll('.editor-nav__item').forEach(item => {
-      const lbl = item.querySelector('.editor-nav__label');
-      if (!lbl) return;
-      if (item.dataset.tab === 'info')       lbl.textContent = tr('editorRestaurantTab');
-      if (item.dataset.tab === 'config')     lbl.textContent = tr('editorSettingsTab');
-      if (item.dataset.tab === 'categories') lbl.textContent = tr('editorMenuTab');
-      if (item.dataset.tab === 'qr')         lbl.textContent = tr('editorQrTab');
+    document.querySelectorAll('.rh-hub-item__label[data-i18n]').forEach(lbl => {
+      const k = lbl.getAttribute('data-i18n');
+      if (k) lbl.textContent = tr(k);
     });
+    const rhTitle = document.getElementById('restaurantHubTitle');
+    const rhNavLbl = document.getElementById('restaurantHubNavLabel');
+    if (rhTitle) rhTitle.textContent = tr('restaurantHubSheetTitle');
+    if (rhNavLbl) rhNavLbl.textContent = tr('restaurantHubNavLabel');
+    const hubNavBtnAria = document.getElementById('restaurantHubNavBtn');
+    if (hubNavBtnAria) hubNavBtnAria.setAttribute('aria-label', tr('restaurantHubNavAria'));
 
     // Info bilingual row labels
     const setRowLabel = (rowId, text) => {
@@ -1423,6 +1439,7 @@
     authScreen.classList.add('hidden');
     editorScreen.classList.remove('hidden');
     window.scrollTo(0, 0);
+    switchTab('info');
 
     const r = menuData.restaurant;
     refreshWorkspaceTabLabels();
@@ -1446,12 +1463,15 @@
       });
     }
 
-    // Show Layout & Reservations tab only for super admins
-    const layoutTab = document.getElementById('layoutTab');
-    if (layoutTab) layoutTab.classList.toggle('hidden', !sessionSuperAdmin);
+    const rhL = document.getElementById('rhHubLayoutRow');
+    const rhR = document.getElementById('rhHubReservationsRow');
+    if (rhL) rhL.classList.toggle('hidden', !sessionSuperAdmin);
+    if (rhR) rhR.classList.toggle('hidden', !sessionSuperAdmin);
 
-    if (sessionSuperAdmin) {
-      _initLayoutPanel();
+    const hubBtn = document.getElementById('restaurantHubNavBtn');
+    if (hubBtn) {
+      hubBtn.classList.remove('hidden');
+      hubBtn.setAttribute('aria-expanded', 'false');
     }
   }
 
@@ -1474,9 +1494,15 @@
     currentRestaurant = null;
     setDirty(false);
     showPostAuthUi();
-    document.querySelectorAll('.editor-nav__item').forEach(t => {
-      t.classList.toggle('active', t.dataset.tab === 'info');
+    document.querySelectorAll('.rh-hub-item').forEach(t => {
+      t.classList.toggle('is-active', t.dataset.tab === 'info');
     });
+    closeRestaurantHub();
+    const hubBtnOut = document.getElementById('restaurantHubNavBtn');
+    if (hubBtnOut) {
+      hubBtnOut.classList.add('hidden');
+      hubBtnOut.setAttribute('aria-expanded', 'false');
+    }
     document.querySelectorAll('.editor-panel').forEach(p => {
       const on = p.id === 'panel-info';
       p.classList.toggle('active', on);
@@ -1486,7 +1512,9 @@
 
   /* ── TABS ────────────────────────────────────────────────── */
   function switchTab(tabId) {
-    document.querySelectorAll('.editor-nav__item').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+    document.querySelectorAll('.rh-hub-item').forEach(t =>
+      t.classList.toggle('is-active', t.dataset.tab === tabId)
+    );
     document.querySelectorAll('.editor-panel').forEach(p => {
       const active = p.id === 'panel-' + tabId;
       p.classList.toggle('active', active);
@@ -1495,7 +1523,42 @@
     adminTrack('admin_tab_view', { tab: String(tabId).slice(0, 40) });
     if (tabId === 'qr' && window.AdminQrFlyers) window.AdminQrFlyers.refresh();
     if (tabId === 'layout' && sessionSuperAdmin) _initLayoutPanel();
+    if (tabId === 'reservations' && sessionSuperAdmin) {
+      _initLayoutPanel();
+      _loadReservations();
+    }
     if (tabId === 'notifications') renderNotificationsTab();
+  }
+
+  const restaurantHubBackdrop = document.getElementById('restaurantHubBackdrop');
+  const restaurantHubSheet    = document.getElementById('restaurantHubSheet');
+  const restaurantHubNavBtn   = document.getElementById('restaurantHubNavBtn');
+
+  function openRestaurantHub() {
+    if (!restaurantHubSheet || !restaurantHubBackdrop) return;
+    restaurantHubSheet.classList.remove('hidden');
+    restaurantHubBackdrop.classList.remove('hidden');
+    if (restaurantHubNavBtn) restaurantHubNavBtn.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeRestaurantHub() {
+    if (!restaurantHubSheet || !restaurantHubBackdrop) return;
+    restaurantHubSheet.classList.add('hidden');
+    restaurantHubBackdrop.classList.add('hidden');
+    if (restaurantHubNavBtn) restaurantHubNavBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  function syncRestaurantHubLogo() {
+    const img = document.getElementById('restaurantHubNavLogo');
+    if (!img) return;
+    const raw = document.getElementById('infoLogo')?.value?.trim() || '';
+    const fallback = '../resources/logo.webp';
+    const src = raw ? resolveUrl(raw) : null;
+    img.src = src || fallback;
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = fallback;
+    };
   }
 
   /* ── LAYOUT & RESERVATIONS (super-admin) ─────────────────── */
@@ -1508,30 +1571,18 @@
     const rid  = currentRestaurant?.id || '';
     const base = getMenuApiBase();
 
-    // Public reserve link
-    const reserveLink = document.getElementById('reservePublicLink');
-    if (reserveLink) {
-      try {
-        reserveLink.href = new URL(`../reserve/?r=${encodeURIComponent(rid)}`, window.location.href).href;
-      } catch (_) {}
-    }
+    const setReserve = (id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        try {
+          el.href = new URL(`../reserve/?r=${encodeURIComponent(rid)}`, window.location.href).href;
+        } catch (_) {}
+      }
+    };
+    setReserve('reservePublicLinkLayout');
+    setReserve('reservePublicLinkRes');
 
-    // Sub-tab switching
-    const subTabBar = document.getElementById('lfSubTabBar');
     const editorHost = document.getElementById('lfEditorHost');
-    const resHost    = document.getElementById('lfReservationsHost');
-    if (subTabBar) {
-      subTabBar.querySelectorAll('[data-subtab]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          subTabBar.querySelectorAll('[data-subtab]').forEach(b => b.classList.remove('is-active'));
-          btn.classList.add('is-active');
-          const st = btn.dataset.subtab;
-          if (editorHost) editorHost.style.display = st === 'editor' ? '' : 'none';
-          if (resHost)    resHost.style.display    = st === 'reservations' ? '' : 'none';
-          if (st === 'reservations') _loadReservations();
-        });
-      });
-    }
 
     // Init layout editor
     if (window.LayoutEditor && rid && base) {
@@ -1716,6 +1767,13 @@
     bindUrlField('infoLogo',    'infoLogoPreview',    'infoLogoUpload',    `restaurant_menu/${rid}`);
     bindUrlField('infoImage',   'infoImagePreview',   'infoImageUpload',   `restaurant_menu/${rid}`);
     bindUrlField('infoBgImage', 'infoBgImagePreview', 'infoBgImageUpload', `restaurant_menu/${rid}`);
+
+    const logoIn = document.getElementById('infoLogo');
+    if (logoIn && !logoIn.dataset.hubSync) {
+      logoIn.dataset.hubSync = '1';
+      logoIn.addEventListener('input', () => syncRestaurantHubLogo());
+    }
+    syncRestaurantHubLogo();
   }
 
   /* ── POPULATE CONFIG ─────────────────────────────────────── */
@@ -3133,11 +3191,25 @@
     if (isDirty) { e.preventDefault(); e.returnValue = ''; }
   });
 
-  /* ── Nav bar (single delegation — avoids duplicate listeners on re-open) ── */
-  document.getElementById('editorNav').addEventListener('click', e => {
-    const item = e.target.closest('.editor-nav__item');
-    if (!item || !item.dataset.tab) return;
-    switchTab(item.dataset.tab);
+  /* ── Restaurant hub (logo in main staff nav → sheet with editor sections) ── */
+  restaurantHubNavBtn?.addEventListener('click', () => {
+    if (editorScreen.classList.contains('hidden')) return;
+    openRestaurantHub();
+  });
+  restaurantHubBackdrop?.addEventListener('click', closeRestaurantHub);
+  document.getElementById('restaurantHubClose')?.addEventListener('click', closeRestaurantHub);
+  document.getElementById('restaurantHubList')?.addEventListener('click', e => {
+    const row = e.target.closest('.rh-hub-item');
+    if (!row || row.classList.contains('hidden')) return;
+    const tab = row.dataset.tab;
+    if (!tab) return;
+    if ((tab === 'layout' || tab === 'reservations') && !sessionSuperAdmin) return;
+    switchTab(tab);
+    closeRestaurantHub();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || !restaurantHubSheet || restaurantHubSheet.classList.contains('hidden')) return;
+    closeRestaurantHub();
   });
 
   /* ── Debounced “any field changed” while editor is open ── */

@@ -482,107 +482,60 @@ pre, code, kbd, samp {
 .editor-topbar__save:hover { background: #d4a868; transform: translateY(-1px); }
 .editor-topbar__save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-/* ── EDITOR NAV  (bottom bar on mobile / sidebar on desktop) ── */
-.editor-nav {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  display: flex;
-  background: rgba(8,8,16,0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
-  z-index: 150;
-  padding-bottom: env(safe-area-inset-bottom, 0);
-}
-.editor-nav__item {
-  flex: 1;
+/* ── RESTAURANT HUB SHEET (editor sections from main nav logo) ── */
+/* Uses .ws-picker-backdrop / .ws-picker-sheet for positioning & z-index */
+
+.rh-hub-list {
+  padding: 0 12px 16px;
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.rh-hub-item {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 8px 4px;
-  min-height: 56px;
-  color: rgba(240,236,228,0.38);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  transition: color 0.18s ease;
-  position: relative;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(196, 149, 90, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(240, 236, 228, 0.92);
+  font: 500 15px var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   -webkit-tap-highlight-color: transparent;
 }
-.editor-nav__item:hover { color: rgba(240,236,228,0.65); }
-.editor-nav__item.active { color: var(--accent); }
-.editor-nav__item.active::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 20%; right: 20%;
-  height: 2px;
-  background: var(--accent);
-  border-radius: 0 0 3px 3px;
+.rh-hub-item:hover {
+  background: rgba(196, 149, 90, 0.12);
+  border-color: rgba(196, 149, 90, 0.4);
 }
-.editor-nav__item svg {
-  transition: transform 0.18s ease;
+.rh-hub-item.is-active {
+  border-color: rgba(196, 149, 90, 0.55);
+  background: rgba(196, 149, 90, 0.14);
+  color: var(--accent);
+}
+.rh-hub-item svg {
   flex-shrink: 0;
+  opacity: 0.85;
 }
-.editor-nav__item.active svg { transform: translateY(-1px); }
-.editor-nav__label { line-height: 1; }
-
-/* Desktop sidebar */
-@media (min-width: 768px) {
-  .editor-nav {
-    top: 56px; bottom: 0;
-    left: 0; right: auto;
-    width: 220px;
-    flex-direction: column;
-    align-items: stretch;
-    border-top: none;
-    border-right: 1px solid var(--border);
-    padding-bottom: 0;
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
-  .editor-nav::-webkit-scrollbar { display: none; }
-  .editor-nav__item {
-    flex: 0;
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 12px;
-    padding: 14px 20px;
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    text-transform: none;
-    border-radius: 0;
-    min-height: 52px;
-    border-left: 3px solid transparent;
-  }
-  .editor-nav__item.active {
-    background: rgba(196,149,90,0.09);
-    border-left-color: var(--accent);
-    color: var(--accent);
-  }
-  .editor-nav__item:hover:not(.active) {
-    background: rgba(255,255,255,0.03);
-    color: var(--text);
-  }
-  .editor-nav__item.active::after { display: none; }
-  .editor-nav__item.active svg { transform: none; }
-  .editor-nav__label { font-size: 13px; }
-}
+.rh-hub-item.is-active svg { opacity: 1; }
+.rh-hub-item__label { flex: 1; }
 
 /* ── EDITOR BODY ──────────────────────────────────────────── */
 .editor-body {
   max-width: 760px;
   margin: 0 auto;
-  padding: 28px 20px calc(72px + env(safe-area-inset-bottom, 8px));
+  padding: 28px 20px calc(24px + env(safe-area-inset-bottom, 8px));
 }
 @media (min-width: 768px) {
   .editor-body {
-    margin-left: 220px;
+    margin-left: auto;
     margin-right: auto;
-    padding-bottom: 80px;
+    padding-bottom: 48px;
   }
 }
 .editor-panel { display: none; }
@@ -622,6 +575,29 @@ pre, code, kbd, samp {
   text-decoration: none;
   transition: color 0.18s ease;
   -webkit-tap-highlight-color: transparent;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+.m-app-nav__link--hub {
+  flex: 1.15;
+}
+.m-app-nav__link--hub .m-app-nav__hub-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(196, 149, 90, 0.45);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+}
+.m-app-nav__link--hub.m-app-nav__link--active,
+.m-app-nav__link--hub[aria-expanded="true"] {
+  color: var(--accent);
+}
+.m-app-nav__link--hub[aria-expanded="true"] .m-app-nav__hub-logo {
+  border-color: var(--accent);
 }
 .m-app-nav__link--active,
 .m-app-nav__link[aria-current="page"] {
@@ -645,22 +621,13 @@ pre, code, kbd, samp {
   .m-app-nav__link { font-size: 10px; letter-spacing: 0.04em; }
 }
 
-/* Stack editor primary nav above the global /m strip */
-body.has-m-app-nav .editor-nav {
-  bottom: calc(var(--m-app-strip-h) + env(safe-area-inset-bottom, 0px));
-}
-@media (min-width: 768px) {
-  body.has-m-app-nav .editor-nav {
-    bottom: calc(var(--m-app-strip-h) + env(safe-area-inset-bottom, 0px));
-  }
-}
-
+/* Editor content clears the single global /m strip */
 body.has-m-app-nav .editor-body {
-  padding-bottom: calc(72px + var(--m-app-strip-h) + env(safe-area-inset-bottom, 8px));
+  padding-bottom: calc(24px + var(--m-app-strip-h) + env(safe-area-inset-bottom, 8px));
 }
 @media (min-width: 768px) {
   body.has-m-app-nav .editor-body {
-    padding-bottom: calc(80px + var(--m-app-strip-h) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(40px + var(--m-app-strip-h) + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -1962,9 +1929,9 @@ body.has-m-app-nav .sp-wrap {
 /* ── RESPONSIVE ─────────────────────────────────────────── */
 @media (max-width: 560px) {
   .auth-main { padding: 36px 16px 60px; }
-  .editor-body { padding: 20px 16px calc(72px + env(safe-area-inset-bottom, 8px)); }
+  .editor-body { padding: 20px 16px calc(24px + env(safe-area-inset-bottom, 8px)); }
   body.has-m-app-nav .editor-body {
-    padding: 20px 16px calc(72px + var(--m-app-strip-h) + env(safe-area-inset-bottom, 8px));
+    padding: 20px 16px calc(24px + var(--m-app-strip-h) + env(safe-area-inset-bottom, 8px));
   }
   body.has-m-app-nav .auth-main {
     padding: 36px 16px calc(60px + var(--m-app-strip-h) + env(safe-area-inset-bottom, 0px));
