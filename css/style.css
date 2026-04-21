@@ -1713,6 +1713,8 @@ body.legal-page {
    ============================================================ */
 .restaurant-header {
   position: relative;
+  /* Above sticky .filters-bar (z-index 90) so the hamburger dropdown and controls receive taps */
+  z-index: 100;
   background: var(--color-navy);
   color: #fff;
   overflow: hidden;
@@ -1779,8 +1781,8 @@ body.legal-page {
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
-  min-width: 200px;
-  padding: 8px;
+  min-width: min(100vw - 32px, 260px);
+  padding: 6px;
   border-radius: 12px;
   background: rgba(12, 12, 18, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1826,20 +1828,27 @@ body.legal-page {
   width: 100%;
   justify-content: center;
   box-sizing: border-box;
+  min-height: 48px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.12);
 }
 .header-reserve-link {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 11px;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid rgba(196, 149, 90, 0.38);
   background: rgba(255, 255, 255, 0.07);
   color: rgba(255, 255, 255, 0.92);
-  font: 500 12px var(--font-sans);
+  font: 500 14px var(--font-sans);
   text-decoration: none;
   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
 }
 .header-reserve-link:hover {
   background: rgba(196, 149, 90, 0.18);
@@ -1856,7 +1865,8 @@ body.legal-page {
 }
 @media (max-width: 380px) {
   .header-reserve-link {
-    padding: 7px 9px;
+    min-height: 48px;
+    padding: 10px 12px;
   }
   .header-reserve-link__text {
     display: none;

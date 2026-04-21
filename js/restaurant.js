@@ -280,6 +280,34 @@
     if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
   }
 
+  /** 3+ languages: backdrop + bottom sheet live on `body` so they never affect header flex/layout or stacking. */
+  function removeLangPickerPortal() {
+    document.getElementById('langPickerBackdrop')?.remove();
+    document.getElementById('langPickerSheet')?.remove();
+  }
+
+  function mountLangPickerPortal() {
+    if (publicMenuLangs.length <= 2) return;
+    removeLangPickerPortal();
+    const backdrop = document.createElement('div');
+    backdrop.id = 'langPickerBackdrop';
+    backdrop.className = 'lang-picker-backdrop hidden';
+    backdrop.setAttribute('aria-hidden', 'true');
+    const sheet = document.createElement('div');
+    sheet.id = 'langPickerSheet';
+    sheet.className = 'lang-picker-sheet hidden';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-modal', 'true');
+    sheet.setAttribute('aria-label', 'Language');
+    const scroll = document.createElement('div');
+    scroll.id = 'langPickerList';
+    scroll.className = 'lang-picker-sheet__scroll';
+    scroll.setAttribute('role', 'listbox');
+    sheet.appendChild(scroll);
+    document.body.appendChild(backdrop);
+    document.body.appendChild(sheet);
+  }
+
   /* ============================================================
      TIMED SECTIONS
      ============================================================ */
@@ -1808,11 +1836,7 @@
       langBlockHtml = `
             <button class="lang-toggle" id="langToggle" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="langPickerSheet" data-aria-en="Choose menu language" data-aria-bg="Избери език на менюто">
               <span class="lang-toggle__label">EN</span>
-            </button>
-            <div id="langPickerBackdrop" class="lang-picker-backdrop hidden" aria-hidden="true"></div>
-            <div id="langPickerSheet" class="lang-picker-sheet hidden" role="dialog" aria-modal="true" aria-label="Language">
-              <div class="lang-picker-sheet__scroll" id="langPickerList" role="listbox"></div>
-            </div>`;
+            </button>`;
     }
 
     const headerMenuBlock = reservationsOn
@@ -1834,7 +1858,7 @@
                     <path d="M3 10h18"/>
                     <path d="M8 15h.01M12 15h.01"/>
                   </svg>
-                  <span data-en="Reserve" data-bg="Резервация">Reserve</span>
+                  <span class="header-reserve-link__text" data-en="Reserve" data-bg="Резервация">Reserve</span>
                 </a>
               </div>
             </div>`
@@ -1944,6 +1968,8 @@
       </footer>
     `;
 
+    mountLangPickerPortal();
+
     ensureModal();
 
     injectRestaurantFooterContact(document.getElementById('rfContactMount'));
@@ -1988,42 +2014,42 @@
     } else if (langToggleEl && publicMenuLangs.length > 2) {
       const list = document.getElementById('langPickerList');
       const backdrop = document.getElementById('langPickerBackdrop');
-      publicMenuLangs.forEach(code => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'lang-toggle lang-picker-sheet__opt';
-        b.setAttribute('role', 'option');
-        b.dataset.lang = code;
-        b.textContent = langPickerFullName(code, currentLang || 'en');
-        list.appendChild(b);
-      });
-      langToggleEl.addEventListener('click', e => {
-        e.stopPropagation();
-        closeHeaderMenuPanel();
-        const sheet = document.getElementById('langPickerSheet');
-        const opening = sheet && sheet.classList.contains('hidden');
-        if (opening) {
-          syncLangPickerOptionLabels(currentLang);
-          sheet.classList.remove('hidden');
-          backdrop.classList.remove('hidden');
-          langToggleEl.setAttribute('aria-expanded', 'true');
-        } else {
-          closeLangPickerSheet();
-        }
-      });
-      if (backdrop) {
+      if (list && backdrop) {
+        publicMenuLangs.forEach(code => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'lang-toggle lang-picker-sheet__opt';
+          b.setAttribute('role', 'option');
+          b.dataset.lang = code;
+          b.textContent = langPickerFullName(code, currentLang || 'en');
+          list.appendChild(b);
+        });
+        langToggleEl.addEventListener('click', e => {
+          e.stopPropagation();
+          closeHeaderMenuPanel();
+          const sheet = document.getElementById('langPickerSheet');
+          const opening = sheet && sheet.classList.contains('hidden');
+          if (opening) {
+            syncLangPickerOptionLabels(currentLang);
+            sheet.classList.remove('hidden');
+            backdrop.classList.remove('hidden');
+            langToggleEl.setAttribute('aria-expanded', 'true');
+          } else {
+            closeLangPickerSheet();
+          }
+        });
         backdrop.addEventListener('click', e => {
           e.stopPropagation();
           closeLangPickerSheet();
         });
+        list.addEventListener('click', e => {
+          const opt = e.target.closest('.lang-picker-sheet__opt');
+          if (!opt || !opt.dataset.lang) return;
+          e.stopPropagation();
+          applyLang(opt.dataset.lang);
+          closeLangPickerSheet();
+        });
       }
-      list.addEventListener('click', e => {
-        const opt = e.target.closest('.lang-picker-sheet__opt');
-        if (!opt || !opt.dataset.lang) return;
-        e.stopPropagation();
-        applyLang(opt.dataset.lang);
-        closeLangPickerSheet();
-      });
     }
 
     document.addEventListener('click', () => {
