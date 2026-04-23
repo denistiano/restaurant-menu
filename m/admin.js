@@ -1647,6 +1647,9 @@
 
   function openRestaurantHub() {
     if (!restaurantHubLayer) return;
+    if (workspacePickerLayer && adminSheetLayerIsOpen(workspacePickerLayer)) {
+      closeWorkspacePicker();
+    }
     openAdminSheetLayer(restaurantHubLayer);
     if (restaurantHubNavBtn) restaurantHubNavBtn.setAttribute('aria-expanded', 'true');
   }
