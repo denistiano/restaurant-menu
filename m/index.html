@@ -89,7 +89,7 @@
 
     <!-- Top bar -->
     <header class="editor-topbar">
-      <button type="button" class="editor-topbar__back" id="backBtn" title="Back to workspace list" aria-label="Back to workspace list">
+      <button type="button" class="editor-topbar__back" id="backBtn" title="Leave editor" aria-label="Leave editor — workspace switcher is in the bar above">
         <img src="../resources/logo.webp" alt="" class="editor-topbar__back-logo" width="34" height="34" decoding="async" />
       </button>
       <div class="editor-topbar__center">
@@ -618,9 +618,9 @@
   </div>
 
   <nav class="m-app-nav" aria-label="Staff tools">
-    <a class="m-app-nav__link m-app-nav__link--active" href="index.html" aria-current="page">
-      <svg class="m-app-nav__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="15" width="7" height="6" rx="1"/></svg>
-      <span class="m-app-nav__label">Menu</span>
+    <a class="m-app-nav__link m-app-nav__link--hub m-app-nav__link--active" href="index.html" id="restaurantHubNavAnchor" aria-current="page" title="Venue / menu editor" aria-label="Venue — menu editor home">
+      <img src="../resources/logo.webp" alt="" class="m-app-nav__hub-logo" id="restaurantHubNavLogoAnchor" width="28" height="28" decoding="async" />
+      <span class="m-app-nav__label" id="restaurantHubNavAnchorLabel">Venue</span>
     </a>
     <button type="button" class="m-app-nav__link m-app-nav__link--hub hidden" id="restaurantHubNavBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="restaurantHubSheet" aria-label="Open venue sections">
       <img src="../resources/logo.webp" alt="" class="m-app-nav__hub-logo" id="restaurantHubNavLogo" width="28" height="28" decoding="async" />

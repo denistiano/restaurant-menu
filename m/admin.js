@@ -53,9 +53,10 @@
       authSub:
         'Use the staff username and password you were given. Your venues appear after you sign in.',
       signIn: 'Sign in',
-      chooseWorkspaceHint: 'Open a workspace below — names match your published menu titles.',
+      chooseWorkspaceHint:
+        'Your first linked venue opens automatically (same order as returned for your account). Switch venue from the control at the top of the editor, or open the list below when you return here.',
       superOnlyHint:
-        'No venues are linked to this account yet. Use Users in the bar below if you need to manage staff accounts.',
+        'No venues are linked to this account yet. Open Users in the staff bar if you need to manage staff accounts.',
       signOut: 'Sign out',
       openEditor: 'Open editor',
       incorrectPassword: 'Incorrect admin password',
@@ -155,9 +156,9 @@
         'Използвай потребителското име и паролата, които си получил. Обектите се показват след вход.',
       signIn: 'Вход',
       chooseWorkspaceHint:
-        'Избери обект по-долу — имената са от публикуваното меню (EN/BG според езика на панела).',
+        'Първият свързан обект се отваря автоматично (редът е като при акаунта ти). Смени обект от контрола горе в редактора или списъка по-долу, когато си тук.',
       superOnlyHint:
-        'Все още няма свързани обекти. За управление на потребители използвай „Потребители“ в лентата по-долу.',
+        'Все още няма свързани обекти. За управление на потребители отвори „Потребители“ в долната лента.',
       signOut: 'Изход',
       openEditor: 'Отвори редактора',
       incorrectPassword: 'Невалидна админ парола',
@@ -738,10 +739,19 @@
     });
     const rhTitle = document.getElementById('restaurantHubTitle');
     const rhNavLbl = document.getElementById('restaurantHubNavLabel');
+    const rhNavAnchorLbl = document.getElementById('restaurantHubNavAnchorLabel');
     if (rhTitle) rhTitle.textContent = tr('restaurantHubSheetTitle');
     if (rhNavLbl) rhNavLbl.textContent = tr('restaurantHubNavLabel');
+    if (rhNavAnchorLbl) rhNavAnchorLbl.textContent = tr('restaurantHubNavLabel');
     const hubNavBtnAria = document.getElementById('restaurantHubNavBtn');
     if (hubNavBtnAria) hubNavBtnAria.setAttribute('aria-label', tr('restaurantHubNavAria'));
+    const hubNavAnchor = document.getElementById('restaurantHubNavAnchor');
+    if (hubNavAnchor) {
+      hubNavAnchor.setAttribute(
+        'aria-label',
+        adminLang === 'bg' ? `${tr('restaurantHubNavAria')} — редактор на менюто` : `${tr('restaurantHubNavAria')} — menu editor`
+      );
+    }
 
     // Info bilingual row labels
     const setRowLabel = (rowId, text) => {
@@ -973,6 +983,7 @@
     menuData = null;
     currentRestaurant = null;
     showCredentialsUi();
+    syncVenueNavSlot();
     if (authErrorEl) authErrorEl.style.display = 'none';
   }
 
@@ -1252,7 +1263,8 @@
       return;
     }
 
-    if (scopedRestaurantIds.length === 1) {
+    if (scopedRestaurantIds.length >= 1) {
+      /* First ID in `/api/auth/me` → `restaurants` array order (server preserves assignment order). */
       await openEditorForRestaurantId(scopedRestaurantIds[0]);
       if (triggerBtn) triggerBtn.disabled = false;
       return;
@@ -1456,11 +1468,7 @@
     if (rhL) rhL.classList.toggle('hidden', !sessionSuperAdmin);
     if (rhR) rhR.classList.toggle('hidden', !sessionSuperAdmin);
 
-    const hubBtn = document.getElementById('restaurantHubNavBtn');
-    if (hubBtn) {
-      hubBtn.classList.remove('hidden');
-      hubBtn.setAttribute('aria-expanded', 'false');
-    }
+    syncVenueNavSlot();
   }
 
   /* ── BACK BUTTON ─────────────────────────────────────────── */
@@ -1486,11 +1494,7 @@
       t.classList.toggle('is-active', t.dataset.tab === 'info');
     });
     closeRestaurantHub();
-    const hubBtnOut = document.getElementById('restaurantHubNavBtn');
-    if (hubBtnOut) {
-      hubBtnOut.classList.add('hidden');
-      hubBtnOut.setAttribute('aria-expanded', 'false');
-    }
+    syncVenueNavSlot();
     document.querySelectorAll('.editor-panel').forEach(p => {
       const on = p.id === 'panel-info';
       p.classList.toggle('active', on);
@@ -1537,16 +1541,36 @@
   }
 
   function syncRestaurantHubLogo() {
-    const img = document.getElementById('restaurantHubNavLogo');
-    if (!img) return;
     const raw = document.getElementById('infoLogo')?.value?.trim() || '';
     const fallback = '../resources/logo.webp';
     const src = raw ? resolveUrl(raw) : null;
-    img.src = src || fallback;
-    img.onerror = () => {
-      img.onerror = null;
-      img.src = fallback;
+    const apply = img => {
+      if (!img) return;
+      img.src = src || fallback;
+      img.onerror = () => {
+        img.onerror = null;
+        img.src = fallback;
+      };
     };
+    apply(document.getElementById('restaurantHubNavLogo'));
+    apply(document.getElementById('restaurantHubNavLogoAnchor'));
+  }
+
+  /** On index.html: hub anchor when signed out / not in editor; hub button while editing (opens venue sheet). */
+  function syncVenueNavSlot() {
+    const anchor = document.getElementById('restaurantHubNavAnchor');
+    const hubBtn = document.getElementById('restaurantHubNavBtn');
+    if (!hubBtn) return;
+    const inEditor = editorScreen && !editorScreen.classList.contains('hidden');
+    if (anchor) {
+      anchor.classList.toggle('hidden', inEditor);
+      anchor.classList.toggle('m-app-nav__link--active', !inEditor);
+      if (inEditor) anchor.removeAttribute('aria-current');
+      else anchor.setAttribute('aria-current', 'page');
+    }
+    hubBtn.classList.toggle('hidden', !inEditor);
+    hubBtn.classList.toggle('m-app-nav__link--active', !!inEditor);
+    if (!inEditor) hubBtn.setAttribute('aria-expanded', 'false');
   }
 
   /* ── LAYOUT & RESERVATIONS (super-admin) ─────────────────── */
@@ -3259,6 +3283,8 @@
     const restored = await restoreSessionIfPossible();
     if (!restored) {
       showCredentialsUi();
+    } else if (scopedRestaurantIds.length > 0) {
+      await openEditorForRestaurantId(scopedRestaurantIds[0]);
     }
   })();
 
