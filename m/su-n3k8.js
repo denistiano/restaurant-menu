@@ -254,8 +254,6 @@
       }
       el('suLogin').classList.add('su-hidden');
       el('suMain').classList.remove('su-hidden');
-      var logsA = el('suLogsLink');
-      if (logsA) logsA.href = 'logs.html';
       return loadVenueCatalog()
         .then(function () {
           return refreshList();
@@ -273,6 +271,36 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  var SVG_CHECK =
+    '<svg class="su-bool-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+  var SVG_X =
+    '<svg class="su-bool-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+
+  function boolCell(ok, yesLabel, noLabel) {
+    return (
+      '<span class="su-cell-icon ' +
+      (ok ? 'su-cell-icon--ok' : 'su-cell-icon--no') +
+      '" role="img" aria-label="' +
+      escapeHtml(ok ? yesLabel : noLabel) +
+      '">' +
+      (ok ? SVG_CHECK : SVG_X) +
+      '</span>'
+    );
+  }
+
+  function iconButton(className, title, ariaLabel, svgInner) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = className;
+    b.title = title;
+    b.setAttribute('aria-label', ariaLabel);
+    b.innerHTML =
+      '<svg class="su-icon-btn__svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      svgInner +
+      '</svg>';
+    return b;
   }
 
   function fillVenuesTableCell(td, assignments) {
@@ -313,30 +341,41 @@
         /* forEach + .bind: a `for` loop with `var u` made every row's Setup link / Delete target the last user. */
         users.forEach(function (u) {
           var tr = document.createElement('tr');
+          var passwordSet = u.passwordSet !== false;
           tr.innerHTML =
             '<td>' +
             u.id +
             '</td><td>' +
             escapeHtml(u.username) +
-            '</td><td>' +
-            (u.enabled ? 'yes' : 'no') +
-            '</td><td>' +
-            (u.superAdmin ? 'yes' : 'no') +
-            '</td><td></td><td class="su-actions"></td>';
-          fillVenuesTableCell(tr.cells[4], u.assignments);
+            '</td><td class="su-td-icon">' +
+            boolCell(!!u.enabled, 'Account active', 'Account disabled') +
+            '</td><td class="su-td-icon">' +
+            boolCell(!!u.superAdmin, 'Full administrator', 'Not full administrator') +
+            '</td><td class="su-td-icon">' +
+            boolCell(passwordSet, 'Password set', 'Password not set yet') +
+            '</td><td></td><td class="su-actions su-actions--icons"></td>';
+          fillVenuesTableCell(tr.cells[5], u.assignments);
           var cell = tr.querySelector('.su-actions');
-          var editBtn = document.createElement('button');
-          editBtn.className = 'su-btn';
-          editBtn.textContent = 'Edit';
+          var editBtn = iconButton(
+            'su-icon-btn',
+            'Edit',
+            'Edit user',
+            '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
+          );
           editBtn.addEventListener('click', openEditModal.bind(null, u));
-          var linkBtn = document.createElement('button');
-          linkBtn.className = 'su-btn';
-          linkBtn.textContent = 'Setup link';
-          linkBtn.title = 'Generate URL + QR for password set/reset';
+          var linkBtn = iconButton(
+            'su-icon-btn',
+            'Password setup link',
+            'Create password setup link',
+            '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'
+          );
           linkBtn.addEventListener('click', generateSetupLink.bind(null, u.id));
-          var delBtn = document.createElement('button');
-          delBtn.className = 'su-btn su-btn--danger';
-          delBtn.textContent = 'Delete';
+          var delBtn = iconButton(
+            'su-icon-btn su-icon-btn--danger',
+            'Delete',
+            'Delete user',
+            '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>'
+          );
           delBtn.addEventListener('click', deleteUser.bind(null, u.id, u.username));
           cell.appendChild(editBtn);
           cell.appendChild(linkBtn);
@@ -349,7 +388,7 @@
 
   function openEditModal(u) {
     editTargetUser = u;
-    el('suEditUsername').textContent = 'Username: ' + u.username;
+    el('suEditUsername').textContent = 'Sign-in name: ' + u.username;
     el('suEditEn').checked = !!u.enabled;
     el('suEditSuper').checked = !!u.superAdmin;
     editAssignmentList = (u.assignments || []).map(function (a) {
@@ -493,7 +532,7 @@
     }
     var base = getMenuApiBase();
     if (!base) {
-      err.textContent = 'Set menu-api-base meta.';
+      err.textContent = 'This page is missing the menu service address. Ask your administrator.';
       err.classList.remove('su-hidden');
       return;
     }

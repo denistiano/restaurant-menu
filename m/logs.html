@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Search · Telemetry</title>
+  <title>Activity · Search</title>
   <link rel="icon" type="image/x-icon" href="../favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -14,23 +14,23 @@
 <body class="spl-body has-m-app-nav">
   <div id="logsGate" class="spl-gate">
     <div class="spl-gate__card">
-      <p class="spl-gate__brand">telemetry<span class="spl-gate__gt">&gt;</span>search</p>
-      <h1 class="spl-gate__title">Search &amp; reporting</h1>
+      <p class="spl-gate__brand">Activity log</p>
+      <h1 class="spl-gate__title">Search and reporting</h1>
       <p id="logsGateText" class="spl-gate__msg">Checking access…</p>
-      <a class="spl-btn spl-btn--ghost" href="index.html">← Admin sign-in</a>
+      <a class="spl-btn spl-btn--ghost" href="index.html">← Back to menu admin</a>
     </div>
   </div>
 
   <div id="logsMain" class="spl-shell hidden">
     <header class="spl-topbar">
       <div class="spl-topbar__left">
-        <span class="spl-logo">telemetry<span class="spl-logo__gt">&gt;</span><span class="spl-logo__sub">enterprise</span></span>
-        <a href="index.html" class="spl-topbar__link">← Admin</a>
+        <span class="spl-logo">Activity log</span>
+        <a href="index.html" class="spl-topbar__link">← Menu admin</a>
       </div>
       <div class="spl-topbar__right">
         <button type="button" class="spl-topbar__iconbtn" id="logsExportJson" title="Export JSON">⭳ JSON</button>
         <button type="button" class="spl-topbar__iconbtn" id="logsExportCsv" title="Export CSV">⭳ CSV</button>
-        <button type="button" class="spl-topbar__iconbtn" id="logsMetricsBtn" title="Metrics API">Metrics</button>
+        <button type="button" class="spl-topbar__iconbtn" id="logsMetricsBtn" title="Usage summary">Summary</button>
       </div>
     </header>
 
@@ -42,7 +42,7 @@
 
     <div id="logsMetricsPanel" class="spl-drawer hidden">
       <div class="spl-drawer__head">
-        <span>GET /api/v1/metrics/by-app</span>
+        <span>Usage summary</span>
         <button type="button" class="spl-drawer__close" id="logsMetricsClose" aria-label="Close">×</button>
       </div>
       <pre id="logsMetricsOut" class="spl-drawer__pre"></pre>
@@ -59,7 +59,7 @@
             class="spl-search-input"
             rows="2"
             spellcheck="false"
-            placeholder='Keywords and key:value filters — e.g. app:myapp type:telemetry error (space-separated keywords search inside payload JSON)'
+            placeholder='Search words or filters such as app:your-app error (space-separated; matches event details)'
           ></textarea>
         </div>
         <div class="spl-search-controls">
@@ -81,11 +81,11 @@
       <div id="splCustomTime" class="spl-custom-time hidden">
         <div class="spl-custom-time__grid">
           <div class="spl-field spl-field--inline">
-            <label for="filterFrom">Earliest (ISO-8601)</label>
+            <label for="filterFrom">From (date and time)</label>
             <input id="filterFrom" name="from" type="text" placeholder="2026-01-01T00:00:00Z" />
           </div>
           <div class="spl-field spl-field--inline">
-            <label for="filterTo">Latest (ISO-8601)</label>
+            <label for="filterTo">To (date and time)</label>
             <input id="filterTo" name="to" type="text" />
           </div>
         </div>
@@ -104,13 +104,13 @@
           <div class="spl-field"><label for="filterUser">User ID</label><input id="filterUser" name="userId" type="text" /></div>
           <div class="spl-field"><label for="filterEventType">Event type</label><input id="filterEventType" name="eventType" type="text" /></div>
           <div class="spl-field"><label for="filterEventName">Event name</label><input id="filterEventName" name="eventName" type="text" /></div>
-          <div class="spl-field"><label for="filterPayload">Payload contains (also from search bar)</label><input id="filterPayload" name="payloadContains" type="text" /></div>
+          <div class="spl-field"><label for="filterPayload">Details contain (also uses words from search)</label><input id="filterPayload" name="payloadContains" type="text" /></div>
           <div class="spl-field"><label for="filterSize">Events per page</label><input id="filterSize" name="size" type="number" min="1" max="500" value="50" /></div>
         </div>
         <div id="logsJsonRows" class="spl-json-rows">
-          <p class="spl-advanced__hint">JSON field filters (AND)</p>
+          <p class="spl-advanced__hint">Field filters (all must match)</p>
           <div class="spl-json-row logs-json-row">
-            <input type="text" class="logs-json-path spl-mono" placeholder="$.path" />
+            <input type="text" class="logs-json-path spl-mono" placeholder="Field path" />
             <input type="text" class="logs-json-val spl-mono" placeholder="value" />
           </div>
         </div>
@@ -204,7 +204,7 @@
     </a>
     <a class="m-app-nav__link m-app-nav__link--active" href="logs.html" aria-current="page">
       <svg class="m-app-nav__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-6"/></svg>
-      <span class="m-app-nav__label">Telemetry</span>
+      <span class="m-app-nav__label">Activity</span>
     </a>
   </nav>
   <script src="logs.js" defer></script>
