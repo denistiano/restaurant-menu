@@ -236,20 +236,66 @@
 
   var editTargetUser = null;
 
+  function hideSuGate() {
+    var gate = el('suGate');
+    if (gate) gate.classList.add('su-hidden');
+  }
+
+  (function initSessionGate() {
+    var gate = el('suGate');
+    var login = el('suLogin');
+    var token = '';
+    try {
+      token = sessionStorage.getItem(TOKEN_KEY) || '';
+    } catch (e) {}
+    if (!token) {
+      hideSuGate();
+      return;
+    }
+    /* new-user.html reuses this script but has no #suGate — never hide login until verify runs */
+    if (!gate) return;
+    gate.classList.remove('su-hidden');
+    if (login) login.classList.add('su-hidden');
+  })();
+
   function verifySuper() {
-    return api('/api/auth/me').then(function (res) {
-      if (!res.ok) return false;
-      return res.json().then(function (me) {
-        return !!me.superAdmin;
+    return api('/api/auth/me')
+      .then(function (res) {
+        if (res.status === 401 || res.status === 403) {
+          return { ok: false, clearSession: true };
+        }
+        if (!res.ok) {
+          return { ok: false, clearSession: false };
+        }
+        return res.json().then(function (me) {
+          return { ok: !!me.superAdmin, clearSession: !me.superAdmin };
+        });
+      })
+      .catch(function () {
+        return { ok: false, clearSession: false };
       });
-    });
   }
 
   function showMainIfSuper() {
-    if (!getToken()) return Promise.resolve(false);
-    return verifySuper().then(function (ok) {
-      if (!ok) {
-        clearToken();
+    if (!getToken()) {
+      hideSuGate();
+      el('suMain').classList.add('su-hidden');
+      el('suLogin').classList.remove('su-hidden');
+      return Promise.resolve(false);
+    }
+    return verifySuper().then(function (r) {
+      hideSuGate();
+      var errEl = el('suLoginErr');
+      if (errEl) errEl.classList.add('su-hidden');
+      if (!r.ok) {
+        if (r.clearSession) clearToken();
+        el('suLogin').classList.remove('su-hidden');
+        el('suMain').classList.add('su-hidden');
+        if (errEl && !r.clearSession) {
+          errEl.textContent =
+            'Could not verify your session (network or server error). Check your connection and try again.';
+          errEl.classList.remove('su-hidden');
+        }
         return false;
       }
       el('suLogin').classList.add('su-hidden');
