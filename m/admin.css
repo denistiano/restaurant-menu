@@ -417,40 +417,9 @@ pre, code, kbd, samp {
   display: block;
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
 }
-.editor-topbar__center {
+.editor-topbar__spacer {
   flex: 1;
   min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.editor-workspace-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  padding: 8px 14px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  font: 600 14px var(--font-serif);
-  transition: background var(--transition), border-color var(--transition);
-  -webkit-tap-highlight-color: transparent;
-}
-.editor-workspace-btn:hover {
-  border-color: rgba(196,149,90,0.35);
-  background: rgba(196,149,90,0.08);
-}
-.editor-workspace-btn__label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: min(46vw, 260px);
-}
-.editor-workspace-btn__chev {
-  flex-shrink: 0;
-  opacity: 0.7;
 }
 .editor-topbar__actions {
   display: flex; align-items: center; gap: 10px; flex-shrink: 0;
@@ -483,7 +452,7 @@ pre, code, kbd, samp {
 .editor-topbar__save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 /* ── RESTAURANT HUB SHEET (editor sections from main nav logo) ── */
-/* Uses .ws-picker-backdrop / .ws-picker-sheet for positioning & z-index */
+/* Positioning: .admin-sheet-layer (shared with workspace + category sheets). */
 
 .rh-hub-list {
   padding: 0 12px 16px;
@@ -2042,42 +2011,117 @@ body.has-m-app-nav .sp-wrap {
   opacity: 0.65;
 }
 
-.ws-picker-backdrop {
+/* ============================================================
+   ADMIN BOTTOM SHEETS (hub, workspace, category)
+   Motion aligned with public menu item sheet (repos/fe/css/style.css).
+   ============================================================ */
+.admin-sheet-layer {
   position: fixed;
   inset: 0;
-  z-index: 10050;
-  background: rgba(0,0,0,0.55);
+  z-index: 10048;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.26s ease;
+}
+.admin-sheet-layer--ws { z-index: 10054; }
+.admin-sheet-layer--cat { z-index: 10060; }
+.admin-sheet-layer--open {
+  pointer-events: auto;
+  opacity: 1;
+}
+.admin-sheet-layer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
-.ws-picker-sheet {
-  position: fixed;
-  z-index: 10051;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-height: min(88vh, 720px);
+.admin-sheet-layer__backdrop--cat {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.admin-sheet-layer__panel.ws-picker-sheet,
+.admin-sheet-layer__panel.cat-settings-sheet {
+  position: relative;
+  z-index: 1;
+  width: 100%;
   display: flex;
   flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px 18px 0 0;
-  box-shadow: 0 -12px 48px rgba(0,0,0,0.45);
+  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.45);
   padding-bottom: env(safe-area-inset-bottom, 12px);
+  overscroll-behavior: contain;
+  transform: translateY(100%);
+  transition: transform 0.45s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.32s ease;
 }
+.admin-sheet-layer__panel.ws-picker-sheet {
+  max-height: min(88vh, 720px);
+}
+.admin-sheet-layer__panel.cat-settings-sheet {
+  max-height: min(92vh, 800px);
+}
+.admin-sheet-layer--open .admin-sheet-layer__panel.ws-picker-sheet,
+.admin-sheet-layer--open .admin-sheet-layer__panel.cat-settings-sheet {
+  transform: translateY(0);
+}
+
 @media (min-width: 640px) {
-  .ws-picker-sheet {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
+  .admin-sheet-layer--hub,
+  .admin-sheet-layer--ws {
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+  }
+  .admin-sheet-layer--hub .admin-sheet-layer__panel.ws-picker-sheet,
+  .admin-sheet-layer--ws .admin-sheet-layer__panel.ws-picker-sheet {
     width: min(440px, 100vw - 32px);
     border-radius: 16px;
-    bottom: auto;
-    top: 50%;
     max-height: min(80vh, 640px);
-    transform: translate(-50%, -50%);
+    transform: translateY(18px) scale(0.97);
+    opacity: 0;
+  }
+  .admin-sheet-layer--hub.admin-sheet-layer--open .admin-sheet-layer__panel.ws-picker-sheet,
+  .admin-sheet-layer--ws.admin-sheet-layer--open .admin-sheet-layer__panel.ws-picker-sheet {
+    transform: translateY(0) scale(1);
+    opacity: 1;
   }
 }
+
+@media (min-width: 560px) {
+  .admin-sheet-layer--cat {
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+  }
+  .admin-sheet-layer--cat .admin-sheet-layer__panel.cat-settings-sheet {
+    width: min(420px, 100vw - 32px);
+    border-radius: 16px;
+    max-height: min(85vh, 720px);
+    transform: translateY(18px) scale(0.97);
+    opacity: 0;
+  }
+  .admin-sheet-layer--cat.admin-sheet-layer--open .admin-sheet-layer__panel.cat-settings-sheet {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-sheet-layer,
+  .admin-sheet-layer__panel.ws-picker-sheet,
+  .admin-sheet-layer__panel.cat-settings-sheet {
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .ws-picker-grab {
   width: 40px;
   height: 4px;
@@ -2139,6 +2183,16 @@ body.has-m-app-nav .sp-wrap {
   padding: 4px 10px 16px;
   min-height: 120px;
 }
+.admin-sheet-layer__panel.ws-picker-sheet .ws-picker-list {
+  min-height: 0;
+}
+.admin-sheet-layer__panel.ws-picker-sheet .rh-hub-list {
+  flex: 1;
+  min-height: 0;
+}
+.admin-sheet-layer__panel.cat-settings-sheet .cat-settings-scroll {
+  min-height: 0;
+}
 .ws-picker-empty {
   text-align: center;
   color: var(--muted);
@@ -2195,40 +2249,7 @@ body.has-m-app-nav .sp-wrap {
   flex-shrink: 0;
 }
 
-/* Category settings sheet */
-.cat-settings-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10052;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(3px);
-}
-.cat-settings-sheet {
-  position: fixed;
-  z-index: 10053;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-height: min(92vh, 800px);
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px 18px 0 0;
-  padding-bottom: env(safe-area-inset-bottom, 12px);
-}
-@media (min-width: 560px) {
-  .cat-settings-sheet {
-    left: 50%;
-    right: auto;
-    width: min(420px, 100vw - 32px);
-    border-radius: 16px;
-    bottom: auto;
-    top: 50%;
-    max-height: min(85vh, 720px);
-    transform: translate(-50%, -50%);
-  }
-}
+/* Category settings sheet — panel chrome lives in .admin-sheet-layer__panel.cat-settings-sheet */
 .cat-settings-head {
   display: flex;
   align-items: center;

@@ -89,15 +89,10 @@
 
     <!-- Top bar -->
     <header class="editor-topbar">
-      <button type="button" class="editor-topbar__back" id="backBtn" title="Leave editor" aria-label="Leave editor — workspace switcher is in the bar above">
+      <button type="button" class="editor-topbar__back" id="backBtn" title="Leave editor" aria-label="Leave editor — hold the Venue button in the staff bar to switch workspace">
         <img src="../resources/logo.webp" alt="" class="editor-topbar__back-logo" width="34" height="34" decoding="async" />
       </button>
-      <div class="editor-topbar__center">
-        <button type="button" class="editor-workspace-btn hidden" id="editorWorkspacePickBtn" aria-haspopup="listbox" aria-expanded="false">
-          <span class="editor-workspace-btn__label" id="editorWorkspacePickLabel">Restaurant</span>
-          <svg class="editor-workspace-btn__chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-      </div>
+      <div class="editor-topbar__spacer" aria-hidden="true"></div>
       <div class="editor-topbar__actions">
         <button class="admin-lang-toggle" id="adminLangToggleEditor" type="button">EN</button>
         <span class="dirty-badge hidden" id="dirtyBadge">Unsaved</span>
@@ -541,11 +536,10 @@
   <!-- ── TOAST ─────────────────────────────────────────────── -->
   <div class="toast hidden" id="toast"></div>
 
-  <!-- Workspace picker (native-style sheet + search) -->
-  <div class="ws-picker-backdrop hidden" id="workspacePickerBackdrop" aria-hidden="true"></div>
-  <!-- Restaurant hub (editor sections) — opened from logo button in main staff nav -->
-  <div class="rh-hub-backdrop ws-picker-backdrop hidden" id="restaurantHubBackdrop" aria-hidden="true"></div>
-  <div class="rh-hub-sheet ws-picker-sheet hidden" id="restaurantHubSheet" role="dialog" aria-modal="true" aria-labelledby="restaurantHubTitle">
+  <!-- Restaurant hub + workspace picker + category settings (admin-sheet-layer: animated bottom sheets) -->
+  <div class="admin-sheet-layer admin-sheet-layer--hub hidden" id="restaurantHubLayer" aria-hidden="true">
+    <div class="admin-sheet-layer__backdrop rh-hub-backdrop" id="restaurantHubBackdrop" aria-hidden="true"></div>
+    <div class="admin-sheet-layer__panel rh-hub-sheet ws-picker-sheet" id="restaurantHubSheet" role="dialog" aria-modal="true" aria-labelledby="restaurantHubTitle">
     <div class="ws-picker-grab" aria-hidden="true"></div>
     <div class="ws-picker-head">
       <h2 class="ws-picker-title" id="restaurantHubTitle">Venue</h2>
@@ -582,8 +576,11 @@
       </button>
     </div>
   </div>
+  </div>
 
-  <div class="ws-picker-sheet hidden" id="workspacePickerSheet" role="dialog" aria-modal="true" aria-labelledby="wsPickerTitle">
+  <div class="admin-sheet-layer admin-sheet-layer--ws hidden" id="workspacePickerLayer" aria-hidden="true">
+    <div class="admin-sheet-layer__backdrop" id="workspacePickerBackdrop" aria-hidden="true"></div>
+    <div class="admin-sheet-layer__panel ws-picker-sheet" id="workspacePickerSheet" role="dialog" aria-modal="true" aria-labelledby="wsPickerTitle">
     <div class="ws-picker-grab" aria-hidden="true"></div>
     <div class="ws-picker-head">
       <h2 class="ws-picker-title" id="wsPickerTitle">Workspaces</h2>
@@ -594,16 +591,18 @@
     </div>
     <div class="ws-picker-list" id="wsPickerList" role="listbox"></div>
   </div>
+  </div>
 
-  <!-- Category settings sheet -->
-  <div class="cat-settings-backdrop hidden" id="catSettingsBackdrop" aria-hidden="true"></div>
-  <div class="cat-settings-sheet hidden" id="catSettingsSheet" role="dialog" aria-modal="true" aria-labelledby="catSettingsTitle">
+  <div class="admin-sheet-layer admin-sheet-layer--cat hidden" id="catSettingsLayer" aria-hidden="true">
+    <div class="admin-sheet-layer__backdrop admin-sheet-layer__backdrop--cat" id="catSettingsBackdrop" aria-hidden="true"></div>
+    <div class="admin-sheet-layer__panel cat-settings-sheet" id="catSettingsSheet" role="dialog" aria-modal="true" aria-labelledby="catSettingsTitle">
     <div class="ws-picker-grab" aria-hidden="true"></div>
     <div class="cat-settings-head">
       <h2 class="cat-settings-title" id="catSettingsTitle">Category</h2>
       <button type="button" class="ws-picker-close" id="catSettingsClose" aria-label="Close">×</button>
     </div>
     <div class="cat-settings-scroll" id="catSettingsBody"></div>
+  </div>
   </div>
 
   <!-- ── CONFIRM MODAL ──────────────────────────────────────── -->
@@ -622,7 +621,7 @@
       <img src="../resources/logo.webp" alt="" class="m-app-nav__hub-logo" id="restaurantHubNavLogoAnchor" width="28" height="28" decoding="async" />
       <span class="m-app-nav__label" id="restaurantHubNavAnchorLabel">Venue</span>
     </a>
-    <button type="button" class="m-app-nav__link m-app-nav__link--hub hidden" id="restaurantHubNavBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="restaurantHubSheet" aria-label="Open venue sections">
+    <button type="button" class="m-app-nav__link m-app-nav__link--hub hidden" id="restaurantHubNavBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="restaurantHubSheet workspacePickerSheet" aria-label="Open venue sections">
       <img src="../resources/logo.webp" alt="" class="m-app-nav__hub-logo" id="restaurantHubNavLogo" width="28" height="28" decoding="async" />
       <span class="m-app-nav__label" id="restaurantHubNavLabel">Venue</span>
     </button>

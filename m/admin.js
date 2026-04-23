@@ -54,7 +54,7 @@
         'Use the staff username and password you were given. Your venues appear after you sign in.',
       signIn: 'Sign in',
       chooseWorkspaceHint:
-        'Your first linked venue opens automatically (same order as returned for your account). Switch venue from the control at the top of the editor, or open the list below when you return here.',
+        'Your first linked venue opens automatically (same order as returned for your account). With several venues, hold the Venue button in the staff bar (~0.5s) to pick one, or use the list below when you are on this screen.',
       superOnlyHint:
         'No venues are linked to this account yet. Open Users in the staff bar if you need to manage staff accounts.',
       signOut: 'Sign out',
@@ -70,7 +70,8 @@
       editorNotificationsTab: 'Notifications',
       restaurantHubNavLabel: 'Venue',
       restaurantHubSheetTitle: 'Venue',
-      restaurantHubNavAria: 'Open venue sections',
+      restaurantHubNavAria: 'Venue: tap for sections, hold ~0.5s to switch workspace (when you have several)',
+      restaurantHubNavAnchorAria: 'Venue — menu editor home',
       preview: 'Preview ↗',
       save: 'Save',
       unsaved: 'Unsaved',
@@ -156,7 +157,7 @@
         'Използвай потребителското име и паролата, които си получил. Обектите се показват след вход.',
       signIn: 'Вход',
       chooseWorkspaceHint:
-        'Първият свързан обект се отваря автоматично (редът е като при акаунта ти). Смени обект от контрола горе в редактора или списъка по-долу, когато си тук.',
+        'Първият свързан обект се отваря автоматично (редът е като при акаунта ти). При няколко обекта задрж бутона „Обект“ в долната лента (~0,5 s) за избор, или ползвай списъка по-долу, когато си тук.',
       superOnlyHint:
         'Все още няма свързани обекти. За управление на потребители отвори „Потребители“ в долната лента.',
       signOut: 'Изход',
@@ -172,7 +173,8 @@
       editorNotificationsTab: 'Известия',
       restaurantHubNavLabel: 'Обект',
       restaurantHubSheetTitle: 'Обект',
-      restaurantHubNavAria: 'Отвори секциите за обекта',
+      restaurantHubNavAria: 'Обект: докосни за секции, задрж ~0,5 s за смяна на обект (при няколко)',
+      restaurantHubNavAnchorAria: 'Обект — начало на редактора на менюто',
       preview: 'Преглед ↗',
       save: 'Запази',
       unsaved: 'Незаписано',
@@ -633,8 +635,6 @@
   const authSignOutBtn = document.getElementById('authSignOutBtn');
   const authSignInBtn = document.getElementById('authSignInBtn');
   const authErrorEl      = document.getElementById('authError');
-  const editorWorkspacePickBtn = document.getElementById('editorWorkspacePickBtn');
-  const editorWorkspacePickLabel = document.getElementById('editorWorkspacePickLabel');
   const previewLink  = document.getElementById('previewLink');
   const saveBtn      = document.getElementById('saveBtn');
   const dirtyBadge   = document.getElementById('dirtyBadge');
@@ -646,6 +646,9 @@
   const modalCancel  = document.getElementById('modalCancel');
   const adminLangToggleAuth = document.getElementById('adminLangToggleAuth');
   const adminLangToggleEditor = document.getElementById('adminLangToggleEditor');
+  const restaurantHubLayer = document.getElementById('restaurantHubLayer');
+  const workspacePickerLayer = document.getElementById('workspacePickerLayer');
+  const catSettingsLayer = document.getElementById('catSettingsLayer');
   const workspacePickerBackdrop = document.getElementById('workspacePickerBackdrop');
   const workspacePickerSheet = document.getElementById('workspacePickerSheet');
   const wsPickerTitle = document.getElementById('wsPickerTitle');
@@ -659,6 +662,130 @@
   const catSettingsClose = document.getElementById('catSettingsClose');
   let _workspacePickerContext = 'auth'; // 'auth' | 'editor'
   let _catSettingsIdx = -1;
+
+  const ADMIN_SHEET_FALLBACK_MS = 480;
+
+  function adminSheetLayerIsOpen(layer) {
+    return !!(layer && layer.classList.contains('admin-sheet-layer--open'));
+  }
+
+  function openAdminSheetLayer(layer) {
+    if (!layer) return;
+    const panel = layer.querySelector('.admin-sheet-layer__panel');
+    if (panel) {
+      panel.style.transform = '';
+      panel.style.transition = '';
+    }
+    layer.classList.remove('hidden');
+    layer.setAttribute('aria-hidden', 'false');
+    syncBodyScrollLock();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        layer.classList.add('admin-sheet-layer--open');
+      });
+    });
+  }
+
+  /**
+   * Close animated sheet layer (matches public menu item sheet: transform + backdrop fade).
+   * @param {HTMLElement|null} layer
+   * @param {HTMLElement|null} [panelEl] sheet panel (.admin-sheet-layer__panel)
+   * @param {() => void} [afterHide] runs after layer is hidden (e.g. clear inner HTML)
+   */
+  function closeAdminSheetLayer(layer, panelEl, afterHide) {
+    if (!layer) {
+      afterHide?.();
+      return;
+    }
+    const panel = panelEl || layer.querySelector('.admin-sheet-layer__panel');
+    const finish = () => {
+      layer.classList.add('hidden');
+      layer.setAttribute('aria-hidden', 'true');
+      layer.classList.remove('admin-sheet-layer--open');
+      if (panel) {
+        panel.style.transform = '';
+        panel.style.transition = '';
+      }
+      syncBodyScrollLock();
+      afterHide?.();
+    };
+
+    if (!adminSheetLayerIsOpen(layer)) {
+      finish();
+      return;
+    }
+
+    if (panel) {
+      panel.style.transform = '';
+      panel.style.transition = '';
+    }
+    layer.classList.remove('admin-sheet-layer--open');
+    let done = false;
+    const complete = () => {
+      if (done) return;
+      done = true;
+      finish();
+    };
+
+    const t = setTimeout(complete, ADMIN_SHEET_FALLBACK_MS + 80);
+    if (panel) {
+      const onTe = (ev) => {
+        if (ev.target !== panel) return;
+        if (ev.propertyName !== 'transform' && ev.propertyName !== 'opacity') return;
+        clearTimeout(t);
+        panel.removeEventListener('transitionend', onTe);
+        complete();
+      };
+      panel.addEventListener('transitionend', onTe);
+    } else {
+      clearTimeout(t);
+      complete();
+    }
+  }
+
+  function adminSheetSwipeBottomHubOrWs() {
+    return window.matchMedia('(max-width: 639px)').matches;
+  }
+  function adminSheetSwipeBottomCat() {
+    return window.matchMedia('(max-width: 559px)').matches;
+  }
+
+  /** Same thresholds as repos/fe/js/restaurant.js item modal (read-only reference). */
+  function attachAdminSheetSwipeDown(sheet, scrollRoot, isBottomAnchored, runClose) {
+    if (!sheet) return;
+    let swipeStartY = 0;
+    let swipeCurrent = 0;
+    let swipeActive = false;
+
+    sheet.addEventListener('touchstart', (e) => {
+      if (!isBottomAnchored()) return;
+      const root = typeof scrollRoot === 'function' ? scrollRoot() : scrollRoot;
+      if (root && root.scrollTop > 0) return;
+      swipeStartY = e.touches[0].clientY;
+      swipeCurrent = swipeStartY;
+      swipeActive = true;
+      sheet.style.transition = 'none';
+    }, { passive: true });
+
+    sheet.addEventListener('touchmove', (e) => {
+      if (!swipeActive) return;
+      swipeCurrent = e.touches[0].clientY;
+      const delta = Math.max(0, swipeCurrent - swipeStartY);
+      sheet.style.transform = `translateY(${delta}px)`;
+    }, { passive: true });
+
+    sheet.addEventListener('touchend', () => {
+      if (!swipeActive) return;
+      swipeActive = false;
+      sheet.style.transition = '';
+      const delta = swipeCurrent - swipeStartY;
+      if (delta > 110 || delta > sheet.offsetHeight * 0.28) {
+        runClose();
+      } else {
+        sheet.style.transform = '';
+      }
+    });
+  }
 
   function applyAdminLang(lang, rerender = true) {
     adminLang = (lang === 'bg') ? 'bg' : 'en';
@@ -746,12 +873,7 @@
     const hubNavBtnAria = document.getElementById('restaurantHubNavBtn');
     if (hubNavBtnAria) hubNavBtnAria.setAttribute('aria-label', tr('restaurantHubNavAria'));
     const hubNavAnchor = document.getElementById('restaurantHubNavAnchor');
-    if (hubNavAnchor) {
-      hubNavAnchor.setAttribute(
-        'aria-label',
-        adminLang === 'bg' ? `${tr('restaurantHubNavAria')} — редактор на менюто` : `${tr('restaurantHubNavAria')} — menu editor`
-      );
-    }
+    if (hubNavAnchor) hubNavAnchor.setAttribute('aria-label', tr('restaurantHubNavAnchorAria'));
 
     // Info bilingual row labels
     const setRowLabel = (rowId, text) => {
@@ -764,7 +886,7 @@
       setRowLabel(infoDescRowId(code), tr(ITEM_DESC_LABEL_KEY[code]));
     });
 
-    if (workspacePickerSheet && !workspacePickerSheet.classList.contains('hidden')) {
+    if (workspacePickerLayer && !workspacePickerLayer.classList.contains('hidden')) {
       if (wsPickerTitle) wsPickerTitle.textContent = tr('workspacePickerTitle');
       if (wsPickerSearch) wsPickerSearch.placeholder = tr('workspaceSearchPlaceholder');
       populateWorkspacePickerList(wsPickerSearch?.value || '');
@@ -854,29 +976,28 @@
           ? workspaceDisplayNameForId(activeWorkspaceId)
           : tr('chooseWorkspaceBtn');
       }
-    }
-    if (editorWorkspacePickBtn) {
-      const inEditor = editorScreen && !editorScreen.classList.contains('hidden');
-      editorWorkspacePickBtn.classList.toggle('hidden', !hasVenues || !inEditor);
-      if (hasVenues && inEditor && editorWorkspacePickLabel && menuData && menuData.restaurant) {
-        const r = menuData.restaurant;
-        editorWorkspacePickLabel.textContent = workspaceDisplayNameForId(r.id) || (r.name && r.name.en) || r.id;
-      }
+      authWorkspacePickBtn.setAttribute(
+        'title',
+        adminLang === 'bg'
+          ? 'Избор на обект преди да влезеш в редактора (също: задрж бутона „Обект“ в редактора ~0,5 s)'
+          : 'Choose workspace before opening the editor (in the editor, hold Venue in the staff bar ~0.5s)'
+      );
     }
   }
 
   function syncBodyScrollLock() {
-    const wsOpen = workspacePickerSheet && !workspacePickerSheet.classList.contains('hidden');
-    const catOpen = catSettingsSheet && !catSettingsSheet.classList.contains('hidden');
-    document.body.style.overflow = wsOpen || catOpen ? 'hidden' : '';
+    const wsOpen = workspacePickerLayer && !workspacePickerLayer.classList.contains('hidden');
+    const catOpen = catSettingsLayer && !catSettingsLayer.classList.contains('hidden');
+    const hubOpen = restaurantHubLayer && !restaurantHubLayer.classList.contains('hidden');
+    document.body.style.overflow = wsOpen || catOpen || hubOpen ? 'hidden' : '';
   }
 
   function closeWorkspacePicker() {
-    workspacePickerBackdrop?.classList.add('hidden');
-    workspacePickerSheet?.classList.add('hidden');
+    closeAdminSheetLayer(workspacePickerLayer, workspacePickerSheet);
     authWorkspacePickBtn?.setAttribute('aria-expanded', 'false');
-    editorWorkspacePickBtn?.setAttribute('aria-expanded', 'false');
-    syncBodyScrollLock();
+    if (_workspacePickerContext === 'editor') {
+      restaurantHubNavBtn?.setAttribute('aria-expanded', 'false');
+    }
   }
 
   function populateWorkspacePickerList(filterText) {
@@ -939,10 +1060,8 @@
       wsPickerSearch.value = '';
     }
     populateWorkspacePickerList('');
-    workspacePickerBackdrop?.classList.remove('hidden');
-    workspacePickerSheet?.classList.remove('hidden');
-    syncBodyScrollLock();
-    const expandBtn = context === 'editor' ? editorWorkspacePickBtn : authWorkspacePickBtn;
+    openAdminSheetLayer(workspacePickerLayer);
+    const expandBtn = context === 'editor' ? restaurantHubNavBtn : authWorkspacePickBtn;
     expandBtn?.setAttribute('aria-expanded', 'true');
     setTimeout(() => wsPickerSearch?.focus(), 50);
   }
@@ -1527,16 +1646,14 @@
   const restaurantHubNavBtn   = document.getElementById('restaurantHubNavBtn');
 
   function openRestaurantHub() {
-    if (!restaurantHubSheet || !restaurantHubBackdrop) return;
-    restaurantHubSheet.classList.remove('hidden');
-    restaurantHubBackdrop.classList.remove('hidden');
+    if (!restaurantHubLayer) return;
+    openAdminSheetLayer(restaurantHubLayer);
     if (restaurantHubNavBtn) restaurantHubNavBtn.setAttribute('aria-expanded', 'true');
   }
 
   function closeRestaurantHub() {
-    if (!restaurantHubSheet || !restaurantHubBackdrop) return;
-    restaurantHubSheet.classList.add('hidden');
-    restaurantHubBackdrop.classList.add('hidden');
+    if (!restaurantHubLayer) return;
+    closeAdminSheetLayer(restaurantHubLayer, restaurantHubSheet);
     if (restaurantHubNavBtn) restaurantHubNavBtn.setAttribute('aria-expanded', 'false');
   }
 
@@ -1832,10 +1949,9 @@
   /* ── CATEGORIES ──────────────────────────────────────────── */
   function closeCategorySettingsSheet() {
     _catSettingsIdx = -1;
-    catSettingsBackdrop?.classList.add('hidden');
-    catSettingsSheet?.classList.add('hidden');
-    if (catSettingsBody) catSettingsBody.innerHTML = '';
-    syncBodyScrollLock();
+    closeAdminSheetLayer(catSettingsLayer, catSettingsSheet, () => {
+      if (catSettingsBody) catSettingsBody.innerHTML = '';
+    });
   }
 
   function updateCategoryHeaderFromCat(block, cat) {
@@ -1923,9 +2039,7 @@
       <button type="button" class="btn-delete-category-sheet">${esc(tr('deleteCategory'))}</button>
     `;
 
-    catSettingsBackdrop?.classList.remove('hidden');
-    catSettingsSheet?.classList.remove('hidden');
-    syncBodyScrollLock();
+    openAdminSheetLayer(catSettingsLayer);
 
     const block = categoriesList.querySelector(`[data-cat-idx="${catIdx}"]`);
 
@@ -3203,11 +3317,58 @@
     if (isDirty) { e.preventDefault(); e.returnValue = ''; }
   });
 
-  /* ── Restaurant hub (logo in main staff nav → sheet with editor sections) ── */
-  restaurantHubNavBtn?.addEventListener('click', () => {
+  /* ── Restaurant hub (staff nav Venue: tap = sections, hold ~500ms = workspace picker) ── */
+  const VENUE_LONG_PRESS_MS = 500;
+  const VENUE_LONG_PRESS_MOVE_PX = 12;
+  let venueLongPressTimer = null;
+  let venueLongPressStartX = 0;
+  let venueLongPressStartY = 0;
+  let suppressNextVenueTap = false;
+
+  function cancelVenueLongPress() {
+    if (venueLongPressTimer) {
+      clearTimeout(venueLongPressTimer);
+      venueLongPressTimer = null;
+    }
+  }
+
+  restaurantHubNavBtn?.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     if (editorScreen.classList.contains('hidden')) return;
+    venueLongPressStartX = e.clientX;
+    venueLongPressStartY = e.clientY;
+    suppressNextVenueTap = false;
+    cancelVenueLongPress();
+    venueLongPressTimer = setTimeout(() => {
+      venueLongPressTimer = null;
+      if (scopedRestaurantIds.length < 2) return;
+      suppressNextVenueTap = true;
+      closeRestaurantHub();
+      openWorkspacePicker('editor');
+    }, VENUE_LONG_PRESS_MS);
+  });
+
+  restaurantHubNavBtn?.addEventListener('pointermove', (e) => {
+    if (!venueLongPressTimer) return;
+    if (Math.hypot(e.clientX - venueLongPressStartX, e.clientY - venueLongPressStartY) > VENUE_LONG_PRESS_MOVE_PX) {
+      cancelVenueLongPress();
+    }
+  });
+
+  ['pointerup', 'pointercancel'].forEach((evt) => {
+    restaurantHubNavBtn?.addEventListener(evt, cancelVenueLongPress);
+  });
+
+  restaurantHubNavBtn?.addEventListener('click', (e) => {
+    if (editorScreen.classList.contains('hidden')) return;
+    if (suppressNextVenueTap) {
+      e.preventDefault();
+      suppressNextVenueTap = false;
+      return;
+    }
     openRestaurantHub();
   });
+
   restaurantHubBackdrop?.addEventListener('click', closeRestaurantHub);
   document.getElementById('restaurantHubClose')?.addEventListener('click', closeRestaurantHub);
   document.getElementById('restaurantHubList')?.addEventListener('click', e => {
@@ -3219,10 +3380,25 @@
     switchTab(tab);
     closeRestaurantHub();
   });
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape' || !restaurantHubSheet || restaurantHubSheet.classList.contains('hidden')) return;
-    closeRestaurantHub();
-  });
+
+  attachAdminSheetSwipeDown(
+    restaurantHubSheet,
+    () => document.getElementById('restaurantHubList'),
+    adminSheetSwipeBottomHubOrWs,
+    closeRestaurantHub
+  );
+  attachAdminSheetSwipeDown(
+    workspacePickerSheet,
+    () => document.getElementById('wsPickerList'),
+    adminSheetSwipeBottomHubOrWs,
+    closeWorkspacePicker
+  );
+  attachAdminSheetSwipeDown(
+    catSettingsSheet,
+    () => document.getElementById('catSettingsBody'),
+    adminSheetSwipeBottomCat,
+    closeCategorySettingsSheet
+  );
 
   /* ── Debounced “any field changed” while editor is open ── */
   editorScreen.addEventListener('input', e => {
@@ -3267,16 +3443,25 @@
   applyAdminLang(adminLang, false);
 
   authWorkspacePickBtn?.addEventListener('click', () => openWorkspacePicker('auth'));
-  editorWorkspacePickBtn?.addEventListener('click', () => openWorkspacePicker('editor'));
   workspacePickerBackdrop?.addEventListener('click', closeWorkspacePicker);
   wsPickerClose?.addEventListener('click', closeWorkspacePicker);
   wsPickerSearch?.addEventListener('input', () => populateWorkspacePickerList(wsPickerSearch.value));
   catSettingsBackdrop?.addEventListener('click', closeCategorySettingsSheet);
   catSettingsClose?.addEventListener('click', closeCategorySettingsSheet);
-  document.addEventListener('keydown', e => {
+
+  document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    closeWorkspacePicker();
-    closeCategorySettingsSheet();
+    if (catSettingsLayer && adminSheetLayerIsOpen(catSettingsLayer)) {
+      closeCategorySettingsSheet();
+      return;
+    }
+    if (workspacePickerLayer && adminSheetLayerIsOpen(workspacePickerLayer)) {
+      closeWorkspacePicker();
+      return;
+    }
+    if (restaurantHubLayer && adminSheetLayerIsOpen(restaurantHubLayer)) {
+      closeRestaurantHub();
+    }
   });
 
   (async () => {
