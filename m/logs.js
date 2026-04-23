@@ -1,5 +1,5 @@
 /**
- * Splunk-style telemetry search — GET /api/v1/logs + Bearer JWT.
+ * Activity log search (signed-in full administrators).
  */
 (function () {
   'use strict';
@@ -190,29 +190,29 @@
     var base = getMenuApiBase();
     var token = getToken();
     if (!base) {
-      showGate('Set meta menu-api-base to your API URL (e.g. https://tebeshir.online).');
+      showGate('This page needs the menu service address configured. Ask your administrator.');
       return Promise.resolve(false);
     }
     if (!token) {
-      showGate('Sign in as a super administrator from the admin app first, then open this page again.');
+      showGate('Sign in from the menu admin first (full administrator), then open this page again.');
       return Promise.resolve(false);
     }
     return fetch(base + '/api/auth/me', { headers: authHeaders() })
       .then(function (res) {
         if (!res.ok) {
-          showGate('Session expired or invalid. Sign in again from Admin.');
+          showGate('Session expired or invalid. Sign in again from the menu admin.');
           return false;
         }
         return res.json().then(function (me) {
           if (!me.superAdmin) {
-            showGate('Telemetry is limited to super administrators.');
+            showGate('Only full administrators can open the activity log.');
             return false;
           }
           return true;
         });
       })
       .catch(function (e) {
-        showGate('Could not reach the API: ' + (e.message || 'network error'));
+        showGate('Could not reach the menu service: ' + (e.message || 'network error'));
         return false;
       });
   }

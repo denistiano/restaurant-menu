@@ -541,7 +541,7 @@ pre, code, kbd, samp {
 .editor-panel { display: none; }
 .editor-panel.active { display: block; }
 
-/* ── /m GLOBAL BOTTOM NAV (Menu · Users · New user · Telemetry) ── */
+/* ── /m GLOBAL BOTTOM NAV (Menu · Users · New user · Activity) ── */
 .m-app-nav {
   position: fixed;
   left: 0;

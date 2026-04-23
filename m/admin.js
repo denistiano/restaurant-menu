@@ -51,12 +51,11 @@
       backToSite: '← Back to site',
       signInTitle: 'Sign in',
       authSub:
-        'Use your server username and password. Venues linked to your account appear only after you sign in.',
+        'Use the staff username and password you were given. Your venues appear after you sign in.',
       signIn: 'Sign in',
       chooseWorkspaceHint: 'Open a workspace below — names match your published menu titles.',
-      superOnlyHint: 'No venues are linked to this account. You can still open Operations to manage users.',
-      operationsLink: 'Operations',
-      logsDashboardLink: 'Telemetry logs',
+      superOnlyHint:
+        'No venues are linked to this account yet. Use Users in the bar below if you need to manage staff accounts.',
       signOut: 'Sign out',
       openEditor: 'Open editor',
       incorrectPassword: 'Incorrect admin password',
@@ -153,14 +152,12 @@
       backToSite: '← Назад към сайта',
       signInTitle: 'Вход',
       authSub:
-        'Потребителско име и парола от сървъра. Обектите, към които имаш достъп, се показват едва след вход.',
+        'Използвай потребителското име и паролата, които си получил. Обектите се показват след вход.',
       signIn: 'Вход',
       chooseWorkspaceHint:
         'Избери обект по-долу — имената са от публикуваното меню (EN/BG според езика на панела).',
       superOnlyHint:
-        'Няма свързани обекти. Можеш да отвориш Operations за управление на потребители.',
-      operationsLink: 'Операции',
-      logsDashboardLink: 'Телеметрия (логове)',
+        'Все още няма свързани обекти. За управление на потребители използвай „Потребители“ в лентата по-долу.',
       signOut: 'Изход',
       openEditor: 'Отвори редактора',
       incorrectPassword: 'Невалидна админ парола',
@@ -632,8 +629,6 @@
   const superOnlyHint = document.getElementById('superOnlyHint');
   const authWorkspacePickBtn = document.getElementById('authWorkspacePickBtn');
   const authWorkspacePickLabel = document.getElementById('authWorkspacePickLabel');
-  const superOpsLink = document.getElementById('superOpsLink');
-  const logsDashboardLink = document.getElementById('logsDashboardLink');
   const authSignOutBtn = document.getElementById('authSignOutBtn');
   const authSignInBtn = document.getElementById('authSignInBtn');
   const authErrorEl      = document.getElementById('authError');
@@ -700,8 +695,6 @@
     setText('authError', 'incorrectPassword');
     const logo = document.getElementById('authLogoText');
     if (logo) logo.textContent = adminLang === 'bg' ? 'Съдържание' : 'Content';
-    setText('superOpsLink', 'operationsLink');
-    setText('logsDashboardLink', 'logsDashboardLink');
     setText('authSignOutBtn', 'signOut');
     // section headings
     const nameTitle = document.getElementById('infoSectionNameTitle'); if (nameTitle) nameTitle.textContent = adminLang === 'bg' ? 'Имена' : 'Name';
@@ -952,11 +945,6 @@
   function showPostAuthUi() {
     authCredentialsBlock?.classList.add('hidden');
     postAuthPanel?.classList.remove('hidden');
-    if (superOpsLink) superOpsLink.classList.toggle('hidden', !sessionSuperAdmin);
-    if (logsDashboardLink) {
-      logsDashboardLink.classList.toggle('hidden', !sessionSuperAdmin);
-      logsDashboardLink.href = 'logs.html';
-    }
     if (superOnlyHint) {
       superOnlyHint.classList.toggle('hidden', scopedRestaurantIds.length > 0);
       superOnlyHint.textContent = tr('superOnlyHint');

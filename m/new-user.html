@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>New user</title>
+  <title>Add user · Staff</title>
   <link rel="icon" type="image/x-icon" href="../favicon.ico" />
   <link rel="stylesheet" href="admin.css" />
   <meta name="menu-api-base" content="https://tebeshir.online" />
@@ -60,8 +60,8 @@
     </a>
 
     <div id="suLogin">
-      <h1 class="su-h1">New user</h1>
-      <p class="su-muted">Super administrator sign-in. Create accounts here; open <strong>Users</strong> to edit accounts or send a password setup link.</p>
+      <h1 class="su-h1">Add user</h1>
+      <p class="su-muted">Sign in with a full administrator account. You can add people here and manage existing accounts under <strong>Users</strong>.</p>
       <div class="su-field">
         <label for="suUser">Username</label>
         <input id="suUser" type="text" autocomplete="username" />
@@ -75,29 +75,27 @@
     </div>
 
     <div id="suMain" class="su-hidden">
-      <h1 class="su-h1">New user</h1>
-      <p class="su-muted">Create an API account and assign venues. Manage existing users under <strong>Users</strong>.</p>
+      <h1 class="su-h1">Add user</h1>
+      <p class="su-muted">Create a sign-in for staff and choose which venues they can open. Change or remove users anytime under <strong>Users</strong>.</p>
       <div class="su-toolbar">
-        <a class="su-btn" href="su-n3k8.html">All users</a>
-        <a class="su-btn" id="suLogsLink" href="logs.html">Telemetry logs</a>
         <button type="button" class="su-btn su-btn--danger" id="suLogoutBtn">Sign out</button>
       </div>
 
       <div class="su-card">
-        <h2 class="su-h1" style="font-size:1.1rem">Account</h2>
+        <h2 class="su-h1" style="font-size:1.1rem">New account</h2>
         <div class="su-field">
           <label for="suNewUser">Username</label>
           <input id="suNewUser" type="text" />
         </div>
         <div class="su-field">
-          <label for="suNewPass">Password (min 8, optional)</label>
-          <input id="suNewPass" type="password" placeholder="Leave empty → invite link only" />
+          <label for="suNewPass">Password (optional, at least 8 characters)</label>
+          <input id="suNewPass" type="password" placeholder="Leave blank to send a setup link instead" />
         </div>
         <div class="su-field">
-          <label><input type="checkbox" id="suNewEn" checked /> Enabled</label>
+          <label><input type="checkbox" id="suNewEn" checked /> Account active</label>
         </div>
         <div class="su-field">
-          <label><input type="checkbox" id="suNewSuper" /> Super administrator</label>
+          <label><input type="checkbox" id="suNewSuper" /> Full administrator</label>
         </div>
         <div class="su-field">
           <label for="suNewVenueSearch">Venue access</label>
@@ -125,7 +123,7 @@
     </a>
     <a class="m-app-nav__link" href="logs.html">
       <svg class="m-app-nav__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-6"/></svg>
-      <span class="m-app-nav__label">Telemetry</span>
+      <span class="m-app-nav__label">Activity</span>
     </a>
   </nav>
   <script src="su-n3k8.js"></script>

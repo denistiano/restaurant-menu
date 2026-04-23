@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Operations</title>
+  <title>Users · Staff</title>
   <link rel="icon" type="image/x-icon" href="../favicon.ico" />
   <link rel="stylesheet" href="admin.css" />
   <meta name="menu-api-base" content="https://tebeshir.online" />
@@ -15,7 +15,22 @@
     table.su-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .su-table th, .su-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
     .su-table th { color: var(--muted); font-weight: 500; }
-    .su-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .su-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .su-actions--icons { flex-wrap: nowrap; gap: 4px; justify-content: flex-end; }
+    .su-td-icon { text-align: center; vertical-align: middle; width: 44px; padding-left: 6px !important; padding-right: 6px !important; }
+    .su-cell-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+    .su-cell-icon--ok { color: var(--success); }
+    .su-cell-icon--no { color: rgba(224, 92, 92, 0.75); }
+    .su-bool-svg { display: block; }
+    .su-icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; padding: 0; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--surface-2); color: var(--muted);
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .su-icon-btn:hover { color: var(--text); border-color: rgba(196,149,90,0.45); background: rgba(196,149,90,0.1); }
+    .su-icon-btn--danger:hover { color: var(--danger); border-color: rgba(224,92,92,0.45); background: var(--danger-dim); }
+    .su-icon-btn__svg { display: block; }
     .su-btn { padding: 8px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); font-size: 13px; }
     .su-btn--primary { background: var(--accent-dim); border-color: rgba(196,149,90,0.35); color: var(--text); }
     .su-btn--danger { border-color: rgba(224,92,92,0.35); color: var(--danger); }
@@ -104,8 +119,8 @@
     </a>
 
     <div id="suLogin">
-      <h1 class="su-h1">Operations</h1>
-      <p class="su-muted">Super administrator sign-in. User management only — bookmark this URL; it is not linked from public pages.</p>
+      <h1 class="su-h1">User accounts</h1>
+      <p class="su-muted">Sign in with a full administrator account to view and edit staff users.</p>
       <div class="su-field">
         <label for="suUser">Username</label>
         <input id="suUser" type="text" autocomplete="username" />
@@ -120,28 +135,29 @@
 
     <div id="suMain" class="su-hidden">
       <h1 class="su-h1">Users</h1>
-      <p class="su-muted">View and edit API accounts. To <strong>create</strong> a user, use <strong>New user</strong> in the bar below. Pick venues from the list when editing (search, click to add; set role per venue). Use <strong>Setup link</strong> for a QR + URL so staff can set their password without you knowing it.</p>
-      <button type="button" class="su-btn" id="suRefreshBtn">Refresh list</button>
-      <a class="su-btn" id="suLogsLink" href="logs.html">Telemetry logs</a>
-      <button type="button" class="su-btn su-btn--danger" id="suLogoutBtn">Sign out</button>
+      <p class="su-muted">Review staff who can sign in to this menu. Add someone new from <strong>New user</strong> below. When editing, pick venues from the list and set each role. Use the link icon to share a one-time page so they can choose their own password.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+        <button type="button" class="su-btn" id="suRefreshBtn">Refresh</button>
+        <button type="button" class="su-btn su-btn--danger" id="suLogoutBtn">Sign out</button>
+      </div>
 
       <div class="su-table-wrap">
         <table class="su-table" id="suTable">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>#</th>
               <th>Username</th>
-              <th>Enabled</th>
-              <th>Super</th>
+              <th class="su-td-icon" title="Account can sign in">Active</th>
+              <th class="su-td-icon" title="Full access to all admin tools">Admin</th>
+              <th class="su-td-icon" title="User chose a password or you set one">Password</th>
               <th>Venues</th>
-              <th></th>
+              <th aria-label="Actions"></th>
             </tr>
           </thead>
           <tbody id="suTbody"></tbody>
         </table>
       </div>
 
-      <p class="su-muted" style="margin-top:20px"><a class="su-btn" href="new-user.html" style="display:inline-block;text-decoration:none">+ New user</a></p>
     </div>
 
     <div id="suEditBackdrop" class="su-modal-backdrop su-hidden" aria-hidden="true">
@@ -149,10 +165,10 @@
         <h2 class="su-modal__title" id="suEditTitle">Edit user</h2>
         <p class="su-muted" id="suEditUsername"></p>
         <div class="su-field">
-          <label><input type="checkbox" id="suEditEn" /> Enabled</label>
+          <label><input type="checkbox" id="suEditEn" /> Account active</label>
         </div>
         <div class="su-field">
-          <label><input type="checkbox" id="suEditSuper" /> Super administrator</label>
+          <label><input type="checkbox" id="suEditSuper" /> Full administrator</label>
         </div>
         <div class="su-field">
           <label for="suEditVenueSearch">Venue access</label>
@@ -179,7 +195,7 @@
     <div id="suLinkBackdrop" class="su-modal-backdrop su-hidden" aria-hidden="true">
       <div class="su-modal" role="dialog" aria-labelledby="suLinkTitle">
         <h2 class="su-modal__title" id="suLinkTitle">Password setup link</h2>
-        <p class="su-muted">Share once. Previous unused links for this user are invalidated. Scan or copy:</p>
+        <p class="su-muted">Share this once. Older unused links for this person stop working. They can scan the code or open the link:</p>
         <input type="text" readonly class="su-url-field" id="suLinkUrl" />
         <div class="su-modal__actions">
           <button type="button" class="su-btn su-btn--primary" id="suLinkCopy">Copy URL</button>
@@ -205,7 +221,7 @@
     </a>
     <a class="m-app-nav__link" href="logs.html">
       <svg class="m-app-nav__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-6"/></svg>
-      <span class="m-app-nav__label">Telemetry</span>
+      <span class="m-app-nav__label">Activity</span>
     </a>
   </nav>
   <script src="su-n3k8.js"></script>
