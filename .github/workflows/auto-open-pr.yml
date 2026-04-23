@@ -1,0 +1,62 @@
+# When a non-default branch is pushed, open a PR into the integration branch (default: develop)
+# if one does not already exist. Ignores master, main, and develop.
+#
+# Optional: Repository → Settings → Variables → PR_DEFAULT_BASE (e.g. main) if you do not use develop.
+# If PR creation fails with 403, set: Settings → Actions → General → Workflow permissions:
+#   "Read and write permissions" (and allow creating pull requests).
+name: Auto-open pull request
+
+on:
+  push:
+    branches-ignore:
+      - master
+      - main
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: auto-pr-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    env:
+      BASE_REF: ${{ vars.PR_DEFAULT_BASE || 'develop' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Create pull request if missing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_REF_NAME}"
+          BASE="${BASE_REF}"
+          REPO="${{ github.repository }}"
+
+          exists=$(gh pr list --repo "$REPO" --head "$BRANCH" --base "$BASE" --json number --jq length)
+          if [ "${exists:-0}" -gt 0 ]; then
+            echo "PR from '$BRANCH' into '$BASE' already exists — skipping."
+            exit 0
+          fi
+
+          if ! git ls-remote --heads origin "refs/heads/${BASE}" | grep -q .; then
+            echo "::warning::Base branch '${BASE}' not found on origin. Create it or set repository variable PR_DEFAULT_BASE (e.g. to main)."
+            exit 0
+          fi
+
+          TITLE=$(git log -1 --pretty=%s 2>/dev/null || echo "$BRANCH")
+          BODY=$(printf '%s\n\n%s\n' \
+            "Automated pull request for branch \`${BRANCH}\`." \
+            "- Base: \`${BASE}\` — override via repository variable \`PR_DEFAULT_BASE\` if needed.")
+
+          gh pr create --repo "$REPO" --base "$BASE" --head "$BRANCH" \
+            --title "$TITLE" \
+            --body "$BODY"
