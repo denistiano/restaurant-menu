@@ -467,6 +467,58 @@
     document.body.appendChild(overlay);
     document.body.appendChild(sheet);
 
+    /* Swipe-down to close — match public menu item sheet (narrow viewports only:
+       desktop sheet uses translateX(-50%) which must not be overwritten). */
+    (function attachRvSheetSwipe() {
+      const narrow = typeof window.matchMedia === 'function'
+        ? window.matchMedia('(max-width: 767px)')
+        : null;
+      let swipeStartY = 0;
+      let swipeCurrent = 0;
+      let swipeActive = false;
+
+      function endSwipeSpringBack() {
+        swipeActive = false;
+        sheet.style.transition = '';
+        sheet.style.transform = '';
+      }
+
+      sheet.addEventListener('touchstart', e => {
+        if (narrow && !narrow.matches) return;
+        if (sheet.scrollTop > 0) return;
+        swipeStartY = e.touches[0].clientY;
+        swipeCurrent = swipeStartY;
+        swipeActive = true;
+        sheet.style.transition = 'none';
+      }, { passive: true });
+
+      sheet.addEventListener('touchmove', e => {
+        if (!swipeActive) return;
+        if (narrow && !narrow.matches) return;
+        swipeCurrent = e.touches[0].clientY;
+        const delta = Math.max(0, swipeCurrent - swipeStartY);
+        sheet.style.transform = `translateY(${delta}px)`;
+      }, { passive: true });
+
+      sheet.addEventListener('touchend', () => {
+        if (!swipeActive) return;
+        if (narrow && !narrow.matches) {
+          endSwipeSpringBack();
+          return;
+        }
+        sheet.style.transition = '';
+        const delta = swipeCurrent - swipeStartY;
+        if (delta > 110 || delta > sheet.offsetHeight * 0.28) {
+          swipeActive = false;
+          _closeSheet();
+        } else {
+          endSwipeSpringBack();
+        }
+      });
+
+      sheet.addEventListener('touchcancel', endSwipeSpringBack, { passive: true });
+    })();
+
     sheet.querySelector('#rvClose').addEventListener('click', _closeSheet);
     sheet.querySelector('#rvForm').addEventListener('submit', e => {
       e.preventDefault();

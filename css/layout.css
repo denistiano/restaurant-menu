@@ -881,6 +881,7 @@ body[data-theme="classic"] .rv-header__name {
   padding-bottom: env(safe-area-inset-bottom, 16px);
   animation: rvSheetUp .28s cubic-bezier(.34,1.4,.64,1);
   max-height: 92dvh; overflow-y: auto;
+  transition: transform 0.22s ease-out;
 }
 @keyframes rvSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 

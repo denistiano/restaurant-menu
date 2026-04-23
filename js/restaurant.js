@@ -265,7 +265,10 @@
     const sheet = document.getElementById('langPickerSheet');
     const backdrop = document.getElementById('langPickerBackdrop');
     const btn = document.getElementById('langToggle');
-    if (sheet) sheet.classList.add('hidden');
+    if (sheet) {
+      sheet.style.transform = '';
+      sheet.classList.add('hidden');
+    }
     if (backdrop) backdrop.classList.add('hidden');
     if (btn) btn.setAttribute('aria-expanded', 'false');
   }
@@ -274,13 +277,65 @@
     const sheet = document.getElementById('menuSheet');
     const backdrop = document.getElementById('menuSheetBackdrop');
     const btn = document.getElementById('headerMenuBtn');
-    if (sheet) sheet.classList.add('hidden');
+    if (sheet) {
+      sheet.style.transform = '';
+      sheet.classList.add('hidden');
+    }
     if (backdrop) backdrop.classList.add('hidden');
     if (btn) btn.setAttribute('aria-expanded', 'false');
   }
 
   /* keep old name working so any future callers are safe */
   function closeHeaderMenuPanel() { closeMenuSheet(); }
+
+  /**
+   * Drag down to dismiss (same behaviour as the food item bottom sheet).
+   * @param {HTMLElement} sheetEl  Element that receives translateY while dragging
+   * @param {HTMLElement} scrollRoot  Scroll container — swipe only starts when its scrollTop is 0
+   * @param {() => void} onDismiss  Called when release passes dismiss threshold
+   */
+  function attachBottomSheetSwipeClose(sheetEl, scrollRoot, onDismiss) {
+    if (!sheetEl || typeof onDismiss !== 'function') return;
+    const scroll = scrollRoot || sheetEl;
+    let swipeStartY = 0;
+    let swipeCurrent = 0;
+    let swipeActive = false;
+
+    function endSwipeSpringBack() {
+      swipeActive = false;
+      sheetEl.style.transition = '';
+      sheetEl.style.transform = '';
+    }
+
+    sheetEl.addEventListener('touchstart', e => {
+      if (scroll.scrollTop > 0) return;
+      swipeStartY = e.touches[0].clientY;
+      swipeCurrent = swipeStartY;
+      swipeActive = true;
+      sheetEl.style.transition = 'none';
+    }, { passive: true });
+
+    sheetEl.addEventListener('touchmove', e => {
+      if (!swipeActive) return;
+      swipeCurrent = e.touches[0].clientY;
+      const delta = Math.max(0, swipeCurrent - swipeStartY);
+      sheetEl.style.transform = `translateY(${delta}px)`;
+    }, { passive: true });
+
+    sheetEl.addEventListener('touchend', () => {
+      if (!swipeActive) return;
+      sheetEl.style.transition = '';
+      const delta = swipeCurrent - swipeStartY;
+      if (delta > 110 || delta > sheetEl.offsetHeight * 0.28) {
+        swipeActive = false;
+        onDismiss();
+      } else {
+        endSwipeSpringBack();
+      }
+    });
+
+    sheetEl.addEventListener('touchcancel', endSwipeSpringBack, { passive: true });
+  }
 
   /** 3+ languages: backdrop + bottom sheet live on `body` so they never affect header flex/layout or stacking. */
   function removeLangPickerPortal() {
@@ -308,6 +363,7 @@
     sheet.appendChild(scroll);
     document.body.appendChild(backdrop);
     document.body.appendChild(sheet);
+    attachBottomSheetSwipeClose(sheet, scroll, closeLangPickerSheet);
   }
 
   function mountMenuSheetPortal(restaurant) {
@@ -346,6 +402,7 @@
     sheet.appendChild(scroll);
     document.body.appendChild(backdrop);
     document.body.appendChild(sheet);
+    attachBottomSheetSwipeClose(sheet, scroll, closeMenuSheet);
   }
 
   /* ============================================================
@@ -660,37 +717,7 @@
 
     /* ── Swipe-down to close (mobile bottom sheet) ────────── */
     const sheet = document.getElementById('itemModalSheet');
-    let swipeStartY  = 0;
-    let swipeCurrent = 0;
-    let swipeActive  = false;
-
-    sheet.addEventListener('touchstart', e => {
-      /* Only begin swipe if sheet content is scrolled to top */
-      if (sheet.scrollTop > 0) return;
-      swipeStartY  = e.touches[0].clientY;
-      swipeCurrent = swipeStartY;
-      swipeActive  = true;
-      sheet.style.transition = 'none';
-    }, { passive: true });
-
-    sheet.addEventListener('touchmove', e => {
-      if (!swipeActive) return;
-      swipeCurrent = e.touches[0].clientY;
-      const delta = Math.max(0, swipeCurrent - swipeStartY);
-      sheet.style.transform = `translateY(${delta}px)`;
-    }, { passive: true });
-
-    sheet.addEventListener('touchend', () => {
-      if (!swipeActive) return;
-      swipeActive = false;
-      sheet.style.transition = ''; // restore CSS transition
-      const delta = swipeCurrent - swipeStartY;
-      if (delta > 110 || delta > sheet.offsetHeight * 0.28) {
-        closeItemModal();
-      } else {
-        sheet.style.transform = ''; // spring back
-      }
-    });
+    attachBottomSheetSwipeClose(sheet, sheet, closeItemModal);
   }
 
   function populateModal(item) {
