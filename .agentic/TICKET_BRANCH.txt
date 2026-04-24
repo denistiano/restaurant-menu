@@ -1,2 +1,2 @@
-ticket_id=7
-branch=emenu-7-fixes-on-the-reservations-view-1
+ticket_id=8
+branch=emenu-8-let-s-fix-telemetry-a-bit-the-ta

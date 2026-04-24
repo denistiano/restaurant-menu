@@ -28,6 +28,19 @@
   const rid    = params.get('r') || '';
   const BASE   = getApi();
 
+  /** Ingest analytics (analytics.js); never log guest PII. */
+  function rvTrack(eventName, extra) {
+    try {
+      const payload = Object.assign(
+        { restaurant_id: rid, reservation_funnel: 'guest_booking' },
+        extra || {}
+      );
+      if (typeof window.trackEvent === 'function') {
+        window.trackEvent(eventName, payload);
+      }
+    } catch (_) { /* ignore */ }
+  }
+
   const $back         = document.getElementById('rvBack');
   const $name         = document.getElementById('rvRestaurantName');
   const $sub          = document.getElementById('rvRestaurantSub');
@@ -67,8 +80,14 @@
   $dateInput.value = paramDate && paramDate >= todayLocal ? paramDate : todayLocal;
   $timeInput.value = params.get('time') || _roundSlot(now);
 
-  $dateInput.addEventListener('change', () => { _onDateOrTimeChange(); });
-  $timeInput.addEventListener('change', () => { _reloadOccupied(); });
+  $dateInput.addEventListener('change', () => {
+    rvTrack('reserve_date_set', { booking_date: $dateInput.value });
+    _onDateOrTimeChange();
+  });
+  $timeInput.addEventListener('change', () => {
+    rvTrack('reserve_time_set', { slot_time: $timeInput.value });
+    _reloadOccupied();
+  });
 
   _load();
 
@@ -121,6 +140,7 @@
       });
       sel.addEventListener('change', () => {
         selectDurMin = parseInt(sel.value, 10) || 120;
+        rvTrack('reserve_duration_set', { duration_minutes: selectDurMin });
         _reloadOccupied();
         _renderFloor();
       });
@@ -162,7 +182,14 @@
       _applyResConfig();
       await _fetchDayBlocks();
       await _reloadOccupied(true);
-    } catch (e) { _showError(e.message); }
+      rvTrack('reserve_view', {
+        has_layout: !!layout,
+        layout_mode: layout ? layout.mode : 'none',
+      });
+    } catch (e) {
+      rvTrack('reserve_load_error', { error_type: 'load_failed' });
+      _showError(e.message);
+    }
   }
 
   async function _fetchDayBlocks() {
@@ -301,6 +328,10 @@
       btn.setAttribute('role', 'listitem');
       btn.textContent = `${_minToHHMM(s.startMin)} · ${lab}`;
       btn.addEventListener('click', () => {
+        rvTrack('reserve_pick_slot_suggestion', {
+          table_id: s.table.id,
+          slot_start_minute: s.startMin,
+        });
         $timeInput.value = _minToHHMM(s.startMin);
         const g = $durHost && $durHost.querySelector('#rvGlobalDur');
         if (g) g.value = String(selectDurMin);
@@ -587,6 +618,10 @@
   /* ------------------------------------------------------------------ */
   function _selectTable(id, data) {
     if (occupied.includes(id)) return;
+    rvTrack('reserve_pick_table', {
+      table_id: id,
+      layout_mode: layout ? layout.mode : 'unknown',
+    });
     selectedId = id;
     _renderFloor();
     _openSheet(data);
@@ -655,6 +690,7 @@
   function _openSheet(data) {
     if (sheetOpen) _closeSheet(false);
     sheetOpen = true;
+    rvTrack('reserve_booking_open', { table_id: data.id });
 
     const overlay = document.createElement('div');
     overlay.className = 'rv-sheet-overlay';
@@ -723,7 +759,10 @@
 
     const durEl = sheet.querySelector('#rvDur');
     if (durEl && durEl.tagName === 'SELECT') {
-      durEl.addEventListener('change', () => { selectDurMin = parseInt(durEl.value, 10) || 120; });
+      durEl.addEventListener('change', () => {
+        selectDurMin = parseInt(durEl.value, 10) || 120;
+        rvTrack('reserve_duration_set', { duration_minutes: selectDurMin, context: 'sheet' });
+      });
     }
 
     sheet.querySelector('#rvForm').addEventListener('submit', e => {
@@ -766,15 +805,23 @@
     const dur   = _readDuration(sheet);
     errEl.style.display = 'none';
 
-    if (!name)  { _fieldErr(errEl, nameEl,  'Please enter your name.');    return; }
-    if (!party) { _fieldErr(errEl, partyEl, 'Please enter number of guests.'); return; }
-    if (!date)  { _fieldErr(errEl, dateEl,  'Please select a date.');       return; }
-    if (!timeEl.value) { _fieldErr(errEl, timeEl, 'Please pick a time.'); return; }
+    if (!name)  { _fieldErr(errEl, nameEl,  'Please enter your name.', 'guest_name');    return; }
+    if (!party) { _fieldErr(errEl, partyEl, 'Please enter number of guests.', 'party_size'); return; }
+    if (!date)  { _fieldErr(errEl, dateEl,  'Please select a date.', 'booking_date');       return; }
+    if (!timeEl.value) { _fieldErr(errEl, timeEl, 'Please pick a time.', 'booking_time'); return; }
 
     btn.disabled = true; btn.textContent = 'Reserving…';
 
     const timeValue = timeEl.value.length === 5 ? (timeEl.value + ':00') : timeEl.value;
 
+    rvTrack('reserve_booking_submit', {
+      table_id: data.id,
+      party_size: party,
+      duration_minutes: dur,
+      booking_date: date,
+    });
+
+    let bookingApiErrorLogged = false;
     try {
       const res = await fetch(`${BASE}/api/public/reservations/${encodeURIComponent(rid)}`, {
         method:  'POST',
@@ -790,19 +837,34 @@
           notes:           sheet.querySelector('#rvNotes').value.trim() || null,
         }),
       });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || `HTTP ${res.status}`); }
+      if (!res.ok) {
+        bookingApiErrorLogged = true;
+        rvTrack('reserve_booking_api_error', { http_status: res.status });
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.message || `HTTP ${res.status}`);
+      }
+      rvTrack('reserve_booking_ok', {
+        table_id: data.id,
+        party_size: party,
+        duration_minutes: dur,
+        booking_date: date,
+      });
       $dateInput.value = date;
       $timeInput.value = timeEl.value.length >= 5 ? timeEl.value.slice(0, 5) : timeEl.value;
       selectDurMin = dur;
       _showSuccess(sheet, name, data, date, timeEl.value, dur);
     } catch (e) {
+      if (!bookingApiErrorLogged) {
+        rvTrack('reserve_booking_api_error', { http_status: 0, error_type: 'network_or_unknown' });
+      }
       btn.disabled = false; btn.textContent = 'Confirm reservation';
       errEl.textContent = e.message || 'Failed. Please try again.';
       errEl.style.display = '';
     }
   }
 
-  function _fieldErr(errEl, input, msg) {
+  function _fieldErr(errEl, input, msg, fieldCode) {
+    if (fieldCode) rvTrack('reserve_booking_validate_error', { field: fieldCode });
     errEl.textContent = msg; errEl.style.display = '';
     input.focus(); input.style.borderColor = '#dc2626';
     input.addEventListener('input', () => { input.style.borderColor = ''; }, { once: true });
