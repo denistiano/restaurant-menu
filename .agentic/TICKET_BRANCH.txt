@@ -1,0 +1,2 @@
+ticket_id=7
+branch=emenu-7-fixes-on-the-reservations-view-1
