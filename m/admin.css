@@ -98,6 +98,19 @@ pre, code, kbd, samp {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Session restore (same-tab token): avoid flashing the sign-in form before /api/auth/me */
+.auth-session-boot {
+  max-width: 440px;
+  margin: 0 auto;
+  text-align: center;
+}
+.auth-session-boot__spinner-wrap {
+  padding: 28px 0 12px;
+}
+.auth-session-boot__hint {
+  margin-top: 0;
+}
+
 /* ── AUTH SCREEN ─────────────────────────────────────────── */
 .auth-header {
   display: flex; align-items: center; justify-content: space-between;

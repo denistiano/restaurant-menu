@@ -109,7 +109,23 @@
       font-family: ui-monospace, monospace;
       flex-shrink: 0;
     }
-    .su-gate { padding: 12px 0 20px; font-size: 14px; color: var(--muted); }
+    .su-gate-card-wrap {
+      display: flex; justify-content: center; padding: 28px 12px 36px; min-height: 38vh;
+    }
+    .su-gate-card {
+      max-width: 400px; width: 100%; text-align: center; padding: 28px 22px;
+      border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+    }
+    .su-gate-brand { font-size: 12px; color: var(--muted); letter-spacing: 0.03em; margin: 0 0 10px; }
+    .su-gate-title { font-family: var(--font-serif); font-size: 1.2rem; margin: 0 0 12px; font-weight: 600; }
+    .su-gate-msg { color: var(--muted); font-size: 14px; line-height: 1.45; margin: 0 0 8px; }
+    .su-gate-spinner-wrap { display: flex; justify-content: center; padding: 10px 0 14px; }
+    .su-gate-spinner {
+      width: 28px; height: 28px; border: 2px solid rgba(196,149,90,0.2); border-top-color: var(--accent);
+      border-radius: 50%; animation: su-gate-spin 0.7s linear infinite;
+    }
+    @keyframes su-gate-spin { to { transform: rotate(360deg); } }
+    .su-gate-actions { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" crossorigin="anonymous"></script>
 </head>
@@ -119,7 +135,17 @@
       <img src="../resources/logo.webp" alt="" class="su-back__logo" width="40" height="40" decoding="async" />
     </a>
 
-    <div id="suGate" class="su-gate su-hidden" role="status" aria-live="polite">Checking session…</div>
+    <div id="suGate" class="su-gate-card-wrap su-hidden" role="status" aria-live="polite">
+      <div class="su-gate-card">
+        <p class="su-gate-brand">Staff tools</p>
+        <h2 class="su-gate-title">Users</h2>
+        <div class="su-gate-spinner-wrap" aria-hidden="true"><div class="su-gate-spinner"></div></div>
+        <p id="suGateMsg" class="su-gate-msg">Checking access…</p>
+        <div class="su-gate-actions">
+          <a class="su-btn" href="index.html">← Menu admin</a>
+        </div>
+      </div>
+    </div>
 
     <div id="suLogin">
       <h1 class="su-h1">User accounts</h1>
@@ -134,6 +160,7 @@
       </div>
       <button type="button" class="su-btn su-btn--primary" id="suLoginBtn">Sign in</button>
       <p class="su-err su-hidden" id="suLoginErr"></p>
+      <button type="button" class="su-btn su-hidden" id="suRetryVerifyBtn" style="margin-top:10px">Try again</button>
     </div>
 
     <div id="suMain" class="su-hidden">
