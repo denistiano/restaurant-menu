@@ -1780,7 +1780,7 @@
     const tbody = document.getElementById('admResTbody');
     const empty = document.getElementById('admResEmpty');
     if (!tbody || !rid || !base) return;
-    tbody.innerHTML = '<tr><td colspan="7" style="padding:14px;text-align:center;color:var(--color-text-muted)">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:14px;text-align:center;color:var(--color-text-muted)">Loading…</td></tr>';
     if (empty) empty.style.display = 'none';
     try {
       const res = await fetch(
@@ -1792,8 +1792,10 @@
       if (!list.length) {
         tbody.innerHTML = '';
         if (empty) empty.style.display = '';
+        _renderAdmResTimeline([]);
         return;
       }
+      _renderAdmResTimeline(list);
       const STATUS_NEXT = {
         PENDING:   'CONFIRMED',
         CONFIRMED: 'SEATED',
@@ -1809,8 +1811,10 @@
         const cancelAction = r.status !== 'CANCELLED' && r.status !== 'COMPLETED'
           ? `<button class="adm-res-action" data-id="${r.id}" data-status="CANCELLED" style="color:#dc2626">Cancel</button>`
           : '';
+        const dmin = typeof r.durationMinutes === 'number' && r.durationMinutes > 0 ? r.durationMinutes : '—';
         return `<tr>
           <td>${time}</td>
+          <td>${dmin === '—' ? '—' : dmin + 'm'}</td>
           <td>${_esc(r.tableId)}</td>
           <td>${_esc(r.guestName)}</td>
           <td>${r.partySize}</td>
@@ -1843,8 +1847,67 @@
         });
       });
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="7" style="color:#dc2626;padding:14px">${_esc(err.message)}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="color:#dc2626;padding:14px">${_esc(err.message)}</td></tr>`;
+      _renderAdmResTimeline([]);
     }
+  }
+
+  /** One swimlane per table, blocks from reserved time + duration. */
+  function _renderAdmResTimeline(list) {
+    const host = document.getElementById('admResTimeline');
+    if (!host) return;
+    if (!list || !list.length) {
+      host.innerHTML = '';
+      host.style.display = 'none';
+      return;
+    }
+    host.style.display = 'block';
+    const toMin = (timeStr) => {
+      if (!timeStr || typeof timeStr !== 'string') return null;
+      const t = timeStr.slice(0, 5);
+      const p = t.split(':');
+      if (p.length < 2) return null;
+      return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
+    };
+    const segs = list.map((r) => {
+      const startM = toMin(r.reservedTime);
+      const dur = typeof r.durationMinutes === 'number' && r.durationMinutes > 0 ? r.durationMinutes : 120;
+      if (startM == null) {
+        return { table: r.tableId, guest: r.guestName, a: 0, b: 24 * 60, allday: true };
+      }
+      const endM = Math.min(24 * 60, startM + dur);
+      return { table: r.tableId, guest: r.guestName, a: startM, b: endM, allday: false };
+    });
+    const win0 = Math.max(0, Math.min(...segs.map(s => s.a)) - 30);
+    const win1 = Math.min(24 * 60, Math.max(...segs.map(s => s.b)) + 30);
+    const widthMin = win1 - win0 || 1;
+    const tables = [...new Set(segs.map(s => s.table))].sort();
+    const tickMaj = 60;
+    const ticks = [];
+    for (let m = Math.floor(win0 / tickMaj) * tickMaj; m <= win1; m += tickMaj) {
+      const left = ((m - win0) / widthMin) * 100;
+      const label = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+      ticks.push(`<span class="adm-res-tl-tick" style="left:${left.toFixed(2)}%">${label}</span>`);
+    }
+    const rowH = 40;
+    const bodyRows = tables.map(tid => {
+      const inRow = segs.filter(s => s.table === tid);
+      const blocks = inRow.map(s => {
+        const left = ((s.a - win0) / widthMin) * 100;
+        const w = ((Math.min(s.b, win1) - Math.max(s.a, win0)) / widthMin) * 100;
+        if (w <= 0) return '';
+        const tip = _esc(s.guest) + (s.allday ? ' (all day)' : '');
+        return `<div class="adm-res-tl-block" style="left:${left.toFixed(2)}%;width:${Math.max(w, 0.8).toFixed(2)}%" title="${tip}"><span class="adm-res-tl-block__g">${_esc(s.guest)}</span></div>`;
+      }).join('');
+      return `<div class="adm-res-tl-row">
+        <div class="adm-res-tl-label" title="${_esc(tid)}">${_esc(tid)}</div>
+        <div class="adm-res-tl-lane" style="height:${rowH}px">${blocks}</div>
+      </div>`;
+    }).join('');
+    host.innerHTML = `
+      <h4 class="adm-res-tl-title">${adminLang === 'bg' ? 'Времеви план' : 'Day timeline (per table)'}</h4>
+      <div class="adm-res-tl-scale">${ticks.join('')}</div>
+      <div class="adm-res-tl-body">${bodyRows}</div>`;
   }
 
   function _statusLabel(s) {
@@ -1951,6 +2014,22 @@
     const resEl = document.getElementById('cfgReservations');
     if (resEl) resEl.checked = cfg.reservations_enabled !== false;
 
+    const durs = cfg.reservation_allowed_durations_minutes;
+    const durInput = document.getElementById('cfgResDurations');
+    if (durInput) {
+      if (Array.isArray(durs) && durs.length) {
+        durInput.value = durs.map(n => String(n)).join(', ');
+      } else if (typeof durs === 'number' && durs > 0) {
+        durInput.value = String(durs);
+      } else {
+        durInput.value = '120';
+      }
+    }
+    const forf = document.getElementById('cfgResForfeit');
+    if (forf) forf.value = (typeof cfg.reservation_forfeit_minutes === 'number' && cfg.reservation_forfeit_minutes >= 0)
+      ? cfg.reservation_forfeit_minutes
+      : 30;
+
     const langs = normalizeEnabledLanguages(cfg);
     MENU_LANG_OPTIONS.forEach(({ code, id }) => {
       const el = document.getElementById(id);
@@ -1962,12 +2041,14 @@
       tzEl.value = cfg.timezone || 'Europe/Sofia';
       if (!tzEl.value) tzEl.value = 'Europe/Sofia'; // fallback if not in list
     }
-    ['cfgPrice','cfgDesc','cfgTags','cfgIngredients','cfgAllergens','cfgTimezone','cfgReservations']
+    ['cfgPrice','cfgDesc','cfgTags','cfgIngredients','cfgAllergens','cfgTimezone','cfgReservations','cfgResDurations','cfgResForfeit']
       .forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         el.addEventListener('change', () => setDirty(true));
       });
+    const cfgResDurs = document.getElementById('cfgResDurations');
+    if (cfgResDurs) cfgResDurs.addEventListener('input', () => setDirty(true));
 
     MENU_LANG_OPTIONS.forEach(({ id }) => {
       const el = document.getElementById(id);
@@ -3263,6 +3344,22 @@
     r.menu.config.show_allergens   = document.getElementById('cfgAllergens').checked;
     const resCfg = document.getElementById('cfgReservations');
     if (resCfg) r.menu.config.reservations_enabled = resCfg.checked;
+    const dursStr = (document.getElementById('cfgResDurations')?.value || '').trim();
+    if (dursStr) {
+      const arr = dursStr.split(/[\s,;]+/)
+        .map(s => parseInt(s, 10))
+        .filter(n => n > 0 && n <= 24 * 60);
+      r.menu.config.reservation_allowed_durations_minutes = arr.length ? arr : [120];
+    } else {
+      r.menu.config.reservation_allowed_durations_minutes = [120];
+    }
+    const fMin = document.getElementById('cfgResForfeit')?.value;
+    if (fMin !== undefined && fMin !== '') {
+      const fi = Math.max(0, Math.min(24 * 60, parseInt(fMin, 10) || 0));
+      r.menu.config.reservation_forfeit_minutes = fi;
+    } else {
+      r.menu.config.reservation_forfeit_minutes = 30;
+    }
     r.menu.config.enabled_languages = [];
     MENU_LANG_OPTIONS.forEach(({ code, id }) => {
       if (document.getElementById(id)?.checked) r.menu.config.enabled_languages.push(code);

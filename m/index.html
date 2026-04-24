@@ -272,6 +272,18 @@
               <input type="checkbox" class="toggle-cb" id="cfgReservations" />
               <span class="toggle-switch"></span>
             </label>
+            <div class="field-row" style="margin-top:10px" id="cfgResPolicyBlock">
+              <div style="flex:1;min-width:200px">
+                <label class="field-label" for="cfgResDurations" id="cfgResDurationsLabel">Allowed reservation lengths (minutes)</label>
+                <p class="field-label__hint" id="cfgResDurationsHint">One value (e.g. 120) is fixed. Several values, comma-separated (e.g. 120, 180, 240), let guests pick.</p>
+                <input type="text" class="field-input" id="cfgResDurations" inputmode="numeric" placeholder="120 or 120, 180" autocomplete="off" />
+              </div>
+              <div style="flex:0 0 120px;min-width:100px">
+                <label class="field-label" for="cfgResForfeit" id="cfgResForfeitLabel">Forfeit delay (min)</label>
+                <p class="field-label__hint" id="cfgResForfeitHint">Unclaimed after start</p>
+                <input type="number" class="field-input" id="cfgResForfeit" min="0" max="1440" step="5" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -452,11 +464,12 @@
             <input type="date" id="admResDate" />
             <button class="lf-save-btn" id="admResLoad" style="padding:6px 16px;font-size:12px">Load</button>
           </div>
+          <div class="adm-res-timeline" id="admResTimeline" aria-label="Reservations by table"></div>
           <div style="overflow-x:auto">
             <table class="adm-res-table" id="admResTable">
               <thead>
                 <tr>
-                  <th>Time</th><th>Table</th><th>Guest</th><th>Party</th>
+                  <th>Time</th><th>Duration</th><th>Table</th><th>Guest</th><th>Party</th>
                   <th>Contact</th><th>Status</th><th>Actions</th>
                 </tr>
               </thead>
