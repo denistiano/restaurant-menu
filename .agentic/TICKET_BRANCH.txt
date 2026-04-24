@@ -1,2 +1,2 @@
-ticket_id=8
-branch=emenu-8-let-s-fix-telemetry-a-bit-the-ta
+ticket_id=9
+branch=emenu-9-fixes-for-admin-dashboard-1-in-u
