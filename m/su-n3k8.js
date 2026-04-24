@@ -394,29 +394,37 @@
     return b;
   }
 
-  function fillVenuesTableCell(td, assignments) {
-    td.className = 'su-table-venues';
-    td.textContent = '';
-    if (!assignments || !assignments.length) {
-      td.classList.add('su-table-venues--empty');
-      td.textContent = '—';
-      return;
-    }
-    assignments.forEach(function (a) {
-      var pill = document.createElement('span');
-      pill.className = 'su-table-pill';
-      pill.title = a.restaurantId + ' · ' + String(a.role || 'ADMIN').toUpperCase();
-      var nameSpan = document.createElement('span');
-      nameSpan.className = 'su-table-pill__name';
-      var v = findVenue(a.restaurantId);
-      nameSpan.textContent = venueLabel(v, a.restaurantId);
-      var roleSpan = document.createElement('span');
-      roleSpan.className = 'su-table-pill__role';
-      roleSpan.textContent = String(a.role || 'ADMIN').toUpperCase();
-      pill.appendChild(nameSpan);
-      pill.appendChild(roleSpan);
-      td.appendChild(pill);
+  var VENUE_PIN_SVG =
+    '<g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3" fill="currentColor" stroke="none"/></g>';
+
+  function closeAllVenueDetails(tbody) {
+    if (!tbody) return;
+    tbody.querySelectorAll('.su-venue-detail-row:not(.su-hidden)').forEach(function (r) {
+      r.classList.add('su-hidden');
     });
+    tbody.querySelectorAll('.su-venues-toggle[aria-expanded="true"]').forEach(function (b) {
+      b.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  function buildVenueDetailList(assignments) {
+    var ul = document.createElement('ul');
+    ul.className = 'su-venue-detail-list';
+    for (var i = 0; i < assignments.length; i++) {
+      var a = assignments[i];
+      var li = document.createElement('li');
+      var v = findVenue(a.restaurantId);
+      var name = document.createElement('span');
+      name.className = 'su-venue-detail-name';
+      name.textContent = venueLabel(v, a.restaurantId);
+      var role = document.createElement('span');
+      role.className = 'su-venue-detail-role';
+      role.textContent = String(a.role || 'ADMIN').toUpperCase();
+      li.appendChild(name);
+      li.appendChild(role);
+      ul.appendChild(li);
+    }
+    return ul;
   }
 
   function refreshList() {
@@ -429,9 +437,9 @@
       }
       return res.json().then(function (users) {
         tbody.innerHTML = '';
-        /* forEach + .bind: a `for` loop with `var u` made every row's Setup link / Delete target the last user. */
         users.forEach(function (u) {
           var tr = document.createElement('tr');
+          tr.className = 'su-user-row';
           var passwordSet = u.passwordSet !== false;
           tr.innerHTML =
             '<td>' +
@@ -445,7 +453,28 @@
             '</td><td class="su-td-icon">' +
             boolCell(passwordSet, 'Password set', 'Password not set yet') +
             '</td><td></td><td class="su-actions su-actions--icons"></td>';
-          fillVenuesTableCell(tr.cells[5], u.assignments);
+          var vCell = tr.cells[5];
+          vCell.className = 'su-table-venues';
+          vCell.textContent = '';
+          var asg = u.assignments || [];
+          if (!asg.length) {
+            vCell.classList.add('su-table-venues--empty');
+            vCell.textContent = '—';
+          } else {
+            var n = asg.length;
+            var vBtn = document.createElement('button');
+            vBtn.type = 'button';
+            vBtn.className = 'su-venues-toggle';
+            vBtn.setAttribute('aria-expanded', 'false');
+            vBtn.setAttribute('aria-label', n + ' venue' + (n === 1 ? '' : 's') + ' — show details');
+            vBtn.innerHTML =
+              '<svg class="su-venues-toggle__ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+              VENUE_PIN_SVG +
+              '</svg><span class="su-venues-toggle__n">' +
+              n +
+              '</span>';
+            vCell.appendChild(vBtn);
+          }
           var cell = tr.querySelector('.su-actions');
           var editBtn = iconButton(
             'su-icon-btn',
@@ -472,6 +501,30 @@
           cell.appendChild(linkBtn);
           cell.appendChild(delBtn);
           tbody.appendChild(tr);
+          if (asg.length) {
+            var dTr = document.createElement('tr');
+            dTr.className = 'su-venue-detail-row su-hidden';
+            var dTd = document.createElement('td');
+            dTd.className = 'su-venue-detail-cell';
+            dTd.colSpan = 7;
+            dTd.appendChild(buildVenueDetailList(asg));
+            dTr.appendChild(dTd);
+            tbody.appendChild(dTr);
+            (function (btn, row) {
+              btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var wasHidden = row.classList.contains('su-hidden');
+                closeAllVenueDetails(tbody);
+                if (wasHidden) {
+                  row.classList.remove('su-hidden');
+                  btn.setAttribute('aria-expanded', 'true');
+                } else {
+                  row.classList.add('su-hidden');
+                  btn.setAttribute('aria-expanded', 'false');
+                }
+              });
+            })(vCell.querySelector('.su-venues-toggle'), dTr);
+          }
         });
       });
     });
@@ -611,87 +664,77 @@
     });
   }
 
-  el('suLoginBtn').addEventListener('click', function () {
-    var username = el('suUser').value.trim();
-    var password = el('suPass').value;
-    var err = el('suLoginErr');
-    err.classList.add('su-hidden');
-    if (!username || !password) {
-      err.textContent = 'Enter username and password.';
-      err.classList.remove('su-hidden');
-      return;
-    }
-    var base = getMenuApiBase();
-    if (!base) {
-      err.textContent = 'This page is missing the menu service address. Ask your administrator.';
-      err.classList.remove('su-hidden');
-      return;
-    }
-    fetch(base + '/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username, password: password }),
-      credentials: 'include'
-    })
-      .then(function (res) {
-        if (!res.ok) {
-          err.textContent = 'Invalid credentials.';
-          err.classList.remove('su-hidden');
-          return null;
-        }
-        return res.json();
-      })
-      .then(function (body) {
-        if (!body) return;
-        setToken(body.accessToken);
-        if (!body.superAdmin) {
-          clearToken();
-          err.textContent = 'Not a super administrator.';
-          err.classList.remove('su-hidden');
-          return;
-        }
-        el('suPass').value = '';
-        showMainIfSuper();
-      })
-      .catch(function (e) {
-        err.textContent = e.message || 'Network error';
+  if (el('suLoginBtn')) {
+    el('suLoginBtn').addEventListener('click', function () {
+      var username = el('suUser') ? el('suUser').value.trim() : '';
+      var password = el('suPass') ? el('suPass').value : '';
+      var err = el('suLoginErr');
+      if (!err) return;
+      err.classList.add('su-hidden');
+      if (!username || !password) {
+        err.textContent = 'Enter username and password.';
         err.classList.remove('su-hidden');
-      });
-  });
-
-  el('suLogoutBtn').addEventListener('click', function () {
-    var base = getMenuApiBase();
-    function done() {
-      clearToken();
-      el('suMain').classList.add('su-hidden');
-      el('suLogin').classList.remove('su-hidden');
-    }
-    if (base) {
-      fetch(base + '/api/auth/logout', { method: 'POST', credentials: 'include' }).finally(done);
-    } else {
-      done();
-    }
-  });
-
-  if (el('suRefreshBtn')) {
-    el('suRefreshBtn').addEventListener('click', function () {
-      loadVenueCatalog()
-        .then(function () {
-          return refreshList();
-        })
-        .then(function () {
-          if (el('suNewVenueChosen')) renderVenueAssignmentUI('suNew');
-          var eb = el('suEditBackdrop');
-          if (editTargetUser && eb && !eb.classList.contains('su-hidden')) {
-            renderVenueAssignmentUI('suEdit');
+        return;
+      }
+      var base = getMenuApiBase();
+      if (!base) {
+        err.textContent = 'This page is missing the menu service address. Ask your administrator.';
+        err.classList.remove('su-hidden');
+        return;
+      }
+      fetch(base + '/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password }),
+        credentials: 'include'
+      })
+        .then(function (res) {
+          if (!res.ok) {
+            err.textContent = 'Invalid credentials.';
+            err.classList.remove('su-hidden');
+            return null;
           }
+          return res.json();
+        })
+        .then(function (body) {
+          if (!body) return;
+          setToken(body.accessToken);
+          if (!body.superAdmin) {
+            clearToken();
+            err.textContent = 'Not a super administrator.';
+            err.classList.remove('su-hidden');
+            return;
+          }
+          if (el('suPass')) el('suPass').value = '';
+          showMainIfSuper();
+        })
+        .catch(function (e) {
+          err.textContent = e.message || 'Network error';
+          err.classList.remove('su-hidden');
         });
+    });
+  }
+
+  if (el('suLogoutBtn')) {
+    el('suLogoutBtn').addEventListener('click', function () {
+      var base = getMenuApiBase();
+      function done() {
+        clearToken();
+        if (el('suMain')) el('suMain').classList.add('su-hidden');
+        if (el('suLogin')) el('suLogin').classList.remove('su-hidden');
+      }
+      if (base) {
+        fetch(base + '/api/auth/logout', { method: 'POST', credentials: 'include' }).finally(done);
+      } else {
+        done();
+      }
     });
   }
 
   if (el('suCreateBtn')) {
     el('suCreateBtn').addEventListener('click', function () {
       var err = el('suCreateErr');
+      if (!err) return;
       err.classList.add('su-hidden');
       var username = el('suNewUser').value.trim();
       var passwordRaw = el('suNewPass').value;
