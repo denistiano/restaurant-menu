@@ -32,6 +32,13 @@
       <h1 class="auth-title" id="authTitle">Sign in</h1>
       <p class="auth-sub" id="authSub">Use the staff username and password you were given. Your venues appear after you sign in.</p>
 
+      <div id="authSessionBoot" class="auth-session-boot hidden" role="status" aria-live="polite">
+        <div class="admin-spinner-wrap auth-session-boot__spinner-wrap">
+          <div class="admin-spinner" aria-hidden="true"></div>
+        </div>
+        <p class="auth-sub auth-session-boot__hint" id="authSessionBootText"></p>
+      </div>
+
       <div id="authCredentialsBlock">
       <div class="api-key-row">
         <label class="api-key-row__label" for="usernameInput">

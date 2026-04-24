@@ -53,6 +53,7 @@
       authSub:
         'Use the staff username and password you were given. Your venues appear after you sign in.',
       signIn: 'Sign in',
+      sessionRestoreHint: 'Restoring your session…',
       chooseWorkspaceHint:
         'Your first linked venue opens automatically (same order as returned for your account). With several venues, hold the Venue button in the staff bar (~0.5s) to pick one, or use the list below when you are on this screen.',
       superOnlyHint:
@@ -156,6 +157,7 @@
       authSub:
         'Използвай потребителското име и паролата, които си получил. Обектите се показват след вход.',
       signIn: 'Вход',
+      sessionRestoreHint: 'Възстановяване на сесията…',
       chooseWorkspaceHint:
         'Първият свързан обект се отваря автоматично (редът е като при акаунта ти). При няколко обекта задрж бутона „Обект“ в долната лента (~0,5 s) за избор, или ползвай списъка по-долу, когато си тук.',
       superOnlyHint:
@@ -627,6 +629,8 @@
   const editorScreen = document.getElementById('editorScreen');
   const authGrid     = document.getElementById('authGrid');
   const authCredentialsBlock = document.getElementById('authCredentialsBlock');
+  const authSessionBoot = document.getElementById('authSessionBoot');
+  const authSessionBootText = document.getElementById('authSessionBootText');
   const postAuthPanel = document.getElementById('postAuthPanel');
   const postAuthHint = document.getElementById('postAuthHint');
   const superOnlyHint = document.getElementById('superOnlyHint');
@@ -819,6 +823,7 @@
     }
     setText('authTitle', 'signInTitle');
     setText('authSub', 'authSub');
+    if (authSessionBootText) authSessionBootText.textContent = tr('sessionRestoreHint');
     setText('authSignInBtn', 'signIn');
     setText('authError', 'incorrectPassword');
     const logo = document.getElementById('authLogoText');
@@ -1066,12 +1071,30 @@
     setTimeout(() => wsPickerSearch?.focus(), 50);
   }
 
+  function exitAuthSessionBoot() {
+    authSessionBoot?.classList.add('hidden');
+    document.getElementById('authTitle')?.classList.remove('hidden');
+    document.getElementById('authSub')?.classList.remove('hidden');
+  }
+
+  /** While a tab session token exists, hide the sign-in form until /api/auth/me completes. */
+  function enterAuthSessionBoot() {
+    authSessionBoot?.classList.remove('hidden');
+    document.getElementById('authTitle')?.classList.add('hidden');
+    document.getElementById('authSub')?.classList.add('hidden');
+    authCredentialsBlock?.classList.add('hidden');
+    postAuthPanel?.classList.add('hidden');
+    if (authSessionBootText) authSessionBootText.textContent = tr('sessionRestoreHint');
+  }
+
   function showCredentialsUi() {
+    exitAuthSessionBoot();
     authCredentialsBlock?.classList.remove('hidden');
     postAuthPanel?.classList.add('hidden');
   }
 
   function showPostAuthUi() {
+    exitAuthSessionBoot();
     authCredentialsBlock?.classList.add('hidden');
     postAuthPanel?.classList.remove('hidden');
     if (superOnlyHint) {
@@ -1113,13 +1136,21 @@
     await loadAndOpenEditor();
   }
 
+  const AUTH_ME_TIMEOUT_MS = 28000;
+
   async function restoreSessionIfPossible() {
     const t = getAuthToken();
     if (!t) return false;
     const base = getMenuApiBase();
     if (!base) return false;
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), AUTH_ME_TIMEOUT_MS);
     try {
-      const res = await fetch(`${base}/api/auth/me`, { headers: { Authorization: 'Bearer ' + t } });
+      const res = await fetch(`${base}/api/auth/me`, {
+        headers: { Authorization: 'Bearer ' + t },
+        signal: ctrl.signal
+      });
+      clearTimeout(tid);
       if (!res.ok) {
         clearAuthToken();
         return false;
@@ -1135,9 +1166,13 @@
         /* ignore */
       }
       await loadQuantityMetricsOnly();
-      showPostAuthUi();
       return true;
-    } catch {
+    } catch (e) {
+      clearTimeout(tid);
+      if (e && e.name === 'AbortError') {
+        clearAuthToken();
+        return false;
+      }
       clearAuthToken();
       return false;
     }
@@ -3442,6 +3477,10 @@
   adminLangToggleEditor?.addEventListener('click', () => applyAdminLang(adminLang === 'bg' ? 'en' : 'bg'));
   applyAdminLang(adminLang, false);
 
+  if (getAuthToken()) {
+    enterAuthSessionBoot();
+  }
+
   authWorkspacePickBtn?.addEventListener('click', () => openWorkspacePicker('auth'));
   workspacePickerBackdrop?.addEventListener('click', closeWorkspacePicker);
   wsPickerClose?.addEventListener('click', closeWorkspacePicker);
@@ -3465,11 +3504,24 @@
   });
 
   (async () => {
-    const restored = await restoreSessionIfPossible();
-    if (!restored) {
+    try {
+      const restored = await restoreSessionIfPossible();
+      if (!restored) {
+        showCredentialsUi();
+        return;
+      }
+      if (scopedRestaurantIds.length > 0) {
+        await openEditorForRestaurantId(scopedRestaurantIds[0]);
+        if (!editorScreen.classList.contains('hidden')) {
+          exitAuthSessionBoot();
+        } else {
+          showPostAuthUi();
+        }
+        return;
+      }
+      showPostAuthUi();
+    } catch (_) {
       showCredentialsUi();
-    } else if (scopedRestaurantIds.length > 0) {
-      await openEditorForRestaurantId(scopedRestaurantIds[0]);
     }
   })();
 

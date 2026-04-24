@@ -4,6 +4,7 @@
   var TOKEN_KEY = 'menu_admin_jwt';
   var SUPER_MIRROR_KEY = 'menu_admin_jwt_super_mirror';
   var DEFAULT_LOCAL = 'http://127.0.0.1:8080';
+  var ME_TIMEOUT_MS = 28000;
 
   function getMenuApiBase() {
     var w = typeof window !== 'undefined' && window.__MENU_API_BASE__;
@@ -26,7 +27,11 @@
   }
 
   function getToken() {
-    return sessionStorage.getItem(TOKEN_KEY) || '';
+    try {
+      return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(SUPER_MIRROR_KEY) || '';
+    } catch (e) {
+      return '';
+    }
   }
   function setToken(t) {
     if (t) {
@@ -246,7 +251,7 @@
     var login = el('suLogin');
     var token = '';
     try {
-      token = sessionStorage.getItem(TOKEN_KEY) || '';
+      token = getToken();
     } catch (e) {}
     if (!token) {
       hideSuGate();
@@ -259,8 +264,24 @@
   })();
 
   function verifySuper() {
-    return api('/api/auth/me')
+    var base = getMenuApiBase();
+    if (!base) {
+      return Promise.resolve({ ok: false, clearSession: false, noBase: true });
+    }
+    var token = getToken();
+    if (!token) {
+      return Promise.resolve({ ok: false, clearSession: false });
+    }
+    var ctrl = new AbortController();
+    var tid = setTimeout(function () {
+      ctrl.abort();
+    }, ME_TIMEOUT_MS);
+    return fetch(base + '/api/auth/me', {
+      headers: { Authorization: 'Bearer ' + token },
+      signal: ctrl.signal
+    })
       .then(function (res) {
+        clearTimeout(tid);
         if (res.status === 401 || res.status === 403) {
           return { ok: false, clearSession: true };
         }
@@ -271,17 +292,30 @@
           return { ok: !!me.superAdmin, clearSession: !me.superAdmin };
         });
       })
-      .catch(function () {
+      .catch(function (e) {
+        clearTimeout(tid);
+        if (e && e.name === 'AbortError') {
+          return { ok: false, clearSession: false, timedOut: true };
+        }
         return { ok: false, clearSession: false };
       });
   }
 
   function showMainIfSuper() {
+    var retryBtn = el('suRetryVerifyBtn');
+    if (retryBtn) retryBtn.classList.add('su-hidden');
     if (!getToken()) {
       hideSuGate();
       el('suMain').classList.add('su-hidden');
       el('suLogin').classList.remove('su-hidden');
       return Promise.resolve(false);
+    }
+    var gate = el('suGate');
+    if (gate) {
+      gate.classList.remove('su-hidden');
+      var gm = el('suGateMsg');
+      if (gm) gm.textContent = 'Checking access…';
+      el('suLogin').classList.add('su-hidden');
     }
     return verifySuper().then(function (r) {
       hideSuGate();
@@ -291,10 +325,21 @@
         if (r.clearSession) clearToken();
         el('suLogin').classList.remove('su-hidden');
         el('suMain').classList.add('su-hidden');
-        if (errEl && !r.clearSession) {
-          errEl.textContent =
-            'Could not verify your session (network or server error). Check your connection and try again.';
-          errEl.classList.remove('su-hidden');
+        if (errEl) {
+          if (r.noBase) {
+            errEl.textContent = 'This page is missing the menu service address. Ask your administrator.';
+            errEl.classList.remove('su-hidden');
+          } else if (r.timedOut) {
+            errEl.textContent =
+              'Checking your session timed out. Check your connection, use Try again, or open Menu admin and return here.';
+            errEl.classList.remove('su-hidden');
+            if (retryBtn) retryBtn.classList.remove('su-hidden');
+          } else if (!r.clearSession) {
+            errEl.textContent =
+              'Could not verify your session (network or server error). Check your connection and try again.';
+            errEl.classList.remove('su-hidden');
+            if (retryBtn) retryBtn.classList.remove('su-hidden');
+          }
         }
         return false;
       }
@@ -644,44 +689,55 @@
     });
   }
 
-  el('suCreateBtn').addEventListener('click', function () {
-    var err = el('suCreateErr');
-    err.classList.add('su-hidden');
-    var username = el('suNewUser').value.trim();
-    var passwordRaw = el('suNewPass').value;
-    var enabled = el('suNewEn').checked;
-    var superAdmin = el('suNewSuper').checked;
-    var assignments = assignmentsPayloadFromList(newUserAssignmentList);
-    if (!username) {
-      err.textContent = 'Username required.';
-      err.classList.remove('su-hidden');
-      return;
-    }
-    if (passwordRaw.length > 0 && passwordRaw.length < 8) {
-      err.textContent = 'Password must be at least 8 characters or leave empty for invite-only.';
-      err.classList.remove('su-hidden');
-      return;
-    }
-    var json = { username: username, enabled: enabled, superAdmin: superAdmin, assignments: assignments };
-    if (passwordRaw.length >= 8) json.password = passwordRaw;
-    api('/api/super/users', { method: 'POST', json: json }).then(function (res) {
-      if (!res.ok) {
-        return res.json().then(function (j) {
-          err.textContent = formatApiError(j, res.status);
-          err.classList.remove('su-hidden');
-        }).catch(function () {
-          err.textContent = 'HTTP ' + res.status;
-          err.classList.remove('su-hidden');
-        });
+  if (el('suCreateBtn')) {
+    el('suCreateBtn').addEventListener('click', function () {
+      var err = el('suCreateErr');
+      err.classList.add('su-hidden');
+      var username = el('suNewUser').value.trim();
+      var passwordRaw = el('suNewPass').value;
+      var enabled = el('suNewEn').checked;
+      var superAdmin = el('suNewSuper').checked;
+      var assignments = assignmentsPayloadFromList(newUserAssignmentList);
+      if (!username) {
+        err.textContent = 'Username required.';
+        err.classList.remove('su-hidden');
+        return;
       }
-      el('suNewUser').value = '';
-      el('suNewPass').value = '';
-      newUserAssignmentList = [];
-      if (el('suNewVenueSearch')) el('suNewVenueSearch').value = '';
-      renderVenueAssignmentUI('suNew');
-      refreshList();
+      if (passwordRaw.length > 0 && passwordRaw.length < 8) {
+        err.textContent = 'Password must be at least 8 characters or leave empty for invite-only.';
+        err.classList.remove('su-hidden');
+        return;
+      }
+      var json = { username: username, enabled: enabled, superAdmin: superAdmin, assignments: assignments };
+      if (passwordRaw.length >= 8) json.password = passwordRaw;
+      api('/api/super/users', { method: 'POST', json: json }).then(function (res) {
+        if (!res.ok) {
+          return res.json().then(function (j) {
+            err.textContent = formatApiError(j, res.status);
+            err.classList.remove('su-hidden');
+          }).catch(function () {
+            err.textContent = 'HTTP ' + res.status;
+            err.classList.remove('su-hidden');
+          });
+        }
+        el('suNewUser').value = '';
+        el('suNewPass').value = '';
+        newUserAssignmentList = [];
+        if (el('suNewVenueSearch')) el('suNewVenueSearch').value = '';
+        renderVenueAssignmentUI('suNew');
+        refreshList();
+      });
     });
-  });
+  }
+
+  if (el('suRetryVerifyBtn')) {
+    el('suRetryVerifyBtn').addEventListener('click', function () {
+      var err = el('suLoginErr');
+      if (err) err.classList.add('su-hidden');
+      el('suRetryVerifyBtn').classList.add('su-hidden');
+      showMainIfSuper();
+    });
+  }
 
   if (el('suEditVenueSearch')) {
     el('suEditVenueSearch').addEventListener('input', function () {
