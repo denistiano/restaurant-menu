@@ -625,6 +625,93 @@ body.has-m-app-nav .sp-wrap {
   padding-bottom: calc(80px + var(--m-app-strip-h) + env(safe-area-inset-bottom, 0px)) !important;
 }
 
+/* ── STAFF SUB-APP SHELL (Users, New user, Activity, Set password) ──
+   html/body do not scroll; one flex child scrolls; bottom nav stays fixed. */
+html.m-staff-root {
+  height: 100%;
+}
+html.m-staff-root body.m-staff-shell {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.m-staff-shell__main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+.m-staff-shell__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+/* Reserve space for fixed .m-app-nav in scrollable regions */
+.m-staff-shell__scroll--with-nav,
+.m-staff-page__table-scroll,
+.m-staff-form-scroll {
+  padding-bottom: calc(12px + var(--m-app-strip-h) + env(safe-area-inset-bottom, 0px));
+}
+.m-staff-page__table-scroll {
+  padding-left: 0;
+  padding-right: 0;
+}
+.m-staff-page__head {
+  flex-shrink: 0;
+  padding: 8px 16px 0;
+  width: 100%;
+  max-width: 100%;
+}
+.m-staff-page__head .su-h1,
+.m-staff-page__head .su-h1--single {
+  margin-bottom: 4px;
+}
+.su-staff-page-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Editor (index): when open, only .editor-body scrolls — not the whole page */
+body.has-m-app-nav:has(#editorScreen:not(.hidden)) {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+body.has-m-app-nav:has(#editorScreen:not(.hidden)) .screen#editorScreen,
+body.has-m-app-nav:has(#editorScreen:not(.hidden)) #editorScreen.screen {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+body.has-m-app-nav:has(#editorScreen:not(.hidden)) #editorScreen .editor-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  max-width: min(760px, 100%);
+  box-sizing: border-box;
+  padding-bottom: calc(20px + var(--m-app-strip-h) + env(safe-area-inset-bottom, 0px));
+}
+
 /* ── FORM ELEMENTS ───────────────────────────────────────── */
 .form-section {
   margin-bottom: 32px;

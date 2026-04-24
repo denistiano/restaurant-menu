@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="m-staff-root" lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="logs.css" />
   <meta name="menu-api-base" content="https://tebeshir.online" />
 </head>
-<body class="spl-body has-m-app-nav">
+<body class="spl-body has-m-app-nav m-staff-shell">
   <div id="logsGate" class="spl-gate">
     <div class="spl-gate__card">
       <p class="spl-gate__brand">Activity log</p>
@@ -22,15 +22,16 @@
   </div>
 
   <div id="logsMain" class="spl-shell hidden">
+    <div class="spl-chrome">
     <header class="spl-topbar">
       <div class="spl-topbar__left">
         <span class="spl-logo">Activity log</span>
         <a href="index.html" class="spl-topbar__link">← Menu admin</a>
       </div>
       <div class="spl-topbar__right">
-        <button type="button" class="spl-topbar__iconbtn" id="logsExportJson" title="Export JSON">⭳ JSON</button>
-        <button type="button" class="spl-topbar__iconbtn" id="logsExportCsv" title="Export CSV">⭳ CSV</button>
-        <button type="button" class="spl-topbar__iconbtn" id="logsMetricsBtn" title="Usage summary">Summary</button>
+        <button type="button" class="spl-topbar__iconbtn" id="logsExportJson" title="Export JSON" aria-label="Export JSON">⭳ JSON</button>
+        <button type="button" class="spl-topbar__iconbtn" id="logsExportCsv" title="Export CSV" aria-label="Export CSV">⭳ CSV</button>
+        <button type="button" class="spl-topbar__iconbtn" id="logsMetricsBtn" title="Usage summary" aria-label="Usage summary">Summary</button>
       </div>
     </header>
 
@@ -39,15 +40,9 @@
       <span class="spl-subnav__tab spl-subnav__tab--disabled">Datasets</span>
       <span class="spl-subnav__tab spl-subnav__tab--disabled">Reports</span>
     </nav>
-
-    <div id="logsMetricsPanel" class="spl-drawer hidden">
-      <div class="spl-drawer__head">
-        <span>Usage summary</span>
-        <button type="button" class="spl-drawer__close" id="logsMetricsClose" aria-label="Close">×</button>
-      </div>
-      <pre id="logsMetricsOut" class="spl-drawer__pre"></pre>
     </div>
 
+    <div class="spl-main-scroll">
     <div id="logsError" class="spl-banner spl-banner--err hidden"></div>
 
     <form id="logsFilterForm" class="spl-search-block" autocomplete="off">
@@ -195,6 +190,15 @@
           <tbody id="splStatsBody"></tbody>
         </table>
       </div>
+    </div>
+    </div><!-- /.spl-main-scroll -->
+
+    <div id="logsMetricsPanel" class="spl-drawer hidden" aria-hidden="true">
+      <div class="spl-drawer__head">
+        <span>Usage summary</span>
+        <button type="button" class="spl-drawer__close" id="logsMetricsClose" aria-label="Close">×</button>
+      </div>
+      <pre id="logsMetricsOut" class="spl-drawer__pre"></pre>
     </div>
   </div>
 

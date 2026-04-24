@@ -27,6 +27,63 @@
   background: var(--spl-black);
 }
 
+.spl-body.m-staff-shell {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  box-sizing: border-box;
+}
+.spl-body.m-staff-shell .spl-gate {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(24px + var(--m-app-strip-h, 52px) + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+}
+.spl-body.m-staff-shell .spl-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+}
+.spl-chrome {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 3;
+  background: var(--spl-topbar);
+}
+.spl-main-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(12px + var(--m-app-strip-h, 52px) + env(safe-area-inset-bottom, 0px));
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+}
+.spl-main-scroll .spl-search-block,
+.spl-main-scroll .spl-results-head,
+.spl-main-scroll .spl-timeline,
+.spl-main-scroll .spl-loading,
+.spl-main-scroll .spl-banner { flex-shrink: 0; }
+.spl-main-scroll .spl-panel {
+  flex: 1 1 auto;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+.spl-main-scroll .spl-main-grid { flex: 1 1 auto; min-height: 0; }
+.spl-main-scroll .spl-events-wrap { min-height: 0; }
+
 .spl-visually-hidden {
   position: absolute;
   width: 1px;
@@ -82,11 +139,14 @@
   line-height: 1.5;
 }
 
-/* Shell */
+/* Shell (logsMain) */
 .spl-shell {
-  min-height: 100vh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+}
+.spl-body:not(.m-staff-shell) .spl-shell {
+  min-height: 100vh;
 }
 
 .spl-topbar {
@@ -178,13 +238,45 @@
 }
 
 .spl-drawer {
-  margin: 0 16px;
+  margin: 0;
   padding: 12px 16px;
   background: var(--spl-panel);
   border: 1px solid var(--spl-border);
-  border-radius: 0 0 4px 4px;
-  border-top: none;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  max-height: min(50vh, 400px);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 8px);
 }
+#logsMain .spl-drawer {
+  max-height: min(48vh, 400px);
+  margin: 0;
+  padding-left: 16px;
+  padding-right: 16px;
+  bottom: calc(var(--m-app-strip-h, 52px) + env(safe-area-inset-bottom, 0px) + 8px);
+  border-radius: 14px 14px 0 0;
+}
+#logsMain .spl-drawer.hidden { display: none; }
+#logsMain .spl-drawer:not(.hidden) { display: flex; }
+.spl-body:not(.m-staff-shell) .spl-drawer {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0 16px;
+  z-index: auto;
+  max-height: 220px;
+  display: block;
+  border-radius: 0 0 4px 4px;
+  box-shadow: none;
+}
+.spl-body:not(.m-staff-shell) .spl-drawer:not(.hidden) { display: block; }
 .spl-drawer__head {
   display: flex;
   justify-content: space-between;
@@ -576,9 +668,10 @@
 .spl-main-grid {
   display: grid;
   grid-template-columns: 240px 1fr;
-  min-height: 400px;
+  min-height: 0;
   align-items: start;
 }
+.spl-body.m-staff-shell .spl-main-grid { min-height: 0; }
 @media (max-width: 900px) {
   .spl-main-grid {
     grid-template-columns: 1fr;
@@ -588,9 +681,11 @@
     border-bottom: 1px solid var(--spl-border-soft);
     position: relative;
     top: auto;
-    max-height: none;
-    overflow-y: visible;
+    max-height: 220px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
+  .spl-body.m-staff-shell .spl-fields { max-height: 200px; }
   .spl-events-table thead {
     position: static;
   }
@@ -600,11 +695,13 @@
   border-right: 1px solid var(--spl-border-soft);
   background: var(--spl-surface);
   padding: 12px 0;
-  max-height: calc(100vh - 320px);
+  max-height: min(40vh, 360px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   position: sticky;
   top: 0;
 }
+.spl-body.m-staff-shell .spl-fields { max-height: 240px; }
 .spl-fields__section {
   margin-bottom: 20px;
   padding: 0 12px;
@@ -875,8 +972,11 @@
   text-transform: uppercase;
 }
 
-/* Global /m bottom nav — avoid content hidden behind strip (admin.css defines .m-app-nav) */
-body.has-m-app-nav.spl-body .spl-shell {
+/* Global /m bottom nav: scroll regions already pad in m-staff-shell; gate keeps its own. */
+body.has-m-app-nav.m-staff-shell.spl-body .spl-shell {
+  padding-bottom: 0;
+}
+body.has-m-app-nav.spl-body:not(.m-staff-shell) .spl-shell {
   padding-bottom: calc(var(--m-app-strip-h, 52px) + env(safe-area-inset-bottom, 0px));
 }
 body.has-m-app-nav.spl-body .spl-gate {

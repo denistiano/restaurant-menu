@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="m-staff-root" lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -8,39 +8,72 @@
   <link rel="stylesheet" href="admin.css" />
   <meta name="menu-api-base" content="https://tebeshir.online" />
   <style>
-    .su-wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 80px; }
+    .su-staff-outer { width: 100%; max-width: 100%; }
+    .su-gate--overlay {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px 12px;
+      background: var(--bg);
+    }
+    .su-login-panel { width: 100%; max-width: 920px; margin: 0 auto; padding: 16px 16px 0; box-sizing: border-box; }
     .su-h1 { font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 8px; }
-    .su-muted { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
-    .su-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); margin-top: 16px; }
-    table.su-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .su-table th, .su-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
-    .su-table th { color: var(--muted); font-weight: 500; }
+    .su-muted { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+    .su-staff-top {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+      padding: 8px 12px 10px; flex-shrink: 0;
+    }
+    .su-staff-top .su-h1--single { margin: 0; }
+    .su-back--logo { margin-bottom: 0; }
+    .su-table-outer { width: 100%; }
+    .su-table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); -webkit-overflow-scrolling: touch; }
+    .su-table-wrap--users { min-height: 0; }
+    table.su-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 14px; }
+    .su-table th, .su-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .su-user-row { transition: background 0.15s ease; }
+    .su-user-row:active { background: rgba(196, 149, 90, 0.06); }
+    .su-table th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; position: sticky; top: 0; z-index: 1; background: var(--surface); }
     .su-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .su-actions--icons { flex-wrap: nowrap; gap: 4px; justify-content: flex-end; }
+    .su-actions--icons { flex-wrap: nowrap; gap: 6px; justify-content: flex-end; }
     .su-td-icon { text-align: center; vertical-align: middle; width: 44px; padding-left: 6px !important; padding-right: 6px !important; }
     .su-cell-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
     .su-cell-icon--ok { color: var(--success); }
     .su-cell-icon--no { color: rgba(224, 92, 92, 0.75); }
     .su-bool-svg { display: block; }
+    .su-venues-toggle {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-width: 44px; min-height: 40px; padding: 4px 12px;
+      border-radius: 999px; border: 1px solid var(--border-2);
+      background: var(--surface-2); color: var(--text);
+      font: 600 13px var(--font-sans, system-ui, sans-serif);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .su-venues-toggle[aria-expanded="true"] { border-color: rgba(196, 149, 90, 0.55); background: var(--accent-dim); }
+    .su-venues-toggle__n { line-height: 1; }
+    .su-venues-toggle__ico { display: block; flex-shrink: 0; color: var(--accent); }
+    .su-venue-detail-row { background: rgba(0, 0, 0, 0.2); }
+    .su-venue-detail-row.su-hidden { display: none !important; }
+    .su-venue-detail-cell { padding: 0 !important; border-bottom: 1px solid var(--border) !important; }
+    .su-venue-detail-list { list-style: none; margin: 0; padding: 12px 16px 14px 52px; }
+    .su-venue-detail-list li { font-size: 14px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .su-venue-detail-list li:last-child { border-bottom: none; }
+    .su-venue-detail-name { font-weight: 500; }
+    .su-venue-detail-role { font-size: 12px; color: var(--muted); font-family: ui-monospace, monospace; margin-left: 8px; }
     .su-icon-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 36px; height: 36px; padding: 0; border-radius: var(--radius-sm);
+      min-width: 44px; min-height: 44px; padding: 0; border-radius: 12px;
       border: 1px solid var(--border); background: var(--surface-2); color: var(--muted);
       transition: color 0.15s, border-color 0.15s, background 0.15s;
     }
     .su-icon-btn:hover { color: var(--text); border-color: rgba(196,149,90,0.45); background: rgba(196,149,90,0.1); }
     .su-icon-btn--danger:hover { color: var(--danger); border-color: rgba(224,92,92,0.45); background: var(--danger-dim); }
     .su-icon-btn__svg { display: block; }
-    .su-btn { padding: 8px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); font-size: 13px; }
+    .su-btn { padding: 10px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); font-size: 14px; }
     .su-btn--primary { background: var(--accent-dim); border-color: rgba(196,149,90,0.35); color: var(--text); }
     .su-btn--danger { border-color: rgba(224,92,92,0.35); color: var(--danger); }
     .su-field { margin-bottom: 12px; }
     .su-field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
     .su-field input, .su-field textarea { width: 100%; max-width: 480px; padding: 10px 12px; }
     .su-field textarea { min-height: 72px; font-family: ui-monospace, monospace; font-size: 12px; }
-    .su-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 24px; }
-    .su-back { display: inline-block; margin-bottom: 20px; font-size: 13px; color: var(--muted); }
-    .su-back:hover { color: var(--accent); }
     .su-err { color: var(--danger); font-size: 13px; margin-top: 8px; }
     .su-hidden { display: none !important; }
     .su-modal-backdrop {
@@ -66,7 +99,6 @@
     .su-venue-chip__remove {
       border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px;
     }
-    .su-venue-chip__remove:hover { color: var(--danger); }
     .su-venue-pick {
       max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm);
       background: var(--surface-2);
@@ -83,35 +115,8 @@
     .su-modal__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     #suQrCanvas { display: block; margin: 12px auto; border-radius: 8px; background: #fff; padding: 8px; }
     .su-url-field { width: 100%; font-size: 12px; padding: 8px; word-break: break-all; font-family: ui-monospace, monospace; }
-    .su-table-venues {
-      max-width: 300px;
-      vertical-align: top;
-    }
-    .su-table-venues--empty { color: var(--muted); font-size: 12px; }
-    .su-table-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      flex-wrap: wrap;
-      padding: 2px 8px;
-      margin: 2px 4px 2px 0;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--surface-2);
-      font-size: 11px;
-      line-height: 1.35;
-      max-width: 100%;
-    }
-    .su-table-pill__name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; max-width: 140px; white-space: nowrap; }
-    .su-table-pill__role {
-      font-size: 10px;
-      color: var(--muted);
-      font-family: ui-monospace, monospace;
-      flex-shrink: 0;
-    }
-    .su-gate-card-wrap {
-      display: flex; justify-content: center; padding: 28px 12px 36px; min-height: 38vh;
-    }
+    .su-table-venues { max-width: 100px; vertical-align: middle; }
+    .su-table-venues--empty { color: var(--muted); font-size: 14px; }
     .su-gate-card {
       max-width: 400px; width: 100%; text-align: center; padding: 28px 22px;
       border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
@@ -129,13 +134,10 @@
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" crossorigin="anonymous"></script>
 </head>
-<body class="has-m-app-nav">
-  <div class="su-wrap">
-    <a class="su-back su-back--logo" href="index.html" aria-label="Back to admin" title="Back">
-      <img src="../resources/logo.webp" alt="" class="su-back__logo" width="40" height="40" decoding="async" />
-    </a>
+<body class="has-m-app-nav m-staff-shell">
+  <div class="m-staff-shell__main su-staff-outer">
 
-    <div id="suGate" class="su-gate-card-wrap su-hidden" role="status" aria-live="polite">
+    <div id="suGate" class="su-gate--overlay su-hidden" role="status" aria-live="polite">
       <div class="su-gate-card">
         <p class="su-gate-brand">Staff tools</p>
         <h2 class="su-gate-title">Users</h2>
@@ -147,7 +149,10 @@
       </div>
     </div>
 
-    <div id="suLogin">
+    <div id="suLogin" class="m-staff-shell__scroll m-staff-form-scroll su-login-panel">
+      <a class="su-back su-back--logo" href="index.html" aria-label="Back to admin" title="Back">
+        <img src="../resources/logo.webp" alt="" class="su-back__logo" width="40" height="40" decoding="async" />
+      </a>
       <h1 class="su-h1">User accounts</h1>
       <p class="su-muted">Sign in with a full administrator account to view and edit staff users.</p>
       <div class="su-field">
@@ -163,31 +168,32 @@
       <button type="button" class="su-btn su-hidden" id="suRetryVerifyBtn" style="margin-top:10px">Try again</button>
     </div>
 
-    <div id="suMain" class="su-hidden">
-      <h1 class="su-h1">Users</h1>
-      <p class="su-muted">Review staff who can sign in to this menu. Add someone new from <strong>New user</strong> below. When editing, pick venues from the list and set each role. Use the link icon to share a one-time page so they can choose their own password.</p>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px">
-        <button type="button" class="su-btn" id="suRefreshBtn">Refresh</button>
-        <button type="button" class="su-btn su-btn--danger" id="suLogoutBtn">Sign out</button>
+    <div id="suMain" class="su-staff-page-main su-hidden">
+      <div class="su-staff-top m-staff-page__head">
+        <a class="su-back su-back--logo" href="index.html" aria-label="Back to admin" title="Back">
+          <img src="../resources/logo.webp" alt="" class="su-back__logo" width="40" height="40" decoding="async" />
+        </a>
+        <h1 class="su-h1 su-h1--single">Users</h1>
       </div>
 
-      <div class="su-table-wrap">
-        <table class="su-table" id="suTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Username</th>
-              <th class="su-td-icon" title="Account can sign in">Active</th>
-              <th class="su-td-icon" title="Full access to all admin tools">Admin</th>
-              <th class="su-td-icon" title="User chose a password or you set one">Password</th>
-              <th>Venues</th>
-              <th aria-label="Actions"></th>
-            </tr>
-          </thead>
-          <tbody id="suTbody"></tbody>
-        </table>
+      <div class="m-staff-shell__scroll m-staff-page__table-scroll su-table-outer">
+        <div class="su-table-wrap su-table-wrap--users">
+          <table class="su-table" id="suTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Username</th>
+                <th class="su-td-icon" title="Account can sign in">Active</th>
+                <th class="su-td-icon" title="Full access to all admin tools">Admin</th>
+                <th class="su-td-icon" title="User chose a password or you set one">Password</th>
+                <th>Venues</th>
+                <th aria-label="Actions"></th>
+              </tr>
+            </thead>
+            <tbody id="suTbody"></tbody>
+          </table>
+        </div>
       </div>
-
     </div>
 
     <div id="suEditBackdrop" class="su-modal-backdrop su-hidden" aria-hidden="true">

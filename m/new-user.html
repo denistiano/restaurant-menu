@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="m-staff-root" lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -8,105 +8,136 @@
   <link rel="stylesheet" href="admin.css" />
   <meta name="menu-api-base" content="https://tebeshir.online" />
   <style>
-    .su-wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 80px; }
-    .su-h1 { font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 8px; }
-    .su-muted { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
-    .su-field { margin-bottom: 12px; }
-    .su-field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-    .su-field input, .su-field textarea { width: 100%; max-width: 480px; padding: 10px 12px; }
-    .su-field textarea { min-height: 72px; font-family: ui-monospace, monospace; font-size: 12px; }
-    .su-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 24px; }
-    .su-back { display: inline-block; margin-bottom: 20px; font-size: 13px; color: var(--muted); }
-    .su-back:hover { color: var(--accent); }
-    .su-err { color: var(--danger); font-size: 13px; margin-top: 8px; }
-    .su-hidden { display: none !important; }
-    .su-btn { padding: 8px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); font-size: 13px; }
-    .su-btn--primary { background: var(--accent-dim); border-color: rgba(196,149,90,0.35); color: var(--text); }
-    .su-btn--danger { border-color: rgba(224,92,92,0.35); color: var(--danger); }
-    .su-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .su-venue-search {
-      width: 100%; max-width: 100%; padding: 10px 12px; margin-bottom: 10px;
-      border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); font-size: 13px;
+    .nu-panel { width: 100%; max-width: 520px; margin: 0 auto; box-sizing: border-box; }
+    .nu-top { padding: 8px 0 4px; }
+    .nu-h1 { font-family: var(--font-serif); font-size: 1.4rem; margin: 0 0 6px; }
+    .nu-lead { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0 0 16px; }
+    .nu-field { margin-bottom: 16px; }
+    .nu-field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.02em; }
+    .nu-field input[type="text"],
+    .nu-field input[type="password"],
+    .nu-field input[type="search"] {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px 14px;
+      font-size: 16px;
+      border-radius: 12px;
+      box-sizing: border-box;
     }
-    .su-venue-chosen { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 0; }
-    .su-venue-chip {
+    .nu-check { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 4px 0; font-size: 15px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .nu-check input { width: 22px; height: 22px; flex-shrink: 0; accent-color: var(--accent); }
+    .nu-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 16px 20px;
+    }
+    .nu-card h2 { font-family: var(--font-serif); font-size: 1.1rem; margin: 0 0 16px; font-weight: 600; }
+    .nu-btn-primary {
+      width: 100%;
+      min-height: 50px;
+      margin-top: 8px;
+      padding: 14px 20px;
+      border-radius: 14px;
+      border: 1px solid rgba(196, 149, 90, 0.45);
+      background: var(--accent);
+      color: #0a0a10;
+      font: 600 16px var(--font-sans, system-ui, sans-serif);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nu-btn-primary:hover { filter: brightness(1.05); }
+    .nu-err { color: var(--danger); font-size: 14px; margin-top: 10px; }
+    .nu-hidden { display: none !important; }
+    .nu-panel .su-venue-search {
+      width: 100%; min-height: 48px; padding: 10px 14px; margin-bottom: 10px;
+      border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-size: 16px;
+    }
+    .nu-panel .su-venue-chosen { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 0; }
+    .nu-panel .su-venue-chip {
       display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
-      padding: 6px 10px; border-radius: var(--radius-pill); border: 1px solid var(--border);
-      background: var(--accent-dim); font-size: 12px; max-width: 100%;
+      padding: 8px 12px; border-radius: var(--radius-pill); border: 1px solid var(--border);
+      background: var(--accent-dim); font-size: 13px; max-width: 100%;
     }
-    .su-venue-chip select { font-size: 12px; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); }
-    .su-venue-chip__remove {
-      border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px;
+    .nu-panel .su-venue-chip select { font-size: 13px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
+    .nu-panel .su-venue-chip__remove {
+      border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px;
     }
-    .su-venue-chip__remove:hover { color: var(--danger); }
-    .su-venue-pick {
-      max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    .nu-panel .su-venue-pick {
+      max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px;
       background: var(--surface-2);
     }
-    .su-venue-row {
-      display: block; width: 100%; text-align: left; padding: 10px 12px; border: none; border-bottom: 1px solid var(--border);
-      background: transparent; font-size: 13px; cursor: pointer; color: var(--text);
+    .nu-panel .su-venue-row {
+      display: block; width: 100%; text-align: left; padding: 12px 14px; border: none; border-bottom: 1px solid var(--border);
+      background: transparent; font-size: 15px; cursor: pointer; color: var(--text);
     }
-    .su-venue-row:last-child { border-bottom: none; }
-    .su-venue-row:hover { background: var(--surface); }
-    .su-venue-row__id { font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .su-venue-empty { padding: 12px; font-size: 12px; color: var(--muted); }
+    .nu-panel .su-venue-row:last-child { border-bottom: none; }
+    .nu-panel .su-venue-row:active { background: var(--surface); }
+    .nu-panel .su-venue-row__id { font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .nu-panel .su-venue-empty { padding: 12px; font-size: 13px; color: var(--muted); }
   </style>
 </head>
-<body class="has-m-app-nav">
-  <div class="su-wrap">
-    <a class="su-back su-back--logo" href="index.html" aria-label="Back to admin" title="Back">
-      <img src="../resources/logo.webp" alt="" class="su-back__logo" width="40" height="40" decoding="async" />
-    </a>
+<body class="has-m-app-nav m-staff-shell">
+  <div class="m-staff-shell__main">
+    <div class="m-staff-shell__scroll m-staff-form-scroll" style="padding: 12px 16px 0;">
 
-    <div id="suLogin">
-      <h1 class="su-h1">Add user</h1>
-      <p class="su-muted">Sign in with a full administrator account. You can add people here and manage existing accounts under <strong>Users</strong>.</p>
-      <div class="su-field">
+    <div id="suLogin" class="nu-panel">
+      <div class="nu-top">
+        <a class="su-back su-back--logo" href="index.html" aria-label="Back to admin" title="Back">
+          <img src="../resources/logo.webp" alt="" class="su-back__logo" width="40" height="40" decoding="async" />
+        </a>
+        <h1 class="nu-h1">Add user</h1>
+        <p class="nu-lead">Sign in with a full administrator account. You can add people here; manage existing accounts under <strong>Users</strong>.</p>
+      </div>
+      <div class="nu-field">
         <label for="suUser">Username</label>
         <input id="suUser" type="text" autocomplete="username" />
       </div>
-      <div class="su-field">
+      <div class="nu-field">
         <label for="suPass">Password</label>
         <input id="suPass" type="password" autocomplete="current-password" />
       </div>
-      <button type="button" class="su-btn su-btn--primary" id="suLoginBtn">Sign in</button>
-      <p class="su-err su-hidden" id="suLoginErr"></p>
-      <button type="button" class="su-btn su-hidden" id="suRetryVerifyBtn" style="margin-top:10px">Try again</button>
+      <button type="button" class="nu-btn-primary" id="suLoginBtn">Sign in</button>
+      <p class="nu-err su-hidden" id="suLoginErr"></p>
+      <button type="button" class="nu-btn-primary su-hidden" id="suRetryVerifyBtn" style="margin-top:10px; background: var(--surface-2); color: var(--text); border-color: var(--border)">Try again</button>
     </div>
 
-    <div id="suMain" class="su-hidden">
-      <h1 class="su-h1">Add user</h1>
-      <p class="su-muted">Create a sign-in for staff and choose which venues they can open. Change or remove users anytime under <strong>Users</strong>.</p>
-      <div class="su-toolbar">
-        <button type="button" class="su-btn su-btn--danger" id="suLogoutBtn">Sign out</button>
+    <div id="suMain" class="nu-panel su-hidden">
+      <div class="nu-top">
+        <a class="su-back su-back--logo" href="index.html" aria-label="Back to admin" title="Back">
+          <img src="../resources/logo.webp" alt="" class="su-back__logo" width="40" height="40" decoding="async" />
+        </a>
+        <h1 class="nu-h1">Add user</h1>
+        <p class="nu-lead">Create a sign-in and pick which venues they can open.</p>
       </div>
 
-      <div class="su-card">
-        <h2 class="su-h1" style="font-size:1.1rem">New account</h2>
-        <div class="su-field">
+      <div class="nu-card">
+        <h2>New account</h2>
+        <div class="nu-field">
           <label for="suNewUser">Username</label>
-          <input id="suNewUser" type="text" />
+          <input id="suNewUser" type="text" autocomplete="off" />
         </div>
-        <div class="su-field">
-          <label for="suNewPass">Password (optional, at least 8 characters)</label>
-          <input id="suNewPass" type="password" placeholder="Leave blank to send a setup link instead" />
+        <div class="nu-field">
+          <label for="suNewPass">Password (optional)</label>
+          <input id="suNewPass" type="password" placeholder="At least 8 characters, or leave blank for a setup link" />
         </div>
-        <div class="su-field">
-          <label><input type="checkbox" id="suNewEn" checked /> Account active</label>
-        </div>
-        <div class="su-field">
-          <label><input type="checkbox" id="suNewSuper" /> Full administrator</label>
-        </div>
-        <div class="su-field">
+        <label class="nu-check">
+          <input type="checkbox" id="suNewEn" checked />
+          <span>Account active</span>
+        </label>
+        <label class="nu-check">
+          <input type="checkbox" id="suNewSuper" />
+          <span>Full administrator</span>
+        </label>
+        <div class="nu-field" style="margin-top: 8px">
           <label for="suNewVenueSearch">Venue access</label>
           <input type="search" id="suNewVenueSearch" class="su-venue-search" placeholder="Search by name or venue id…" autocomplete="off" />
           <div id="suNewVenueChosen" class="su-venue-chosen" aria-live="polite"></div>
           <div id="suNewVenuePick" class="su-venue-pick"></div>
         </div>
-        <button type="button" class="su-btn su-btn--primary" id="suCreateBtn">Create</button>
-        <p class="su-err su-hidden" id="suCreateErr"></p>
+        <button type="button" class="nu-btn-primary" id="suCreateBtn">Create user</button>
+        <p class="nu-err su-hidden" id="suCreateErr"></p>
       </div>
+    </div>
     </div>
   </div>
   <nav class="m-app-nav" aria-label="Staff tools">
