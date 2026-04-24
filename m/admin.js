@@ -149,7 +149,16 @@
       cfgLangTrHint: 'Menu copy in Turkish',
       cfgLangRuHint: 'Menu copy in Russian',
       cfgLangElHint: 'Menu copy in Greek',
-      langMustPickOne: 'Choose at least one menu language.'
+      langMustPickOne: 'Choose at least one menu language.',
+      staffAccountNavLabel: 'Account menu',
+      staffAccountUserDetails: 'User details',
+      staffAccountLogOut: 'Log out',
+      userDetailsSheetTitle: 'Your account',
+      userDetailsUsername: 'Username',
+      userDetailsSuperAdmin: 'Full administrator',
+      userDetailsVenues: 'Linked venues',
+      userDetailsYes: 'Yes',
+      userDetailsNo: 'No'
     },
     bg: {
       backToSite: '← Назад към сайта',
@@ -253,7 +262,16 @@
       cfgLangTrHint: 'Текстове на турски',
       cfgLangRuHint: 'Текстове на руски',
       cfgLangElHint: 'Текстове на гръцки',
-      langMustPickOne: 'Избери поне един език на менюто.'
+      langMustPickOne: 'Избери поне един език на менюто.',
+      staffAccountNavLabel: 'Меню на акаунта',
+      staffAccountUserDetails: 'Данни за акаунта',
+      staffAccountLogOut: 'Изход',
+      userDetailsSheetTitle: 'Твоят акаунт',
+      userDetailsUsername: 'Потребителско име',
+      userDetailsSuperAdmin: 'Пълен администратор',
+      userDetailsVenues: 'Свързани обекти',
+      userDetailsYes: 'Да',
+      userDetailsNo: 'Не'
     }
   };
   const tr = (k) => (I18N[adminLang] && I18N[adminLang][k]) || I18N.en[k] || k;
@@ -599,6 +617,8 @@
   let quantityMetrics = [];       // from restaurants.json (loaded only after sign-in)
   let currentRestaurant = null;   // minimal { id } then full from API menu payload
   let sessionSuperAdmin = false;
+  /** Last successful `/api/auth/me` payload (editor account menu / user sheet). */
+  let cachedAuthMe = null;
   let scopedRestaurantIds = [];
   /** Map restaurantId → { restaurantId, nameEn, nameBg } from login /api/auth/me */
   let scopedRestaurantSummaries = new Map();
@@ -664,8 +684,22 @@
   const catSettingsBody = document.getElementById('catSettingsBody');
   const catSettingsTitle = document.getElementById('catSettingsTitle');
   const catSettingsClose = document.getElementById('catSettingsClose');
+  const userDetailsLayer = document.getElementById('userDetailsLayer');
+  const userDetailsSheet = document.getElementById('userDetailsSheet');
+  const userDetailsBackdrop = document.getElementById('userDetailsBackdrop');
+  const userDetailsBody = document.getElementById('userDetailsBody');
+  const userDetailsClose = document.getElementById('userDetailsClose');
+  const userDetailsTitle = document.getElementById('userDetailsTitle');
+  const staffAccountMenuRoot = document.getElementById('staffAccountMenuRoot');
+  const staffAccountMenuBackdrop = document.getElementById('staffAccountMenuBackdrop');
+  const staffAccountNavBtn = document.getElementById('staffAccountNavBtn');
+  const staffAccountBubble = document.getElementById('staffAccountBubble');
+  const staffAccountMenuDetails = document.getElementById('staffAccountMenuDetails');
+  const staffAccountMenuLogout = document.getElementById('staffAccountMenuLogout');
+  const staffAccountNavLabel = document.getElementById('staffAccountNavLabel');
   let _workspacePickerContext = 'auth'; // 'auth' | 'editor'
   let _catSettingsIdx = -1;
+  let _staffAccountMenuResizeBound = false;
 
   const ADMIN_SHEET_FALLBACK_MS = 480;
 
@@ -880,6 +914,15 @@
     const hubNavAnchor = document.getElementById('restaurantHubNavAnchor');
     if (hubNavAnchor) hubNavAnchor.setAttribute('aria-label', tr('restaurantHubNavAnchorAria'));
 
+    if (staffAccountNavLabel) staffAccountNavLabel.textContent = tr('staffAccountNavLabel');
+    if (staffAccountNavBtn) staffAccountNavBtn.setAttribute('aria-label', tr('staffAccountNavLabel'));
+    if (staffAccountMenuDetails) staffAccountMenuDetails.textContent = tr('staffAccountUserDetails');
+    if (staffAccountMenuLogout) staffAccountMenuLogout.textContent = tr('staffAccountLogOut');
+    if (userDetailsTitle && (!userDetailsLayer || !adminSheetLayerIsOpen(userDetailsLayer))) {
+      userDetailsTitle.textContent = tr('userDetailsSheetTitle');
+    }
+    if (userDetailsClose) userDetailsClose.setAttribute('aria-label', adminLang === 'bg' ? 'Затвори' : 'Close');
+
     // Info bilingual row labels
     const setRowLabel = (rowId, text) => {
       const row = document.getElementById(rowId);
@@ -990,11 +1033,155 @@
     }
   }
 
+  function onStaffAccountMenuResize() {
+    closeStaffAccountMenu();
+  }
+
+  function closeStaffAccountMenu() {
+    if (_staffAccountMenuResizeBound) {
+      window.removeEventListener('resize', onStaffAccountMenuResize);
+      _staffAccountMenuResizeBound = false;
+    }
+    if (staffAccountMenuRoot && !staffAccountMenuRoot.classList.contains('hidden')) {
+      staffAccountMenuRoot.classList.add('hidden');
+      staffAccountMenuRoot.setAttribute('aria-hidden', 'true');
+    }
+    staffAccountNavBtn?.setAttribute('aria-expanded', 'false');
+    syncBodyScrollLock();
+  }
+
+  function positionStaffAccountMenuPanel() {
+    const panel = document.getElementById('staffAccountMenuPanel');
+    if (!staffAccountNavBtn || !panel || staffAccountNavBtn.classList.contains('hidden')) return;
+    const r = staffAccountNavBtn.getBoundingClientRect();
+    const margin = 8;
+    const panelW = Math.min(260, window.innerWidth - 2 * margin);
+    panel.style.width = `${panelW}px`;
+    const idealLeft = r.left + r.width / 2 - panelW / 2;
+    const left = Math.max(margin, Math.min(idealLeft, window.innerWidth - panelW - margin));
+    panel.style.left = `${left}px`;
+    panel.style.bottom = `${window.innerHeight - r.top + margin}px`;
+    panel.style.top = 'auto';
+    panel.style.right = 'auto';
+  }
+
+  function openStaffAccountMenu() {
+    closeUserDetailsSheet();
+    closeRestaurantHub();
+    closeWorkspacePicker();
+    closeCategorySettingsSheet();
+    if (!staffAccountMenuRoot || !staffAccountNavBtn) return;
+    staffAccountMenuRoot.classList.remove('hidden');
+    staffAccountMenuRoot.setAttribute('aria-hidden', 'false');
+    staffAccountNavBtn.setAttribute('aria-expanded', 'true');
+    positionStaffAccountMenuPanel();
+    if (!_staffAccountMenuResizeBound) {
+      window.addEventListener('resize', onStaffAccountMenuResize);
+      _staffAccountMenuResizeBound = true;
+    }
+    syncBodyScrollLock();
+  }
+
+  function toggleStaffAccountMenu() {
+    if (!staffAccountMenuRoot) return;
+    if (staffAccountMenuRoot.classList.contains('hidden')) openStaffAccountMenu();
+    else closeStaffAccountMenu();
+  }
+
+  function closeUserDetailsSheet() {
+    closeAdminSheetLayer(userDetailsLayer, userDetailsSheet);
+  }
+
+  async function fetchMeAndCache() {
+    const base = getMenuApiBase();
+    const t = getAuthToken();
+    if (!base || !t) {
+      cachedAuthMe = null;
+      updateStaffAccountBubbleFromMe();
+      return null;
+    }
+    try {
+      const res = await fetch(`${base}/api/auth/me`, { headers: { Authorization: `Bearer ${t}` } });
+      if (!res.ok) {
+        cachedAuthMe = null;
+        updateStaffAccountBubbleFromMe();
+        return null;
+      }
+      cachedAuthMe = await res.json();
+      updateStaffAccountBubbleFromMe();
+      return cachedAuthMe;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function updateStaffAccountBubbleFromMe() {
+    if (!staffAccountBubble) return;
+    const u = (cachedAuthMe && cachedAuthMe.username) ? String(cachedAuthMe.username).trim() : '';
+    if (!u) {
+      staffAccountBubble.textContent = '?';
+      return;
+    }
+    const parts = u.split(/[\s._-]+/).filter(Boolean);
+    let initials = u.slice(0, 2).toUpperCase();
+    if (parts.length >= 2) {
+      initials = (parts[0][0] + parts[1][0]).toUpperCase();
+    } else if (u.length >= 2) {
+      initials = u.slice(0, 2).toUpperCase();
+    } else {
+      initials = u.charAt(0).toUpperCase();
+    }
+    staffAccountBubble.textContent = initials.slice(0, 2);
+  }
+
+  function renderUserDetailsBody() {
+    if (!userDetailsBody) return;
+    if (!cachedAuthMe) {
+      userDetailsBody.innerHTML = `<p class="user-details-value">${esc(adminLang === 'bg' ? 'Няма данни.' : 'No data loaded.')}</p>`;
+      return;
+    }
+    const venues = Array.isArray(cachedAuthMe.restaurants) ? cachedAuthMe.restaurants : [];
+    const un = esc(cachedAuthMe.username || '—');
+    const sup = !!cachedAuthMe.superAdmin;
+    const yn = sup ? tr('userDetailsYes') : tr('userDetailsNo');
+    userDetailsBody.innerHTML = `
+      <div class="user-details-block">
+        <p class="user-details-label">${esc(tr('userDetailsUsername'))}</p>
+        <p class="user-details-value">${un}</p>
+      </div>
+      <div class="user-details-block">
+        <p class="user-details-label">${esc(tr('userDetailsSuperAdmin'))}</p>
+        <p class="user-details-value">${esc(yn)}</p>
+      </div>
+      <div class="user-details-block">
+        <p class="user-details-label">${esc(tr('userDetailsVenues'))}</p>
+        <p class="user-details-value">${esc(String(venues.length))}</p>
+      </div>`;
+  }
+
+  async function openStaffUserDetailsSheet() {
+    closeStaffAccountMenu();
+    closeUserDetailsSheet();
+    closeRestaurantHub();
+    closeWorkspacePicker();
+    closeCategorySettingsSheet();
+    await fetchMeAndCache();
+    if (!cachedAuthMe) {
+      showToast(adminLang === 'bg' ? 'Неуспешно зареждане на профила.' : 'Could not load account details.', 'error');
+      return;
+    }
+    renderUserDetailsBody();
+    if (userDetailsTitle) userDetailsTitle.textContent = tr('userDetailsSheetTitle');
+    openAdminSheetLayer(userDetailsLayer);
+  }
+
   function syncBodyScrollLock() {
     const wsOpen = workspacePickerLayer && !workspacePickerLayer.classList.contains('hidden');
     const catOpen = catSettingsLayer && !catSettingsLayer.classList.contains('hidden');
     const hubOpen = restaurantHubLayer && !restaurantHubLayer.classList.contains('hidden');
-    document.body.style.overflow = wsOpen || catOpen || hubOpen ? 'hidden' : '';
+    const udOpen = userDetailsLayer && !userDetailsLayer.classList.contains('hidden');
+    const accountMenuOpen = staffAccountMenuRoot && !staffAccountMenuRoot.classList.contains('hidden');
+    document.body.style.overflow = wsOpen || catOpen || hubOpen || udOpen || accountMenuOpen ? 'hidden' : '';
   }
 
   function closeWorkspacePicker() {
@@ -1058,6 +1245,10 @@
   }
 
   function openWorkspacePicker(context) {
+    closeStaffAccountMenu();
+    closeUserDetailsSheet();
+    closeRestaurantHub();
+    closeCategorySettingsSheet();
     _workspacePickerContext = context === 'editor' ? 'editor' : 'auth';
     if (wsPickerTitle) wsPickerTitle.textContent = tr('workspacePickerTitle');
     if (wsPickerSearch) {
@@ -1109,6 +1300,8 @@
   }
 
   async function signOutSession() {
+    closeStaffAccountMenu();
+    closeUserDetailsSheet();
     const apiBase = getMenuApiBase();
     if (apiBase) {
       try {
@@ -1118,12 +1311,16 @@
       }
     }
     clearAuthToken();
+    cachedAuthMe = null;
+    updateStaffAccountBubbleFromMe();
     sessionSuperAdmin = false;
     scopedRestaurantIds = [];
     scopedRestaurantSummaries = new Map();
     activeWorkspaceId = null;
     menuData = null;
     currentRestaurant = null;
+    if (editorScreen) editorScreen.classList.add('hidden');
+    if (authScreen) authScreen.classList.remove('hidden');
     showCredentialsUi();
     syncVenueNavSlot();
     if (authErrorEl) authErrorEl.style.display = 'none';
@@ -1153,9 +1350,13 @@
       clearTimeout(tid);
       if (!res.ok) {
         clearAuthToken();
+        cachedAuthMe = null;
+        updateStaffAccountBubbleFromMe();
         return false;
       }
       const me = await res.json();
+      cachedAuthMe = me;
+      updateStaffAccountBubbleFromMe();
       scopedRestaurantIds = Array.isArray(me.restaurants) ? me.restaurants : [];
       applyRestaurantSummariesFromApi(me.restaurantSummaries);
       sessionSuperAdmin = !!me.superAdmin;
@@ -1171,9 +1372,13 @@
       clearTimeout(tid);
       if (e && e.name === 'AbortError') {
         clearAuthToken();
+        cachedAuthMe = null;
+        updateStaffAccountBubbleFromMe();
         return false;
       }
       clearAuthToken();
+      cachedAuthMe = null;
+      updateStaffAccountBubbleFromMe();
       return false;
     }
   }
@@ -1395,6 +1600,7 @@
       /* ignore */
     }
     await loadQuantityMetricsOnly();
+    await fetchMeAndCache();
 
     if (!scopedRestaurantIds.length && !sessionSuperAdmin) {
       clearAuthToken();
@@ -1623,6 +1829,7 @@
     if (rhR) rhR.classList.toggle('hidden', !sessionSuperAdmin);
 
     syncVenueNavSlot();
+    fetchMeAndCache().catch(() => {});
   }
 
   /* ── BACK BUTTON ─────────────────────────────────────────── */
@@ -1648,6 +1855,8 @@
       t.classList.toggle('is-active', t.dataset.tab === 'info');
     });
     closeRestaurantHub();
+    closeStaffAccountMenu();
+    closeUserDetailsSheet();
     syncVenueNavSlot();
     document.querySelectorAll('.editor-panel').forEach(p => {
       const on = p.id === 'panel-info';
@@ -1682,6 +1891,10 @@
 
   function openRestaurantHub() {
     if (!restaurantHubLayer) return;
+    closeStaffAccountMenu();
+    closeUserDetailsSheet();
+    closeWorkspacePicker();
+    closeCategorySettingsSheet();
     openAdminSheetLayer(restaurantHubLayer);
     if (restaurantHubNavBtn) restaurantHubNavBtn.setAttribute('aria-expanded', 'true');
   }
@@ -1712,7 +1925,6 @@
   function syncVenueNavSlot() {
     const anchor = document.getElementById('restaurantHubNavAnchor');
     const hubBtn = document.getElementById('restaurantHubNavBtn');
-    if (!hubBtn) return;
     const inEditor = editorScreen && !editorScreen.classList.contains('hidden');
     if (anchor) {
       anchor.classList.toggle('hidden', inEditor);
@@ -1720,9 +1932,19 @@
       if (inEditor) anchor.removeAttribute('aria-current');
       else anchor.setAttribute('aria-current', 'page');
     }
-    hubBtn.classList.toggle('hidden', !inEditor);
-    hubBtn.classList.toggle('m-app-nav__link--active', !!inEditor);
-    if (!inEditor) hubBtn.setAttribute('aria-expanded', 'false');
+    if (hubBtn) {
+      hubBtn.classList.toggle('hidden', !inEditor);
+      hubBtn.classList.toggle('m-app-nav__link--active', !!inEditor);
+      if (!inEditor) hubBtn.setAttribute('aria-expanded', 'false');
+    }
+    if (staffAccountNavBtn) {
+      staffAccountNavBtn.classList.toggle('hidden', !inEditor);
+      if (!inEditor) {
+        staffAccountNavBtn.setAttribute('aria-expanded', 'false');
+        closeStaffAccountMenu();
+        closeUserDetailsSheet();
+      }
+    }
   }
 
   /* ── LAYOUT & RESERVATIONS (super-admin) ─────────────────── */
@@ -2155,6 +2377,10 @@
       <button type="button" class="btn-delete-category-sheet">${esc(tr('deleteCategory'))}</button>
     `;
 
+    closeStaffAccountMenu();
+    closeUserDetailsSheet();
+    closeRestaurantHub();
+    closeWorkspacePicker();
     openAdminSheetLayer(catSettingsLayer);
 
     const block = categoriesList.querySelector(`[data-cat-idx="${catIdx}"]`);
@@ -3531,6 +3757,12 @@
     adminSheetSwipeBottomCat,
     closeCategorySettingsSheet
   );
+  attachAdminSheetSwipeDown(
+    userDetailsSheet,
+    () => userDetailsBody,
+    adminSheetSwipeBottomHubOrWs,
+    closeUserDetailsSheet
+  );
 
   /* ── Debounced “any field changed” while editor is open ── */
   editorScreen.addEventListener('input', e => {
@@ -3584,9 +3816,31 @@
   wsPickerSearch?.addEventListener('input', () => populateWorkspacePickerList(wsPickerSearch.value));
   catSettingsBackdrop?.addEventListener('click', closeCategorySettingsSheet);
   catSettingsClose?.addEventListener('click', closeCategorySettingsSheet);
+  userDetailsBackdrop?.addEventListener('click', closeUserDetailsSheet);
+  userDetailsClose?.addEventListener('click', closeUserDetailsSheet);
+
+  staffAccountNavBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleStaffAccountMenu();
+  });
+  staffAccountMenuBackdrop?.addEventListener('click', () => closeStaffAccountMenu());
+  staffAccountMenuDetails?.addEventListener('click', () => {
+    void openStaffUserDetailsSheet();
+  });
+  staffAccountMenuLogout?.addEventListener('click', () => {
+    void signOutSession();
+  });
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    if (staffAccountMenuRoot && !staffAccountMenuRoot.classList.contains('hidden')) {
+      closeStaffAccountMenu();
+      return;
+    }
+    if (userDetailsLayer && adminSheetLayerIsOpen(userDetailsLayer)) {
+      closeUserDetailsSheet();
+      return;
+    }
     if (catSettingsLayer && adminSheetLayerIsOpen(catSettingsLayer)) {
       closeCategorySettingsSheet();
       return;

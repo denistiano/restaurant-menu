@@ -625,6 +625,26 @@
   </div>
   </div>
 
+  <div class="admin-sheet-layer admin-sheet-layer--account hidden" id="userDetailsLayer" aria-hidden="true">
+    <div class="admin-sheet-layer__backdrop" id="userDetailsBackdrop" aria-hidden="true"></div>
+    <div class="admin-sheet-layer__panel ws-picker-sheet" id="userDetailsSheet" role="dialog" aria-modal="true" aria-labelledby="userDetailsTitle">
+      <div class="ws-picker-grab" aria-hidden="true"></div>
+      <div class="ws-picker-head">
+        <h2 class="ws-picker-title" id="userDetailsTitle">Your account</h2>
+        <button type="button" class="ws-picker-close" id="userDetailsClose" aria-label="Close">×</button>
+      </div>
+      <div class="user-details-sheet-body" id="userDetailsBody"></div>
+    </div>
+  </div>
+
+  <div id="staffAccountMenuRoot" class="staff-account-menu-root hidden" aria-hidden="true">
+    <button type="button" class="staff-account-menu-root__backdrop" id="staffAccountMenuBackdrop" aria-label="Dismiss"></button>
+    <div id="staffAccountMenuPanel" class="staff-account-menu-panel" role="menu" aria-label="Account">
+      <button type="button" class="staff-account-menu-panel__item" role="menuitem" id="staffAccountMenuDetails">User details</button>
+      <button type="button" class="staff-account-menu-panel__item staff-account-menu-panel__item--danger" role="menuitem" id="staffAccountMenuLogout">Log out</button>
+    </div>
+  </div>
+
   <!-- ── CONFIRM MODAL ──────────────────────────────────────── -->
   <div class="modal-backdrop hidden" id="modalBackdrop">
     <div class="modal">
@@ -657,6 +677,10 @@
       <svg class="m-app-nav__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-6"/></svg>
       <span class="m-app-nav__label">Activity</span>
     </a>
+    <button type="button" class="m-app-nav__link m-app-nav__link--account hidden" id="staffAccountNavBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="staffAccountMenuPanel" title="Account menu" aria-label="Account menu">
+      <span class="m-app-nav__account-bubble" id="staffAccountBubble" aria-hidden="true">?</span>
+      <span class="m-app-nav__label" id="staffAccountNavLabel">Account</span>
+    </button>
   </nav>
 
   <script type="module" src="../js/analytics.js"></script>

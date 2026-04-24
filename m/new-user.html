@@ -74,10 +74,42 @@
     .nu-panel .su-venue-row:active { background: var(--surface); }
     .nu-panel .su-venue-row__id { font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
     .nu-panel .su-venue-empty { padding: 12px; font-size: 13px; color: var(--muted); }
+    .su-gate--overlay {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px 12px;
+      background: var(--bg);
+    }
+    .su-gate-card {
+      max-width: 400px; width: 100%; text-align: center; padding: 28px 22px;
+      border: 1px solid var(--border); border-radius: 16px; background: var(--surface);
+    }
+    .su-gate-brand { font-size: 12px; color: var(--muted); letter-spacing: 0.03em; margin: 0 0 10px; }
+    .su-gate-title { font-family: var(--font-serif); font-size: 1.2rem; margin: 0 0 12px; font-weight: 600; }
+    .su-gate-msg { color: var(--muted); font-size: 14px; line-height: 1.45; margin: 0 0 8px; }
+    .su-gate-spinner-wrap { display: flex; justify-content: center; padding: 10px 0 14px; }
+    .su-gate-spinner {
+      width: 28px; height: 28px; border: 2px solid rgba(196,149,90,0.2); border-top-color: var(--accent);
+      border-radius: 50%; animation: su-gate-spin 0.7s linear infinite;
+    }
+    @keyframes su-gate-spin { to { transform: rotate(360deg); } }
+    .su-gate-actions { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .su-gate-actions .nu-btn-primary { width: auto; min-width: 140px; min-height: 44px; margin-top: 0; }
   </style>
 </head>
 <body class="has-m-app-nav m-staff-shell">
   <div class="m-staff-shell__main">
+    <div id="suGate" class="su-gate--overlay su-hidden" role="status" aria-live="polite">
+      <div class="su-gate-card">
+        <p class="su-gate-brand">Staff tools</p>
+        <h2 class="su-gate-title">Add user</h2>
+        <div class="su-gate-spinner-wrap" aria-hidden="true"><div class="su-gate-spinner"></div></div>
+        <p id="suGateMsg" class="su-gate-msg">Checking access…</p>
+        <div class="su-gate-actions">
+          <a class="nu-btn-primary" href="index.html" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">← Menu admin</a>
+        </div>
+      </div>
+    </div>
     <div class="m-staff-shell__scroll m-staff-form-scroll" style="padding: 12px 16px 0;">
 
     <div id="suLogin" class="nu-panel">
