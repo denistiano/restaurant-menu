@@ -59,7 +59,7 @@
             class="spl-search-input"
             rows="2"
             spellcheck="false"
-            placeholder='Search words or filters such as app:your-app error (space-separated; matches event details)'
+            placeholder='Words, or app:, session:, eventType:, eventName:, journey_id:…, anon:, restaurant_id:… (JSON paths use $ — Advanced)'
           ></textarea>
         </div>
         <div class="spl-search-controls">
@@ -97,11 +97,20 @@
         <button type="button" class="spl-linkbtn" id="splToggleAdvanced" aria-expanded="false">Advanced filters</button>
       </div>
 
+      <div class="spl-preset-bar" id="splPresetBar" aria-label="Quick filters">
+        <span class="spl-preset-bar__label">Quick filters</span>
+        <div class="spl-preset-bar__chips">
+          <button type="button" class="spl-preset-chip" data-spl-preset="analytics">All analytics</button>
+          <button type="button" class="spl-preset-chip" data-spl-preset="reservations">Guest reservations</button>
+          <button type="button" class="spl-preset-chip" data-spl-preset="clear">Clear filters</button>
+        </div>
+      </div>
+
       <div id="splAdvanced" class="spl-advanced hidden">
         <div class="spl-advanced__grid">
           <div class="spl-field"><label for="filterApp">Application</label><input id="filterApp" name="app" type="text" /></div>
           <div class="spl-field"><label for="filterSession">Session ID</label><input id="filterSession" name="sessionId" type="text" /></div>
-          <div class="spl-field"><label for="filterUser">User ID</label><input id="filterUser" name="userId" type="text" /></div>
+          <div class="spl-field"><label for="filterUser">User ID (ingest row)</label><input id="filterUser" name="userId" type="text" title="Analytics visitors use search: anon:uuid or Advanced → $.anon_user_id" /></div>
           <div class="spl-field"><label for="filterEventType">Event type</label><input id="filterEventType" name="eventType" type="text" /></div>
           <div class="spl-field"><label for="filterEventName">Event name</label><input id="filterEventName" name="eventName" type="text" /></div>
           <div class="spl-field"><label for="filterPayload">Details contain (also uses words from search)</label><input id="filterPayload" name="payloadContains" type="text" /></div>

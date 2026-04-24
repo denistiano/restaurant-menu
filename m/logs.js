@@ -13,12 +13,25 @@
     application: 'app',
     session: 'sessionId',
     sessionid: 'sessionId',
+    sid: 'sessionId',
     user: 'userId',
     userid: 'userId',
     type: 'eventType',
     eventtype: 'eventType',
     name: 'eventName',
     eventname: 'eventName'
+  };
+
+  /** Search-bar keys → SQLite json_extract paths (see LogQueryService). */
+  var JSON_PATH_BAR_ALIASES = {
+    journey_id: '$.journey_id',
+    jid: '$.journey_id',
+    journey: '$.journey_id',
+    anon_user_id: '$.anon_user_id',
+    anon: '$.anon_user_id',
+    visitor: '$.anon_user_id',
+    restaurant_id: '$.restaurant_id',
+    rid: '$.restaurant_id'
   };
 
   function getMenuApiBase() {
@@ -111,6 +124,20 @@
       paths.push(pi ? pi.value.trim() : '');
       vals.push(vi ? vi.value.trim() : '');
     });
+
+    var bar = parseSearchBar(el('splMainSearch') ? el('splMainSearch').value : '');
+    Object.keys(bar.kv).forEach(function (k) {
+      var lk = k.toLowerCase();
+      var jpath = JSON_PATH_BAR_ALIASES[lk];
+      if (!jpath) return;
+      var rawVal = bar.kv[k];
+      var v = rawVal != null ? String(rawVal).trim() : '';
+      if (v) {
+        paths.push(jpath);
+        vals.push(v);
+      }
+    });
+
     var base = {
       size: Math.min(500, Math.max(1, parseInt(val('filterSize'), 10) || 50)),
       app: val('filterApp'),
@@ -125,7 +152,6 @@
       payloadJsonValues: vals
     };
 
-    var bar = parseSearchBar(el('splMainSearch') ? el('splMainSearch').value : '');
     mapBarToFilters(bar.kv, base);
     var kw = bar.keywords.join(' ').trim();
     if (kw && base.payloadContains) base.payloadContains = kw + ' ' + base.payloadContains;
@@ -318,6 +344,34 @@
     return m;
   }
 
+  function parsePayloadObject(row) {
+    var raw = row.payloadJson != null ? row.payloadJson : row.payload || '{}';
+    try {
+      var o = JSON.parse(raw);
+      if (o && typeof o === 'object' && !Array.isArray(o)) return o;
+    } catch (e) {}
+    return null;
+  }
+
+  function countPayloadField(content, key) {
+    var m = {};
+    content.forEach(function (row) {
+      var o = parsePayloadObject(row);
+      if (!o) return;
+      var v = o[key];
+      if (v == null || v === '') return;
+      var s = String(v);
+      m[s] = (m[s] || 0) + 1;
+    });
+    return m;
+  }
+
+  function shortLabel(s, maxLen) {
+    var t = String(s);
+    if (t.length <= maxLen) return t;
+    return t.slice(0, 8) + '…' + t.slice(-6);
+  }
+
   function renderFieldsSidebar(content) {
     var sel = el('splFieldsSelected');
     var intr = el('splFieldsInteresting');
@@ -361,7 +415,7 @@
       sel.appendChild(li);
     });
 
-    ['app', 'eventType'].forEach(function (field) {
+    ['app', 'eventType', 'eventName', 'sessionId'].forEach(function (field) {
       var getv =
         field === 'app'
           ? function (r) {
@@ -385,10 +439,42 @@
         var b = document.createElement('button');
         b.type = 'button';
         b.className = 'spl-fields__val';
-        b.textContent = pair[0] + ' (' + pair[1] + ')';
+        b.textContent = shortLabel(pair[0], 44) + ' (' + pair[1] + ')';
+        b.title = pair[0];
         b.addEventListener('click', function () {
           if (field === 'app') el('filterApp').value = pair[0];
-          else el('filterEventType').value = pair[0];
+          else if (field === 'eventType') el('filterEventType').value = pair[0];
+          else if (field === 'eventName') el('filterEventName').value = pair[0];
+          else if (field === 'sessionId') el('filterSession').value = pair[0];
+          loadPage(0);
+        });
+        li.appendChild(b);
+      });
+      intr.appendChild(li);
+    });
+
+    [['journey_id', '$.journey_id'], ['anon_user_id', '$.anon_user_id']].forEach(function (spec) {
+      var key = spec[0];
+      var jpath = spec[1];
+      var dist = countPayloadField(content, key);
+      var entries = Object.entries(dist).sort(function (a, b) {
+        return b[1] - a[1];
+      });
+      if (!entries.length) return;
+      var li = document.createElement('li');
+      li.className = 'spl-fields__item';
+      var h = document.createElement('div');
+      h.className = 'spl-fields__fname';
+      h.textContent = key + ' (payload)';
+      li.appendChild(h);
+      entries.slice(0, 6).forEach(function (pair) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'spl-fields__val';
+        b.textContent = shortLabel(pair[0], 40) + ' (' + pair[1] + ')';
+        b.title = pair[0];
+        b.addEventListener('click', function () {
+          setPayloadJsonFilters([{ path: jpath, val: pair[0] }]);
           loadPage(0);
         });
         li.appendChild(b);
@@ -398,15 +484,12 @@
 
     var keyFreq = {};
     content.forEach(function (row) {
-      var raw = row.payloadJson != null ? row.payloadJson : row.payload || '{}';
-      try {
-        var o = JSON.parse(raw);
-        if (o && typeof o === 'object' && !Array.isArray(o)) {
-          Object.keys(o).forEach(function (k) {
-            keyFreq[k] = (keyFreq[k] || 0) + 1;
-          });
-        }
-      } catch (e) {}
+      var o = parsePayloadObject(row);
+      if (o) {
+        Object.keys(o).forEach(function (k) {
+          keyFreq[k] = (keyFreq[k] || 0) + 1;
+        });
+      }
     });
     var topKeys = Object.entries(keyFreq)
       .sort(function (a, b) {
@@ -531,6 +614,59 @@
         '</div><pre class="spl-detail-pre">' +
         highlightTerms(payload, state.highlightTerms) +
         '</pre></td>';
+      var tdCell = detail.querySelector('td');
+      if (tdCell) {
+        var ar = document.createElement('div');
+        ar.className = 'spl-detail-actions';
+        ar.setAttribute('role', 'group');
+        ar.setAttribute('aria-label', 'Narrow search');
+        if (row.eventName) {
+          var b1 = document.createElement('button');
+          b1.type = 'button';
+          b1.className = 'spl-btn spl-btn--small spl-btn--ghost';
+          b1.textContent = 'Same event name';
+          b1.addEventListener('click', function () {
+            el('filterEventName').value = String(row.eventName || '');
+            loadPage(0);
+          });
+          ar.appendChild(b1);
+        }
+        if (row.sessionId) {
+          var b2 = document.createElement('button');
+          b2.type = 'button';
+          b2.className = 'spl-btn spl-btn--small spl-btn--ghost';
+          b2.textContent = 'Same session';
+          b2.addEventListener('click', function () {
+            el('filterSession').value = String(row.sessionId || '');
+            loadPage(0);
+          });
+          ar.appendChild(b2);
+        }
+        var pay = parsePayloadObject(row);
+        if (pay && pay.journey_id) {
+          var b3 = document.createElement('button');
+          b3.type = 'button';
+          b3.className = 'spl-btn spl-btn--small spl-btn--ghost';
+          b3.textContent = 'Same journey';
+          b3.addEventListener('click', function () {
+            setPayloadJsonFilters([{ path: '$.journey_id', val: String(pay.journey_id) }]);
+            loadPage(0);
+          });
+          ar.appendChild(b3);
+        }
+        if (pay && pay.anon_user_id) {
+          var b4 = document.createElement('button');
+          b4.type = 'button';
+          b4.className = 'spl-btn spl-btn--small spl-btn--ghost';
+          b4.textContent = 'Same visitor';
+          b4.addEventListener('click', function () {
+            setPayloadJsonFilters([{ path: '$.anon_user_id', val: String(pay.anon_user_id) }]);
+            loadPage(0);
+          });
+          ar.appendChild(b4);
+        }
+        if (ar.firstChild) tdCell.insertBefore(ar, tdCell.firstChild);
+      }
       btn.addEventListener('click', function () {
         detail.classList.toggle('hidden');
         var expanded = !detail.classList.contains('hidden');
@@ -677,6 +813,86 @@
     host.appendChild(row);
   }
 
+  function setPayloadJsonFilters(pairs) {
+    var host = el('logsJsonRows');
+    if (!host) return;
+    host.querySelectorAll('.logs-json-row').forEach(function (r, i) {
+      if (i > 0) r.remove();
+    });
+    var first = host.querySelector('.logs-json-row');
+    if (!first) {
+      addJsonRow();
+      first = host.querySelector('.logs-json-row');
+    }
+    var pi = first.querySelector('.logs-json-path');
+    var vi = first.querySelector('.logs-json-val');
+    if (!pi || !vi) return;
+    if (!pairs || !pairs.length) {
+      pi.value = '';
+      vi.value = '';
+      return;
+    }
+    pi.value = pairs[0].path;
+    vi.value = pairs[0].val;
+    for (var i = 1; i < pairs.length; i++) {
+      addJsonRow();
+      var rows = host.querySelectorAll('.logs-json-row');
+      var row = rows[rows.length - 1];
+      var p2 = row.querySelector('.logs-json-path');
+      var v2 = row.querySelector('.logs-json-val');
+      if (p2) p2.value = pairs[i].path;
+      if (v2) v2.value = pairs[i].val;
+    }
+  }
+
+  function resetJsonRowsEmpty() {
+    setPayloadJsonFilters([]);
+  }
+
+  function applyPreset(kind) {
+    var fa = el('filterApp');
+    var fs = el('filterSession');
+    var fu = el('filterUser');
+    var ft = el('filterEventType');
+    var fn = el('filterEventName');
+    var fp = el('filterPayload');
+    var ms = el('splMainSearch');
+    if (kind === 'clear') {
+      if (fa) fa.value = '';
+      if (fs) fs.value = '';
+      if (fu) fu.value = '';
+      if (ft) ft.value = '';
+      if (fn) fn.value = '';
+      if (fp) fp.value = '';
+      resetJsonRowsEmpty();
+      if (ms) ms.value = '';
+      var tr = el('splTimeRange');
+      if (tr) tr.value = '24h';
+    } else if (kind === 'analytics') {
+      if (fa) fa.value = '';
+      if (fs) fs.value = '';
+      if (fu) fu.value = '';
+      if (ft) ft.value = 'analytics';
+      if (fn) fn.value = '';
+      if (fp) fp.value = '';
+      resetJsonRowsEmpty();
+      var trA = el('splTimeRange');
+      if (trA && trA.value === 'all') trA.value = '24h';
+    } else if (kind === 'reservations') {
+      if (fa) fa.value = '';
+      if (fs) fs.value = '';
+      if (fu) fu.value = '';
+      if (ft) ft.value = 'analytics';
+      if (fn) fn.value = '';
+      if (fp) fp.value = '';
+      setPayloadJsonFilters([{ path: '$.reservation_funnel', val: 'guest_booking' }]);
+      var trR = el('splTimeRange');
+      if (trR && trR.value === 'all') trR.value = '7d';
+    }
+    onTimeRangeChange();
+    loadPage(0);
+  }
+
   function setResultTab(name) {
     document.querySelectorAll('[data-result-tab]').forEach(function (btn) {
       var on = btn.getAttribute('data-result-tab') === name;
@@ -744,6 +960,18 @@
       el('splTimelineZoom').addEventListener('click', function () {
         loadPage(state.page);
       });
+
+      var pb = el('splPresetBar');
+      if (pb) {
+        pb.addEventListener('click', function (e) {
+          var t = e.target;
+          if (!t || !t.getAttribute) return;
+          var pr = t.getAttribute('data-spl-preset');
+          if (!pr) return;
+          e.preventDefault();
+          applyPreset(pr);
+        });
+      }
 
       loadPage(0);
     });
