@@ -257,7 +257,7 @@
       hideSuGate();
       return;
     }
-    /* new-user.html reuses this script but has no #suGate — never hide login until verify runs */
+    /* Pages without #suGate: login stays visible until verify (legacy); new-user.html includes #suGate. */
     if (!gate) return;
     gate.classList.remove('su-hidden');
     if (login) login.classList.add('su-hidden');
@@ -351,6 +351,13 @@
         })
         .then(function () {
           if (el('suNewVenueChosen')) renderVenueAssignmentUI('suNew');
+          /* Do not move focus into add-user fields on tab load or after verify (avoids mobile keyboard). */
+          try {
+            var ae = document.activeElement;
+            if (ae && (ae === el('suUser') || ae === el('suPass') || ae === el('suNewUser') || ae === el('suNewPass') || ae === el('suNewVenueSearch'))) {
+              ae.blur();
+            }
+          } catch (_) {}
           return true;
         });
     });
@@ -790,6 +797,16 @@
   if (el('suNewVenueSearch')) {
     el('suNewVenueSearch').addEventListener('input', function () {
       renderVenueAssignmentUI('suNew');
+    });
+    window.addEventListener('pageshow', function () {
+      setTimeout(function () {
+        try {
+          var m = el('suMain');
+          if (!m || m.classList.contains('su-hidden')) return;
+          var ae = document.activeElement;
+          if (ae && ae.tagName === 'INPUT' && m.contains(ae)) ae.blur();
+        } catch (_) {}
+      }, 0);
     });
   }
 

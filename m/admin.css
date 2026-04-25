@@ -565,6 +565,33 @@ pre, code, kbd, samp {
 .m-app-nav__link--hub {
   flex: 1.15;
 }
+.m-app-nav__link--account {
+  flex: 0.85;
+  max-width: 72px;
+}
+.m-app-nav__account-bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0a0a10;
+  background: var(--accent);
+  border: 2px solid rgba(196, 149, 90, 0.55);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+.m-app-nav__link--account.m-app-nav__link--active,
+.m-app-nav__link--account[aria-expanded="true"] {
+  color: var(--accent);
+}
+.m-app-nav__link--account[aria-expanded="true"] .m-app-nav__account-bubble {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(196, 149, 90, 0.25);
+}
 .m-app-nav__link--hub .m-app-nav__hub-logo {
   width: 28px;
   height: 28px;
@@ -2129,6 +2156,7 @@ body.has-m-app-nav:has(#editorScreen:not(.hidden)) #editorScreen .editor-body {
 }
 .admin-sheet-layer--ws { z-index: 10054; }
 .admin-sheet-layer--cat { z-index: 10060; }
+.admin-sheet-layer--account { z-index: 10064; }
 .admin-sheet-layer--open {
   pointer-events: auto;
   opacity: 1;
@@ -2173,15 +2201,105 @@ body.has-m-app-nav:has(#editorScreen:not(.hidden)) #editorScreen .editor-body {
   transform: translateY(0);
 }
 
+.user-details-sheet-body {
+  padding: 8px 18px 20px;
+  max-height: min(56vh, 420px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.user-details-block {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.user-details-block:last-child {
+  border-bottom: none;
+}
+.user-details-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.user-details-value {
+  font-size: 15px;
+  color: var(--text);
+  word-break: break-word;
+}
+
+/* Staff account menu (popover above bottom nav, editor only) */
+.staff-account-menu-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  pointer-events: none;
+}
+.staff-account-menu-root:not(.hidden) {
+  pointer-events: auto;
+}
+.staff-account-menu-root__backdrop {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: default;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.staff-account-menu-panel {
+  position: fixed;
+  min-width: 200px;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  z-index: 1;
+}
+.staff-account-menu-panel__item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.staff-account-menu-panel__item:hover,
+.staff-account-menu-panel__item:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+.staff-account-menu-panel__item--danger {
+  color: var(--danger);
+}
+.staff-account-menu-panel__item--danger:hover,
+.staff-account-menu-panel__item--danger:focus-visible {
+  background: var(--danger-dim);
+}
+
 @media (min-width: 640px) {
   .admin-sheet-layer--hub,
-  .admin-sheet-layer--ws {
+  .admin-sheet-layer--ws,
+  .admin-sheet-layer--account {
     justify-content: center;
     align-items: center;
     padding: 24px;
   }
   .admin-sheet-layer--hub .admin-sheet-layer__panel.ws-picker-sheet,
-  .admin-sheet-layer--ws .admin-sheet-layer__panel.ws-picker-sheet {
+  .admin-sheet-layer--ws .admin-sheet-layer__panel.ws-picker-sheet,
+  .admin-sheet-layer--account .admin-sheet-layer__panel.ws-picker-sheet {
     width: min(440px, 100vw - 32px);
     border-radius: 16px;
     max-height: min(80vh, 640px);
@@ -2189,7 +2307,8 @@ body.has-m-app-nav:has(#editorScreen:not(.hidden)) #editorScreen .editor-body {
     opacity: 0;
   }
   .admin-sheet-layer--hub.admin-sheet-layer--open .admin-sheet-layer__panel.ws-picker-sheet,
-  .admin-sheet-layer--ws.admin-sheet-layer--open .admin-sheet-layer__panel.ws-picker-sheet {
+  .admin-sheet-layer--ws.admin-sheet-layer--open .admin-sheet-layer__panel.ws-picker-sheet,
+  .admin-sheet-layer--account.admin-sheet-layer--open .admin-sheet-layer__panel.ws-picker-sheet {
     transform: translateY(0) scale(1);
     opacity: 1;
   }
