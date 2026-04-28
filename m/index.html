@@ -549,6 +549,37 @@
         </div>
       </section>
 
+      <!-- FEEDBACK → Agentic ticketing (server forwards to /api/v1/tickets) -->
+      <section class="editor-panel hidden" id="panel-feedback">
+        <div class="form-section">
+          <h3 class="form-section__title" id="feedbackSectionTitle">Feedback</h3>
+          <p class="form-section__desc" id="feedbackSectionDesc">
+            Open a ticket in the development queue. Describe the issue and which parts of the product it affects.
+          </p>
+          <div class="notif-unsupported hidden" id="feedbackDisabledBanner" role="status">
+            <span id="feedbackDisabledText">Ticketing is not configured on the server (set AGENTIC_BASE_URL and AGENTIC_API_KEY on the API).</span>
+          </div>
+        </div>
+        <div class="form-section hidden" id="feedbackFormSection">
+          <div class="field-row" style="flex-wrap:wrap;align-items:flex-end;gap:10px">
+            <div style="flex:1;min-width:200px">
+              <label class="field-label" id="feedbackScreenLabel" for="feedbackScreenSelect">Screen / area</label>
+              <select class="field-input field-select" id="feedbackScreenSelect" aria-describedby="feedbackScreenHint"></select>
+            </div>
+            <button type="button" class="lf-save-btn" id="feedbackAddScreenBtn" style="padding:10px 16px;font-size:13px">Add</button>
+          </div>
+          <p class="form-section__desc" id="feedbackScreenHint" style="padding-top:0;margin-top:-4px">Choose a page or “0 — general”, then Add. You can tag multiple areas.</p>
+          <div class="feedback-pills" id="feedbackPills" aria-live="polite"></div>
+          <div class="field-row" style="flex-direction:column;align-items:stretch;gap:8px">
+            <label class="field-label" for="feedbackComment" id="feedbackCommentLabel" style="width:100%;padding-top:0">What is wrong?</label>
+            <textarea class="field-input field-textarea" id="feedbackComment" rows="6" placeholder=""></textarea>
+          </div>
+          <div class="field-row" style="border-bottom:none;padding-top:16px">
+            <button type="button" class="auth-card__submit" id="feedbackSubmitBtn">Submit ticket</button>
+          </div>
+        </div>
+      </section>
+
     </div><!-- /editor-body -->
 
   </div><!-- /editorScreen -->
@@ -589,6 +620,10 @@
       <button type="button" class="rh-hub-item hidden" data-tab="reservations" id="rhHubReservationsRow" role="listitem">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <span class="rh-hub-item__label" data-i18n="editorReservationsTab">Reservations</span>
+      </button>
+      <button type="button" class="rh-hub-item" data-tab="feedback" role="listitem">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h5l2 3h6a2 2 0 0 1 2 2z"/></svg>
+        <span class="rh-hub-item__label" data-i18n="editorFeedbackTab">Feedback</span>
       </button>
       <button type="button" class="rh-hub-item" data-tab="notifications" role="listitem">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>

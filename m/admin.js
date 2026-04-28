@@ -69,6 +69,32 @@
       editorLayoutTab: 'Layout',
       editorReservationsTab: 'Reservations',
       editorNotificationsTab: 'Notifications',
+      editorFeedbackTab: 'Feedback',
+      feedbackSectionTitle: 'Feedback',
+      feedbackSectionDesc:
+        'Open a ticket for the development queue. Pick which areas apply (use “0 — general” if it is not tied to one screen), then describe the problem in detail.',
+      feedbackScreenLabel: 'Screen / area',
+      feedbackScreenHint:
+        'Choose a page or “0 — general”, then tap Add. You can tag multiple areas.',
+      feedbackCommentLabel: 'What is wrong?',
+      feedbackCommentPlaceholder:
+        'Explain steps to reproduce, what you expected, and what you saw instead.',
+      feedbackAddScreen: 'Add',
+      feedbackSubmit: 'Submit ticket',
+      feedbackSuccess: 'Ticket #%s created.',
+      feedbackDisabled:
+        'Ticketing is not configured on the API server (set AGENTIC_BASE_URL and AGENTIC_API_KEY).',
+      feedbackRemoveAria: 'Remove',
+      feedbackAlreadyAdded: 'That screen is already in the list.',
+      feedbackScreenGeneral: '0 — General (whole app)',
+      feedbackScreenPublic: 'Public guest menu',
+      feedbackScreenAdminInfo: 'Admin · Info',
+      feedbackScreenAdminSettings: 'Admin · Settings',
+      feedbackScreenAdminMenu: 'Admin · Menu editor',
+      feedbackScreenAdminQr: 'Admin · QR',
+      feedbackScreenAdminLayout: 'Admin · Layout',
+      feedbackScreenAdminRes: 'Admin · Reservations',
+      feedbackScreenAdminNotif: 'Admin · Notifications',
       restaurantHubNavLabel: 'Venue',
       restaurantHubSheetTitle: 'Venue',
       restaurantHubNavAria: 'Venue: tap for sections, hold ~0.5s to switch workspace (when you have several)',
@@ -182,6 +208,32 @@
       editorLayoutTab: 'Подредба',
       editorReservationsTab: 'Резервации',
       editorNotificationsTab: 'Известия',
+      editorFeedbackTab: 'Обратна връзка',
+      feedbackSectionTitle: 'Обратна връзка',
+      feedbackSectionDesc:
+        'Отвори тикет за опашката за разработка. Избери засегнатите части (ползвай „0 — общо“, ако не е свързано с конкретен екран), после опиши подробно проблема.',
+      feedbackScreenLabel: 'Екран / област',
+      feedbackScreenHint:
+        'Избери страница или „0 — общо“, после натисни Добави. Можеш да маркираш няколко области.',
+      feedbackCommentLabel: 'Какъв е проблемът?',
+      feedbackCommentPlaceholder:
+        'Опиши стъпки за възпроизвеждане, какво очакваш и какво виждаш вместо това.',
+      feedbackAddScreen: 'Добави',
+      feedbackSubmit: 'Изпрати тикет',
+      feedbackSuccess: 'Тикет №%s е създаден.',
+      feedbackDisabled:
+        'Тикетингът не е настроен на API сървъра (задай AGENTIC_BASE_URL и AGENTIC_API_KEY).',
+      feedbackRemoveAria: 'Премахни',
+      feedbackAlreadyAdded: 'Този екран вече е в списъка.',
+      feedbackScreenGeneral: '0 — Общо (цялото приложение)',
+      feedbackScreenPublic: 'Публично меню за гости',
+      feedbackScreenAdminInfo: 'Админ · Инфо',
+      feedbackScreenAdminSettings: 'Админ · Настройки',
+      feedbackScreenAdminMenu: 'Админ · Редактор на меню',
+      feedbackScreenAdminQr: 'Админ · QR',
+      feedbackScreenAdminLayout: 'Админ · Подредба',
+      feedbackScreenAdminRes: 'Админ · Резервации',
+      feedbackScreenAdminNotif: 'Админ · Известия',
       restaurantHubNavLabel: 'Обект',
       restaurantHubSheetTitle: 'Обект',
       restaurantHubNavAria: 'Обект: докосни за секции, задрж ~0,5 s за смяна на обект (при няколко)',
@@ -285,6 +337,19 @@
     { code: 'tr', id: 'cfgLangTr' },
     { code: 'ru', id: 'cfgLangRu' },
     { code: 'el', id: 'cfgLangEl' }
+  ];
+
+  /** Keys must match {@code AgenticFeedbackService} screen labels in multi-tenant-core. */
+  const FEEDBACK_SCREEN_OPTIONS = [
+    { id: 'general', key: 'feedbackScreenGeneral' },
+    { id: 'public_menu', key: 'feedbackScreenPublic' },
+    { id: 'admin_info', key: 'feedbackScreenAdminInfo' },
+    { id: 'admin_settings', key: 'feedbackScreenAdminSettings' },
+    { id: 'admin_menu', key: 'feedbackScreenAdminMenu' },
+    { id: 'admin_qr', key: 'feedbackScreenAdminQr' },
+    { id: 'admin_layout', key: 'feedbackScreenAdminLayout' },
+    { id: 'admin_reservations', key: 'feedbackScreenAdminRes' },
+    { id: 'admin_notifications', key: 'feedbackScreenAdminNotif' }
   ];
 
   const ITEM_NAME_LABEL_KEY = {
@@ -923,6 +988,17 @@
     }
     if (userDetailsClose) userDetailsClose.setAttribute('aria-label', adminLang === 'bg' ? 'Затвори' : 'Close');
 
+    setText('feedbackSectionTitle', 'feedbackSectionTitle');
+    setText('feedbackSectionDesc', 'feedbackSectionDesc');
+    setText('feedbackScreenLabel', 'feedbackScreenLabel');
+    setText('feedbackScreenHint', 'feedbackScreenHint');
+    setText('feedbackCommentLabel', 'feedbackCommentLabel');
+    const fcPh = document.getElementById('feedbackComment');
+    if (fcPh) fcPh.placeholder = tr('feedbackCommentPlaceholder');
+    setText('feedbackAddScreenBtn', 'feedbackAddScreen');
+    setText('feedbackSubmitBtn', 'feedbackSubmit');
+    setText('feedbackDisabledText', 'feedbackDisabled');
+
     // Info bilingual row labels
     const setRowLabel = (rowId, text) => {
       const row = document.getElementById(rowId);
@@ -1232,6 +1308,7 @@
         activeWorkspaceId = rid;
         currentRestaurant = { id: rid };
         _resetLayoutPanel();
+        _feedbackSelected.clear();
         await loadAndOpenEditor();
       });
       wsPickerList.appendChild(row);
@@ -1883,6 +1960,7 @@
       _loadReservations();
     }
     if (tabId === 'notifications') renderNotificationsTab();
+    if (tabId === 'feedback') renderFeedbackTab();
   }
 
   const restaurantHubBackdrop = document.getElementById('restaurantHubBackdrop');
@@ -4101,6 +4179,134 @@
       testBtn.dataset.wired = '1';
       testBtn.addEventListener('click', () => playNotificationSound(soundPicker?.value));
     }
+  }
+
+  const _feedbackSelected = new Set();
+
+  function feedbackLabelForId(screenId) {
+    const row = FEEDBACK_SCREEN_OPTIONS.find(o => o.id === screenId);
+    return row ? tr(row.key) : screenId;
+  }
+
+  function populateFeedbackScreenSelect() {
+    const sel = document.getElementById('feedbackScreenSelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+    FEEDBACK_SCREEN_OPTIONS.forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.id;
+      opt.textContent = feedbackLabelForId(o.id);
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderFeedbackPills() {
+    const box = document.getElementById('feedbackPills');
+    if (!box) return;
+    box.innerHTML = '';
+    _feedbackSelected.forEach(id => {
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'feedback-pill';
+      pill.setAttribute('aria-label', `${tr('feedbackRemoveAria')}: ${feedbackLabelForId(id)}`);
+      const lab = document.createElement('span');
+      lab.className = 'feedback-pill__text';
+      lab.textContent = feedbackLabelForId(id);
+      const x = document.createElement('span');
+      x.className = 'feedback-pill__x';
+      x.setAttribute('aria-hidden', 'true');
+      x.textContent = '×';
+      pill.appendChild(lab);
+      pill.appendChild(x);
+      pill.addEventListener('click', () => {
+        _feedbackSelected.delete(id);
+        renderFeedbackPills();
+      });
+      box.appendChild(pill);
+    });
+  }
+
+  async function renderFeedbackTab() {
+    const rid = activeWorkspaceId || currentRestaurant?.id;
+    const banner = document.getElementById('feedbackDisabledBanner');
+    const formSec = document.getElementById('feedbackFormSection');
+    if (!rid) return;
+
+    populateFeedbackScreenSelect();
+    try {
+      const res = await fetch(`${getMenuApiBase()}/api/admin/feedback/status`, {
+        headers: { Authorization: 'Bearer ' + getAuthToken() }
+      });
+      if (!res.ok) throw new Error('bad status');
+      const data = await res.json();
+      const enabled = data.enabled === true;
+      if (banner) banner.classList.toggle('hidden', enabled);
+      if (formSec) formSec.classList.toggle('hidden', !enabled);
+    } catch (_) {
+      if (banner) banner.classList.remove('hidden');
+      if (formSec) formSec.classList.add('hidden');
+    }
+
+    const addBtn = document.getElementById('feedbackAddScreenBtn');
+    const submitBtn = document.getElementById('feedbackSubmitBtn');
+    const sel = document.getElementById('feedbackScreenSelect');
+
+    if (addBtn && !addBtn.dataset.wired) {
+      addBtn.dataset.wired = '1';
+      addBtn.addEventListener('click', () => {
+        const id = sel && sel.value;
+        if (!id) return;
+        if (_feedbackSelected.has(id)) {
+          showToast(tr('feedbackAlreadyAdded'), 'error');
+          return;
+        }
+        _feedbackSelected.add(id);
+        renderFeedbackPills();
+      });
+    }
+    if (submitBtn && !submitBtn.dataset.wired) {
+      submitBtn.dataset.wired = '1';
+      submitBtn.addEventListener('click', async () => {
+        const ta = document.getElementById('feedbackComment');
+        const comment = ta && ta.value ? ta.value.trim() : '';
+        if (!comment) {
+          showToast(adminLang === 'bg' ? 'Въведи описание.' : 'Please enter a description.', 'error');
+          return;
+        }
+        submitBtn.disabled = true;
+        try {
+          const res = await fetch(`${getMenuApiBase()}/api/admin/feedback`, {
+            method: 'POST',
+            headers: authJsonHeaders(),
+            body: JSON.stringify({
+              restaurantId: rid,
+              screens: Array.from(_feedbackSelected),
+              comment
+            })
+          });
+          const raw = await res.text();
+          if (!res.ok) {
+            let msg = `HTTP ${res.status}`;
+            try {
+              const j = JSON.parse(raw);
+              if (j.message) msg = j.message;
+            } catch (_) {}
+            throw new Error(msg);
+          }
+          const data = JSON.parse(raw);
+          _feedbackSelected.clear();
+          renderFeedbackPills();
+          if (ta) ta.value = '';
+          const tid = data.ticketId != null ? data.ticketId : data.ticket_id;
+          showToast(tr('feedbackSuccess').replace('%s', String(tid)), 'success');
+        } catch (e) {
+          showToast(e.message || 'Error', 'error');
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    }
+    renderFeedbackPills();
   }
 
   async function handleNotifToggle(rid) {
