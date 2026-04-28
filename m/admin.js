@@ -55,12 +55,12 @@
       signIn: 'Sign in',
       sessionRestoreHint: 'Restoring your session…',
       chooseWorkspaceHint:
-        'Your first linked venue opens automatically (same order as returned for your account). With several venues, hold the Venue button in the staff bar (~0.5s) to pick one, or use the list below when you are on this screen.',
+        'Your first venue opens automatically. If you manage several venues, press and hold the Venue button in the bar at the bottom to choose another, or pick one from the list on this screen.',
       superOnlyHint:
-        'No venues are linked to this account yet. Open Users in the staff bar if you need to manage staff accounts.',
+        'No venues are linked to this account yet. Use Users in the bar below if your organisation manages staff accounts.',
       signOut: 'Sign out',
       openEditor: 'Open editor',
-      incorrectPassword: 'Incorrect admin password',
+      incorrectPassword: 'That didn’t work. Check your username and password.',
       editorRestaurantTab: 'Restaurant',
       editorInfoTab: 'Info',
       editorSettingsTab: 'Settings',
@@ -72,21 +72,21 @@
       editorFeedbackTab: 'Feedback',
       feedbackSectionTitle: 'Feedback',
       feedbackSectionDesc:
-        'Open a ticket for the development queue. Pick which areas apply (use “0 — general” if it is not tied to one screen), then describe the problem in detail.',
-      feedbackScreenLabel: 'Screen / area',
+        'Tell us what happened and where in the product you saw it. You can mark several screens. Choose “Whole app / general” if it is not about one page.',
+      feedbackScreenLabel: 'Where did you notice it?',
       feedbackScreenHint:
-        'Choose a page or “0 — general”, then tap Add. You can tag multiple areas.',
-      feedbackCommentLabel: 'What is wrong?',
+        'Pick an area and tap Add. Repeat to add more. Remove a tag by tapping it.',
+      feedbackCommentLabel: 'What should we know?',
       feedbackCommentPlaceholder:
-        'Explain steps to reproduce, what you expected, and what you saw instead.',
+        'Describe what you were doing, what you expected, and what happened instead.',
       feedbackAddScreen: 'Add',
-      feedbackSubmit: 'Submit ticket',
-      feedbackSuccess: 'Ticket #%s created.',
+      feedbackSubmit: 'Send feedback',
+      feedbackSuccess: 'Thanks — reference #%s.',
       feedbackDisabled:
-        'Ticketing is not configured on the API server (set AGENTIC_BASE_URL and AGENTIC_API_KEY).',
+        'Sending feedback to our team isn’t available from this installation yet. If you need help urgently, contact your usual support channel.',
       feedbackRemoveAria: 'Remove',
       feedbackAlreadyAdded: 'That screen is already in the list.',
-      feedbackScreenGeneral: '0 — General (whole app)',
+      feedbackScreenGeneral: 'Whole app / general',
       feedbackScreenPublic: 'Public guest menu',
       feedbackScreenAdminInfo: 'Admin · Info',
       feedbackScreenAdminSettings: 'Admin · Settings',
@@ -97,8 +97,8 @@
       feedbackScreenAdminNotif: 'Admin · Notifications',
       restaurantHubNavLabel: 'Venue',
       restaurantHubSheetTitle: 'Venue',
-      restaurantHubNavAria: 'Venue: tap for sections, hold ~0.5s to switch workspace (when you have several)',
-      restaurantHubNavAnchorAria: 'Venue — menu editor home',
+      restaurantHubNavAria: 'Venue menu: sections. Press and hold to switch venue if you have several.',
+      restaurantHubNavAnchorAria: 'Venue — home',
       preview: 'Preview ↗',
       save: 'Save',
       unsaved: 'Unsaved',
@@ -115,7 +115,7 @@
       itemsSectionTitle: 'Menu items',
       itemsSectionHint: 'Drag ⠿ on a row to reorder items.',
       addCategory: '+ Add category',
-      cloudinaryUploads: 'Images (server upload)',
+      cloudinaryUploads: 'Images (upload)',
       mainBadge: 'MAIN',
       nameEnglish: 'Name (English)',
       nameBulgarian: 'Name (Bulgarian)',
@@ -154,7 +154,7 @@
       selectIngredient: 'Select ingredient…',
       selectAllergen: 'Select allergen…',
       workspacePickerTitle: 'Workspaces',
-      workspaceSearchPlaceholder: 'Search by name or ID…',
+      workspaceSearchPlaceholder: 'Search venues…',
       chooseWorkspaceBtn: 'Choose workspace',
       categorySettingsTitle: 'Category',
       categoryNamesSection: 'Names',
@@ -194,12 +194,12 @@
       signIn: 'Вход',
       sessionRestoreHint: 'Възстановяване на сесията…',
       chooseWorkspaceHint:
-        'Първият свързан обект се отваря автоматично (редът е като при акаунта ти). При няколко обекта задрж бутона „Обект“ в долната лента (~0,5 s) за избор, или ползвай списъка по-долу, когато си тук.',
+        'Първият обект се отваря автоматично. Ако управляваш няколко обекта, задрж бутона „Обект“ в долната лента за избор или използвай списъка на този екран.',
       superOnlyHint:
         'Все още няма свързани обекти. За управление на потребители отвори „Потребители“ в долната лента.',
       signOut: 'Изход',
       openEditor: 'Отвори редактора',
-      incorrectPassword: 'Невалидна админ парола',
+      incorrectPassword: 'Неуспешен вход. Провери потребителско име и парола.',
       editorRestaurantTab: 'Ресторант',
       editorInfoTab: 'Инфо',
       editorSettingsTab: 'Настройки',
@@ -211,21 +211,21 @@
       editorFeedbackTab: 'Обратна връзка',
       feedbackSectionTitle: 'Обратна връзка',
       feedbackSectionDesc:
-        'Отвори тикет за опашката за разработка. Избери засегнатите части (ползвай „0 — общо“, ако не е свързано с конкретен екран), после опиши подробно проблема.',
-      feedbackScreenLabel: 'Екран / област',
+        'Опиши какво се случи и къде го забеляза. Можеш да маркираш няколко екрана. Използвай „Цяло приложение / общо“, ако не става дума за конкретна страница.',
+      feedbackScreenLabel: 'Къде го забеляза?',
       feedbackScreenHint:
-        'Избери страница или „0 — общо“, после натисни Добави. Можеш да маркираш няколко области.',
-      feedbackCommentLabel: 'Какъв е проблемът?',
+        'Избери област и натисни Добави. Повтори за още. Премахни маркиране с докосване върху етикета.',
+      feedbackCommentLabel: 'Какво трябва да знаем?',
       feedbackCommentPlaceholder:
-        'Опиши стъпки за възпроизвеждане, какво очакваш и какво виждаш вместо това.',
+        'Опиши какво правеше, какво очакваше и какво се случи вместо това.',
       feedbackAddScreen: 'Добави',
-      feedbackSubmit: 'Изпрати тикет',
-      feedbackSuccess: 'Тикет №%s е създаден.',
+      feedbackSubmit: 'Изпрати обратна връзка',
+      feedbackSuccess: 'Благодарим — референция №%s.',
       feedbackDisabled:
-        'Тикетингът не е настроен на API сървъра (задай AGENTIC_BASE_URL и AGENTIC_API_KEY).',
+        'Изпращането на обратна връзка към екипа все още не е налично от тази инсталация. При спешност се свържи с обичайния си канал за поддръжка.',
       feedbackRemoveAria: 'Премахни',
       feedbackAlreadyAdded: 'Този екран вече е в списъка.',
-      feedbackScreenGeneral: '0 — Общо (цялото приложение)',
+      feedbackScreenGeneral: 'Цяло приложение / общо',
       feedbackScreenPublic: 'Публично меню за гости',
       feedbackScreenAdminInfo: 'Админ · Инфо',
       feedbackScreenAdminSettings: 'Админ · Настройки',
@@ -236,8 +236,8 @@
       feedbackScreenAdminNotif: 'Админ · Известия',
       restaurantHubNavLabel: 'Обект',
       restaurantHubSheetTitle: 'Обект',
-      restaurantHubNavAria: 'Обект: докосни за секции, задрж ~0,5 s за смяна на обект (при няколко)',
-      restaurantHubNavAnchorAria: 'Обект — начало на редактора на менюто',
+      restaurantHubNavAria: 'Меню на обекта: секции. Задрж за смяна на обект, ако имаш няколко.',
+      restaurantHubNavAnchorAria: 'Обект — начало',
       preview: 'Преглед ↗',
       save: 'Запази',
       unsaved: 'Незаписано',
@@ -254,7 +254,7 @@
       itemsSectionTitle: 'Продукти',
       itemsSectionHint: 'Плъзни ⠿ до реда за подредба на продуктите.',
       addCategory: '+ Добави категория',
-      cloudinaryUploads: 'Изображения (качване към сървъра)',
+      cloudinaryUploads: 'Изображения (качване)',
       mainBadge: 'ОСНОВНА',
       nameEnglish: 'Име (Английски)',
       nameBulgarian: 'Име (Български)',
@@ -293,7 +293,7 @@
       selectIngredient: 'Избери съставка…',
       selectAllergen: 'Избери алерген…',
       workspacePickerTitle: 'Обекти',
-      workspaceSearchPlaceholder: 'Търсене по име или ID…',
+      workspaceSearchPlaceholder: 'Търсене на обекти…',
       chooseWorkspaceBtn: 'Избери обект',
       categorySettingsTitle: 'Категория',
       categoryNamesSection: 'Имена',
@@ -583,7 +583,11 @@
     }
     const base = getMenuApiBase();
     if (!base) {
-      throw new Error('Menu API base not set. Add <meta name="menu-api-base" content="http://127.0.0.1:8080"> or window.__MENU_API_BASE__.');
+      throw new Error(
+        adminLang === 'bg'
+          ? 'Услугата за менюто не е налична от тази страница.'
+          : 'The menu service isn’t available from this page.'
+      );
     }
     const fd = new FormData();
     fd.append('file', file);
@@ -608,12 +612,18 @@
           } catch (_) {}
           reject(new Error('Upload succeeded but response was unexpected.'));
         } else {
-          let msg = `HTTP ${xhr.status}`;
+          let msg = '';
           try {
             const j = JSON.parse(xhr.responseText);
             if (j.message) msg = j.message;
             if (j.error) msg = typeof j.error === 'string' ? j.error : msg;
           } catch (_) {}
+          if (!msg || /^HTTP \d+$/i.test(String(msg).trim())) {
+            msg =
+              adminLang === 'bg'
+                ? 'Качването неуспешно. Опитай отново или ползвай линк към снимка.'
+                : 'Couldn’t upload the image. Try again or paste an image link.';
+          }
           reject(new Error(msg));
         }
       };
@@ -663,8 +673,15 @@
         showToast('Image uploaded!', 'success');
         adminTrack('admin_cloudinary_upload_ok', { folder: String(folder).slice(0, 60) });
       } catch (err) {
-        previewEl.innerHTML = `<span class="url-preview-err">${esc(err.message)}</span>`;
-        showToast('Upload failed: ' + err.message, 'error');
+        const shortMsg =
+          adminLang === 'bg' ? 'Качването неуспешно.' : 'Upload failed.';
+        previewEl.innerHTML = `<span class="url-preview-err">${esc(shortMsg)}</span>`;
+        showToast(
+          adminLang === 'bg'
+            ? 'Качването неуспешно. Опитай отново или ползвай линк към снимка.'
+            : 'Couldn’t upload the image. Try again or paste a link instead.',
+          'error'
+        );
         adminTrack('admin_cloudinary_upload_fail', { message: err.message || 'error' });
       }
     });
@@ -933,6 +950,16 @@
     const descTitle = document.getElementById('infoSectionDescTitle'); if (descTitle) descTitle.textContent = adminLang === 'bg' ? 'Слоган / Описание' : 'Tagline / Description';
     const appTitle  = document.getElementById('infoSectionAppearanceTitle'); if (appTitle) appTitle.textContent = adminLang === 'bg' ? 'Визия' : 'Appearance';
     const mediaTitle= document.getElementById('infoSectionMediaTitle'); if (mediaTitle) mediaTitle.textContent = adminLang === 'bg' ? 'Медия' : 'Media';
+    const mediaDescEl = document.getElementById('infoSectionMediaDesc');
+    if (mediaDescEl) {
+      mediaDescEl.innerHTML = adminLang === 'bg'
+        ? 'Постави връзка или натисни <strong>Качи</strong> за файл от устройството. Може и кратко име (напр. <code>cover.jpg</code>), ако сайтът вече хоства снимката.'
+        : 'Paste a link or click <strong>Upload</strong> to add an image from your device. A short filename is fine if your site hosts the file (e.g. <code>cover.jpg</code>).';
+    }
+    ['infoLogoUpload', 'infoImageUpload', 'infoBgImageUpload'].forEach(uid => {
+      const upl = document.getElementById(uid);
+      if (upl) upl.setAttribute('title', adminLang === 'bg' ? 'Качи изображение' : 'Upload image');
+    });
 
     setText('cfgSectionDisplayTitle', 'cfgDisplayTitle');
     setText('cfgSectionDisplayDesc', 'cfgDisplayDesc');
@@ -963,6 +990,16 @@
     const preview = document.getElementById('previewLink'); if (preview) preview.textContent = tr('preview');
     const saveBtnEl = document.getElementById('saveBtn'); if (saveBtnEl && saveBtnEl.textContent !== 'Saving…' && saveBtnEl.textContent !== 'Запазване…') saveBtnEl.textContent = tr('save');
     const dirty = document.getElementById('dirtyBadge'); if (dirty) dirty.textContent = tr('unsaved');
+
+    const backBtnEl = document.getElementById('backBtn');
+    if (backBtnEl) {
+      backBtnEl.setAttribute(
+        'aria-label',
+        adminLang === 'bg'
+          ? 'Напусни редактора — задрж „Обект“ в долната лента за смяна на обект'
+          : 'Leave editor — press and hold Venue in the bar below to switch venue'
+      );
+    }
 
     document.querySelectorAll('.rh-hub-item__label[data-i18n]').forEach(lbl => {
       const k = lbl.getAttribute('data-i18n');
@@ -1618,8 +1655,8 @@
     if (!base) {
       showToast(
         adminLang === 'bg'
-          ? 'Задай URL на API: meta menu-api-base или window.__MENU_API_BASE__ (портът на статичния сървър не е API).'
-          : 'Set the Menu API URL: <meta name="menu-api-base"> or window.__MENU_API_BASE__ (static file port is not the API).',
+          ? 'Услугата за менюто не е конфигурирана за тази страница. Помолете екипа, който поддържа сайта.'
+          : 'The menu service isn’t set up for this page. Ask whoever manages your website.',
         'error'
       );
       return;
@@ -1638,7 +1675,12 @@
         credentials: 'include'
       });
     } catch (err) {
-      showToast((adminLang === 'bg' ? 'Мрежова грешка: ' : 'Network error: ') + (err.message || ''), 'error');
+      showToast(
+        adminLang === 'bg'
+          ? 'Няма връзка. Провери интернета и опитай отново.'
+          : 'Couldn’t connect. Check your internet and try again.',
+        'error'
+      );
       if (triggerBtn) triggerBtn.disabled = false;
       return;
     }
@@ -1661,7 +1703,10 @@
     const token = body.accessToken;
     const allowed = Array.isArray(body.restaurants) ? body.restaurants : [];
     if (!token) {
-      showToast('Login response missing token.', 'error');
+      showToast(
+        adminLang === 'bg' ? 'Влизането не завърши. Опитай отново.' : 'Sign-in didn’t finish. Please try again.',
+        'error'
+      );
       if (triggerBtn) triggerBtn.disabled = false;
       return;
     }
@@ -1827,7 +1872,12 @@
     const r = currentRestaurant;
     const base = getMenuApiBase();
     if (!base) {
-      showToast('Menu API base not configured (meta menu-api-base or __MENU_API_BASE__).', 'error');
+      showToast(
+        adminLang === 'bg'
+          ? 'Услугата за менюто не е конфигурирана за тази страница. Помолете екипа, който поддържа сайта.'
+          : 'The menu service isn’t set up for this page. Ask whoever manages your website.',
+        'error'
+      );
       saveBtn.disabled = false;
       return;
     }
@@ -1837,8 +1887,8 @@
       if (res.status === 404) {
         showToast(
           adminLang === 'bg'
-            ? 'Няма публикувано меню в базата. Запази първо от админ или импортирай.'
-            : 'No menu in database yet. Save once from admin or import data.',
+            ? 'Още няма публикувано меню за този обект. Запази менюто веднъж оттук или импортирай данни.'
+            : 'Nothing is published for this venue yet. Save your menu once here, or import your data.',
           'error'
         );
         saveBtn.disabled = false;
@@ -1856,7 +1906,12 @@
         restaurant_id: String(r.id).slice(0, 40),
         message:         err.message || 'error'
       });
-      showToast('Failed to load menu: ' + err.message, 'error');
+      showToast(
+        adminLang === 'bg'
+          ? 'Менюто не можа да се зареди. Опитай отново след малко.'
+          : 'We couldn’t load your menu. Try again in a moment.',
+        'error'
+      );
     } finally {
       saveBtn.disabled = false;
     }
@@ -2141,13 +2196,22 @@
             if (!upd.ok) throw new Error(`HTTP ${upd.status}`);
             _loadReservations();
           } catch (err) {
-            showToast('Failed: ' + err.message, 'error');
+            showToast(
+              adminLang === 'bg'
+                ? 'Обновяването неуспешно. Опитай отново.'
+                : 'Couldn’t update the booking. Try again.',
+              'error'
+            );
             btn.disabled = false;
           }
         });
       });
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="8" style="color:#dc2626;padding:14px">${_esc(err.message)}</td></tr>`;
+      const loadErr =
+        adminLang === 'bg'
+          ? 'Резервациите не можаха да се заредят. Опитай отново.'
+          : 'Couldn’t load reservations. Try again.';
+      tbody.innerHTML = `<tr><td colspan="8" style="color:#dc2626;padding:14px">${_esc(loadErr)}</td></tr>`;
       _renderAdmResTimeline([]);
     }
   }
@@ -3449,14 +3513,14 @@
           <div class="item-field-row item-field-row--image">
             <label>
               Image
-              <span class="field-label__hint">Paste a URL or upload to Cloudinary (max 5 MB)</span>
+              <span class="field-label__hint">${adminLang === 'bg' ? 'Линк или качване на файл (до 5 MB)' : 'Paste a link or upload an image (max 5 MB)'}</span>
             </label>
             <div class="field-url-wrap">
               <div class="field-url-input-row">
                 <input class="item-img-input field-input" type="text"
                        value="${esc(item.image || '')}"
-                       placeholder="https://res.cloudinary.com/… or paste any URL" />
-                <button class="btn-upload-img item-img-upload" type="button" title="Upload to Cloudinary">
+                       placeholder="${adminLang === 'bg' ? 'https://… или линк към снимка' : 'https://… or any image URL'}" />
+                <button class="btn-upload-img item-img-upload" type="button" title="${adminLang === 'bg' ? 'Качи изображение' : 'Upload image'}">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
                   Upload
                 </button>
@@ -3701,7 +3765,12 @@
       return;
     }
     if (!getMenuApiBase()) {
-      showToast('Menu API base not configured.', 'error');
+      showToast(
+        adminLang === 'bg'
+          ? 'Услугата за менюто не е конфигурирана за тази страница. Помолете екипа, който поддържа сайта.'
+          : 'The menu service isn’t set up for this page. Ask whoever manages your website.',
+        'error'
+      );
       saveBtn.disabled = false;
       saveBtn.textContent = tr('save');
       return;
@@ -3732,7 +3801,23 @@
       showToast('Menu saved successfully! Changes are now live.', 'success');
     } catch (err) {
       adminTrack('admin_save_fail', { message: err.message || 'error' });
-      showToast('Save failed: ' + err.message, 'error');
+      const raw = (err && err.message) ? String(err.message).trim() : '';
+      const technical =
+        /^HTTP \d+$/i.test(raw) ||
+        /menu-api-base|__MENU_API_BASE__|Menu API/i.test(raw);
+      if (technical || !raw) {
+        showToast(
+          adminLang === 'bg'
+            ? 'Запазването неуспешно. Опитай отново.'
+            : 'Couldn’t save your changes. Try again.',
+          'error'
+        );
+      } else {
+        showToast(
+          adminLang === 'bg' ? `Проблем при запазване: ${raw}` : `Couldn’t save: ${raw}`,
+          'error'
+        );
+      }
     } finally {
       saveBtn.textContent = tr('save');
       saveBtn.disabled = false;
@@ -4300,7 +4385,12 @@
           const tid = data.ticketId != null ? data.ticketId : data.ticket_id;
           showToast(tr('feedbackSuccess').replace('%s', String(tid)), 'success');
         } catch (e) {
-          showToast(e.message || 'Error', 'error');
+          showToast(
+            adminLang === 'bg'
+              ? 'Изпращането неуспешно. Опитай отново.'
+              : 'Couldn’t send your feedback. Try again.',
+            'error'
+          );
         } finally {
           submitBtn.disabled = false;
         }
@@ -4328,7 +4418,15 @@
   async function doSubscribe(rid) {
     if (!_swRegistration) {
       _swRegistration = await registerServiceWorker();
-      if (!_swRegistration) { showToast('Service worker not available.', 'error'); return; }
+      if (!_swRegistration) {
+        showToast(
+          adminLang === 'bg'
+            ? 'Известията не се поддържат в този браузър.'
+            : 'Notifications aren’t available in this browser.',
+          'error'
+        );
+        return;
+      }
     }
 
     /* Get VAPID public key */
@@ -4340,7 +4438,12 @@
       const data = await res.json();
       vapidKey = data.publicKey;
     } catch (e) {
-      showToast('Could not load push config from server.', 'error');
+      showToast(
+        adminLang === 'bg'
+          ? 'Неуспешно зареждане на настройките за известия.'
+          : 'Couldn’t load notification settings.',
+        'error'
+      );
       return;
     }
 
@@ -4356,7 +4459,12 @@
         const deniedEl = document.getElementById('notifDenied');
         if (deniedEl) deniedEl.classList.remove('hidden');
       } else {
-        showToast('Could not create push subscription: ' + e.message, 'error');
+        showToast(
+          adminLang === 'bg'
+            ? 'Неуспешно активиране на известията. Опитай отново.'
+            : 'Couldn’t turn on notifications. Try again.',
+          'error'
+        );
       }
       return;
     }
@@ -4378,7 +4486,12 @@
       if (!res.ok) throw new Error('HTTP ' + res.status);
       showToast(adminLang === 'bg' ? 'Известията са активирани!' : 'Notifications enabled!', 'success');
     } catch (e) {
-      showToast('Failed to save subscription: ' + e.message, 'error');
+      showToast(
+        adminLang === 'bg'
+          ? 'Неуспешно записване на известията. Опитай отново.'
+          : 'Couldn’t save notification settings. Try again.',
+        'error'
+      );
     }
   }
 

@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="admin.css" />
   <link rel="stylesheet" href="../css/layout.css" />
-  <!-- API origin (scheme+host+port). Production server; use http://127.0.0.1:8080 for local API only. -->
+  <!-- Menu service URL is normally set by your provider. -->
   <meta name="menu-api-base" content="https://tebeshir.online" />
 </head>
 <body class="has-m-app-nav">
@@ -72,7 +72,7 @@
           <div class="field-row" style="padding-top:0;">
             <button class="auth-card__submit" id="authSignInBtn" type="button">Sign in</button>
           </div>
-          <p class="auth-card__error" id="authError">Incorrect admin password</p>
+          <p class="auth-card__error" id="authError">That didn’t work. Check your username and password.</p>
         </div>
       </div>
       </div><!-- /authCredentialsBlock -->
@@ -96,7 +96,7 @@
 
     <!-- Top bar -->
     <header class="editor-topbar">
-      <button type="button" class="editor-topbar__back" id="backBtn" title="Leave editor" aria-label="Leave editor — hold the Venue button in the staff bar to switch workspace">
+      <button type="button" class="editor-topbar__back" id="backBtn" title="Leave editor" aria-label="Leave editor — press and hold Venue in the bar below to switch venue">
         <img src="../resources/logo.webp" alt="" class="editor-topbar__back-logo" width="34" height="34" decoding="async" />
       </button>
       <div class="editor-topbar__spacer" aria-hidden="true"></div>
@@ -178,7 +178,7 @@
         </div>
         <div class="form-section">
           <h3 class="form-section__title" id="infoSectionMediaTitle">Media</h3>
-          <p class="form-section__desc">Paste a URL or click <strong>Upload</strong> to upload directly to Cloudinary. Use a filename (e.g. <code>cover.jpg</code>) for local assets.</p>
+          <p class="form-section__desc" id="infoSectionMediaDesc">Paste a link or click <strong>Upload</strong> to add an image from your device. You can use a filename if your site hosts the picture (e.g. <code>cover.jpg</code>).</p>
           <div class="field-row">
             <label class="field-label">
               Logo
@@ -187,7 +187,7 @@
             <div class="field-url-wrap">
               <div class="field-url-input-row">
                 <input class="field-input" id="infoLogo" type="text" placeholder="logo.jpg or https://…" autocomplete="off" spellcheck="false" />
-                <button class="btn-upload-img" id="infoLogoUpload" type="button" title="Upload to Cloudinary">
+                <button class="btn-upload-img" id="infoLogoUpload" type="button" title="Upload image">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
                   Upload
                 </button>
@@ -203,7 +203,7 @@
             <div class="field-url-wrap">
               <div class="field-url-input-row">
                 <input class="field-input" id="infoImage" type="text" placeholder="cover.jpg or https://…" autocomplete="off" spellcheck="false" />
-                <button class="btn-upload-img" id="infoImageUpload" type="button" title="Upload to Cloudinary">
+                <button class="btn-upload-img" id="infoImageUpload" type="button" title="Upload image">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
                   Upload
                 </button>
@@ -219,7 +219,7 @@
             <div class="field-url-wrap">
               <div class="field-url-input-row">
                 <input class="field-input" id="infoBgImage" type="text" placeholder="cover.jpg or https://…" autocomplete="off" spellcheck="false" />
-                <button class="btn-upload-img" id="infoBgImageUpload" type="button" title="Upload to Cloudinary">
+                <button class="btn-upload-img" id="infoBgImageUpload" type="button" title="Upload image">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
                   Upload
                 </button>
@@ -519,7 +519,7 @@
           <!-- Permission denied warning -->
           <div class="notif-denied hidden" id="notifDenied">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-            Notifications are blocked. Open browser Settings → Site Settings → Notifications and allow this site.
+            Notifications are turned off for this site. In your browser, open settings for this page and allow notifications.
           </div>
         </div>
 
@@ -545,37 +545,37 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             </button>
           </div>
-          <p class="form-section__desc" style="margin-top:6px">Sound plays when the admin panel is open. Background alerts use the OS default sound.</p>
+          <p class="form-section__desc" style="margin-top:6px">Sound plays here when you’re working in this editor (for example when a guest books a table).</p>
         </div>
       </section>
 
-      <!-- FEEDBACK → Agentic ticketing (server forwards to /api/v1/tickets) -->
+      <!-- Feedback (copy is filled from admin.js i18n) -->
       <section class="editor-panel hidden" id="panel-feedback">
         <div class="form-section">
           <h3 class="form-section__title" id="feedbackSectionTitle">Feedback</h3>
           <p class="form-section__desc" id="feedbackSectionDesc">
-            Open a ticket in the development queue. Describe the issue and which parts of the product it affects.
+            Tell us what happened and where you saw it. You can mention several screens.
           </p>
           <div class="notif-unsupported hidden" id="feedbackDisabledBanner" role="status">
-            <span id="feedbackDisabledText">Ticketing is not configured on the server (set AGENTIC_BASE_URL and AGENTIC_API_KEY on the API).</span>
+            <span id="feedbackDisabledText">Sending feedback isn’t available from here yet. Contact support if you need help.</span>
           </div>
         </div>
         <div class="form-section hidden" id="feedbackFormSection">
           <div class="field-row" style="flex-wrap:wrap;align-items:flex-end;gap:10px">
             <div style="flex:1;min-width:200px">
-              <label class="field-label" id="feedbackScreenLabel" for="feedbackScreenSelect">Screen / area</label>
+              <label class="field-label" id="feedbackScreenLabel" for="feedbackScreenSelect">Where did you notice it?</label>
               <select class="field-input field-select" id="feedbackScreenSelect" aria-describedby="feedbackScreenHint"></select>
             </div>
             <button type="button" class="lf-save-btn" id="feedbackAddScreenBtn" style="padding:10px 16px;font-size:13px">Add</button>
           </div>
-          <p class="form-section__desc" id="feedbackScreenHint" style="padding-top:0;margin-top:-4px">Choose a page or “0 — general”, then Add. You can tag multiple areas.</p>
+          <p class="form-section__desc" id="feedbackScreenHint" style="padding-top:0;margin-top:-4px">Pick an area and tap Add. Repeat for more than one screen.</p>
           <div class="feedback-pills" id="feedbackPills" aria-live="polite"></div>
           <div class="field-row" style="flex-direction:column;align-items:stretch;gap:8px">
-            <label class="field-label" for="feedbackComment" id="feedbackCommentLabel" style="width:100%;padding-top:0">What is wrong?</label>
+            <label class="field-label" for="feedbackComment" id="feedbackCommentLabel" style="width:100%;padding-top:0">What should we know?</label>
             <textarea class="field-input field-textarea" id="feedbackComment" rows="6" placeholder=""></textarea>
           </div>
           <div class="field-row" style="border-bottom:none;padding-top:16px">
-            <button type="button" class="auth-card__submit" id="feedbackSubmitBtn">Submit ticket</button>
+            <button type="button" class="auth-card__submit" id="feedbackSubmitBtn">Send feedback</button>
           </div>
         </div>
       </section>
