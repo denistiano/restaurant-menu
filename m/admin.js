@@ -4318,19 +4318,23 @@
     if (!rid) return;
 
     populateFeedbackScreenSelect();
+    let enabled = false;
     try {
       const res = await fetch(`${getMenuApiBase()}/api/admin/feedback/status`, {
         headers: { Authorization: 'Bearer ' + getAuthToken() }
       });
-      if (!res.ok) throw new Error('bad status');
-      const data = await res.json();
-      const enabled = data.enabled === true;
-      if (banner) banner.classList.toggle('hidden', enabled);
-      if (formSec) formSec.classList.toggle('hidden', !enabled);
+      if (res.ok) {
+        const data = await res.json();
+        enabled = data.enabled === true;
+      } else {
+        /* Proxy/old server/etc.: still show the form; submit will surface real errors. */
+        enabled = true;
+      }
     } catch (_) {
-      if (banner) banner.classList.remove('hidden');
-      if (formSec) formSec.classList.add('hidden');
+      enabled = true;
     }
+    if (banner) banner.classList.toggle('hidden', enabled);
+    if (formSec) formSec.classList.toggle('hidden', !enabled);
 
     const addBtn = document.getElementById('feedbackAddScreenBtn');
     const submitBtn = document.getElementById('feedbackSubmitBtn');
