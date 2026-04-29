@@ -1,41 +1,33 @@
 # e-Menu (Digital QR Menus)
 
-Your menu, in their phone.
+Your menu arrives on their phone before the bread basket does.
 
 https://denistiano.github.io/restaurant-menu/
 
 ![e-Menu walkthrough](demo/demo.gif)
 
-e-Menu is a bilingual digital menu experience for restaurants: one QR code at the table, and guests instantly browse your full menu on their phone—no app downloads, no waiting, always up to date.
+e-Menu is a bilingual QR-and-link experience tailored to Bulgarian dining rooms: one short emenu.click address or a table QR, and guests skim the full carta in Bulgarian or English straight in Safari or Chrome—no install, nothing to sideload.
 
-## Why e-Menu?
+## Why teams pick e-Menu?
 
-- **QR Code Ready**
-  One QR code on the table is all it takes. Guests scan instantly.
-- **Update Anytime**
-  New dish, changed price, seasonal menu? Update your menu in minutes from any device—without developers.
-- **Bilingual by default**
-  Bulgarian and English in one place so locals and tourists can navigate with ease.
-- **Refined restaurant look**
-  Two polished themes (classic list and modern cards) so your venue always makes the right impression.
+- **One surface for locals and travellers**
+  Menus publish in Bulgarian and English on the same URL. When enabled, currency can flip too so nightly specials read clearly for whoever is seated in front of you.
 
-## How it works (simple process)
+- **Edits arrive with the sauté pan**
+  You tweak plating notes, prices, or pour sizes from laptop or tablet. There is no “wait until devs ship a rebuild” anymore.
 
-1. **Call us**
-   We’ll talk through your restaurant needs and what you want the menu to look like.
-2. **We build your e-Menu page + QR + admin access**
-   Your branded e-menu page goes live, your unique QR materials are generated, and you get a secure admin account to manage content.
-3. **You receive your QR materials**
-   Ready-to-print QR codes for your tables and e-menu display materials for your venue.
+- **Optional reservations without yet another portal**
+  When you activate it, diners request tables from that same airy page—not a cluttered app drawer.
 
-## Built for real restaurants
+## How we onboard you?
 
-e-Menu is designed to keep things effortless for staff and clear for guests:
-mobile-first menu presentation, bilingual UX, and fast content updates so you’re never stuck with outdated printed menus.
+1. **You tell us how the floor runs.**  
+   Cuisine focus, pacing, allergens you want highlighted—the conversation takes minutes.
 
-## Get started
+2. **We stitch your menus into emenu.click + QR artwork + guarded admin.**  
+   Your brigade publishes updates whenever they reopen the POS notes.
 
-Ready to go digital?
+3. **You unpack print-ready files for tables and takeaway counters.**  
+   Social bios get the memorable short link bundled in too.
 
-- Email: `denistiano@gmail.com`
-
+Questions? Ping `denistiano@gmail.com` or follow the WhatsApp trail on https://emenu.click

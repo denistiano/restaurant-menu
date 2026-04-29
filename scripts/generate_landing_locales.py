@@ -34,11 +34,12 @@ def hreflang_block(base: str) -> str:
 
 
 FAQ_JSON_EN = """{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-  {"@type":"Question","name":"What is emenu.click?","acceptedAnswer":{"@type":"Answer","text":"emenu.click is a service for restaurants in Bulgaria: each venue gets its own web menu page, opened via a table QR code or a short link. Guests do not install an app — the menu loads in the phone browser."}},
-  {"@type":"Question","name":"Do guests need to install an app?","acceptedAnswer":{"@type":"Answer","text":"No. The menu is a normal web page optimized for phones. Scanning the QR code or opening the link is enough."}},
-  {"@type":"Question","name":"What counts as an electronic / digital menu here?","acceptedAnswer":{"@type":"Answer","text":"The menu with categories, photos, search and filters is in HTML — readable for people and search engines, unlike a flat PDF. The owner updates content through a secure admin panel."}},
-  {"@type":"Question","name":"Is there English for tourists?","acceptedAnswer":{"@type":"Answer","text":"Yes. Menus are bilingual (Bulgarian and English); the guest can switch language on the page."}},
-  {"@type":"Question","name":"How do I get emenu.click for my restaurant?","acceptedAnswer":{"@type":"Answer","text":"Write or call using the contacts on this page — we can often put your first menu live the same day."}}
+  {"@type":"Question","name":"What is emenu.click?","acceptedAnswer":{"@type":"Answer","text":"emenu.click is a hosting service for Bulgarian restaurants: every venue gets its own mobile-friendly menu page—reachable from a table QR or a short emenu.click link. Guests never download an app; the site simply opens in the phone browser."}},
+  {"@type":"Question","name":"Do guests need to install an app?","acceptedAnswer":{"@type":"Answer","text":"No. It is a regular web page tuned for phones—scan the QR or tap the link and you are already browsing categories."}},
+  {"@type":"Question","name":"What counts as an electronic / digital menu here?","acceptedAnswer":{"@type":"Answer","text":"Dishes live in structured HTML with categories, photos, filters, and on-page search—clearer for diners and easier for Google than a flat PDF. You edit it through a password-protected admin."}},
+  {"@type":"Question","name":"Is there English for tourists?","acceptedAnswer":{"@type":"Answer","text":"Yes. Copy ships in Bulgarian and English, and the guest flips languages on the same URL. When you configure it, prices can also follow a second currency."}},
+  {"@type":"Question","name":"Can guests reserve a table online?","acceptedAnswer":{"@type":"Answer","text":"If you switch the feature on—yes. Table requests ride the same lightweight page as your menu (or our live demo cards below) and still stay inside the browser."}},
+  {"@type":"Question","name":"How do I get emenu.click for my restaurant?","acceptedAnswer":{"@type":"Answer","text":"Message or ring the contacts on this page—we often publish your opening menu later the same evening."}}
 ]}"""
 
 
@@ -90,14 +91,15 @@ def apply_locale_index(html: str, locale: str, base: str) -> str:
         )
         html = re.sub(
             r'<meta name="description" content="[^"]*"',
-            '<meta name="description" content="Short emenu.click link and table QR — full bilingual digital menus for restaurants in Bulgaria and guests in English. Updates in minutes, no guest app."',
+            '<meta name="description" content="Table QR or short emenu.click link—bilingual Bulgarian/English menus for restaurants, often updated the same day you call. Reservations and currency switches when you enable them."',
             html,
             count=1,
         )
         en_title = "emenu.click — Digital &amp; QR menu for restaurants (Bulgaria) | Bilingual guest menus"
         en_desc = (
-            "Short emenu.click link and table QR — full bilingual digital menus for "
-            "restaurants in Bulgaria and guests in English. Updates in minutes, no guest app."
+            "Table QR or short emenu.click link—bilingual menus for Bulgarian dining rooms "
+            "and guests abroad. Flip dishes the same afternoon; optional reservations and "
+            "second-currency pricing when you configure them."
         )
         html = re.sub(
             r'<meta property="og:title" content="[^"]*"',
@@ -262,8 +264,8 @@ def main() -> int:
         "about/index.html",
         "About · emenu.click",
         "За нас",
-        """<p class="legal-p">emenu.click помага на ресторанти в България да покажат <strong>актуално двуезично меню</strong> през QR код или кратък линк — без приложение за гостите. Фокусът е прост UX за масата и бързи промени от уеб админ.</p>
-    <p class="legal-p">Работим с малки и средни обекти; за партньорства и медии — контактът е на началната страница.</p>""",
+        """<p class="legal-p">emenu.click носи <strong>двуезично меню до масата</strong> през QR или кратък линк — гостите го виждат директно в браузъра, без отделни приложения. Държим акцента върху неусложнен опит до чинията и възможност за бързи промени от уеб админ.</p>
+    <p class="legal-p">Ако искате да обсъдим партньорство или материали за медии, пишете от контактите на началната страница.</p>""",
         base,
     )
 
