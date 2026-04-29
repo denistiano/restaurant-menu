@@ -1055,7 +1055,10 @@
       syncLangPickerOptionLabels(lang);
       updatePageTitle();
       document.querySelectorAll('.restaurant-footer [data-wa-base]').forEach(setWhatsappPrefill);
-      if (data) renderAdvancedFilters(data.restaurant.menu.categories);
+      if (data) {
+        renderAdvancedFilters(data.restaurant.menu.categories);
+        applyTimedStates();
+      }
       if (currentModalItem) populateModal(currentModalItem);
       [content, filters, header].forEach(el => {
         if (el) el.style.opacity = '1';
@@ -1084,6 +1087,7 @@
       if (data) {
         renderMenu(data.restaurant.menu.categories);
         applyFilters(data.restaurant.menu.categories);
+        applyTimedStates();
       }
       return;
     }
@@ -1103,6 +1107,7 @@
       if (data) {
         renderMenu(data.restaurant.menu.categories);
         applyFilters(data.restaurant.menu.categories);
+        applyTimedStates();
       }
       requestAnimationFrame(() => requestAnimationFrame(() => {
         menuEl.style.opacity = '1';
